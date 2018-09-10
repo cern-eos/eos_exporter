@@ -63,7 +63,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		AvgStatDiskLoad: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_avg_stat_disk_load",
+				Name:        "group_disk_load_avg",
 				Help:        "Group Avg Stat disk load",
 				ConstLabels: labels,
 			},
@@ -72,7 +72,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SigStatDiskLoad: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_sig_stat_disk_load",
+				Name:        "group_disk_load_sig",
 				Help:        "Group Sig Stat disk load",
 				ConstLabels: labels,
 			},
@@ -81,7 +81,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatDiskReadratemb: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_sum_stat_disk_readratemb",
+				Name:        "group_disk_readratemb",
 				Help:        "Group Sum Stat Disk Read Rate in MB/s",
 				ConstLabels: labels,
 			},
@@ -90,7 +90,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatDiskWriteratemb: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_sum_stat_disk_writeratemb",
+				Name:        "group_disk_writeratemb",
 				Help:        "Group Sum Stat Disk Write Rate in MB/s",
 				ConstLabels: labels,
 			},
@@ -99,7 +99,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatNetEthratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_net_ethratemib",
+				Name:        "group_net_ethratemib",
 				Help:        "Group Stat Net Eth Rate in MiB/s",
 				ConstLabels: labels,
 			},
@@ -108,7 +108,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatNetInratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_net_inratemib",
+				Name:        "group_net_inratemib",
 				Help:        "Group Stat Net In Rate MiB/s",
 				ConstLabels: labels,
 			},
@@ -117,7 +117,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatNetOutratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_net_outratemib",
+				Name:        "group_net_outratemib",
 				Help:        "Group Stat Net Out Rate MiB/s",
 				ConstLabels: labels,
 			},
@@ -126,7 +126,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatRopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_sum_stat_ropen",
+				Name:        "group_disk_ropen",
 				Help:        "Group Open reads",
 				ConstLabels: labels,
 			},
@@ -135,7 +135,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatWopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_sum_stat_wopen",
+				Name:        "group_disk_wopen",
 				Help:        "Group Open writes",
 				ConstLabels: labels,
 			},
@@ -144,7 +144,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatStatfsUsedbytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_statfs_usedbytes",
+				Name:        "group_statfs_usedbytes",
 				Help:        "Group StatFs Used Bytes",
 				ConstLabels: labels,
 			},
@@ -153,7 +153,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatStatfsFreebytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_statfs_freebytes",
+				Name:        "group_statfs_freebytes",
 				Help:        "Group StatFs Free Bytes",
 				ConstLabels: labels,
 			},
@@ -162,7 +162,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatStatfsCapacity: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_statfs_capacity_bytes",
+				Name:        "group_statfs_sizebytes",
 				Help:        "Group StatFs Capacity",
 				ConstLabels: labels,
 			},
@@ -171,7 +171,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatUsedfiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_used_files",
+				Name:        "group_statfs_usedfiles",
 				Help:        "Group Used Files",
 				ConstLabels: labels,
 			},
@@ -180,7 +180,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatStatfsFfree: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_stafs_ffree",
+				Name:        "group_statfs_freefiles",
 				Help:        "Group Free-Files",
 				ConstLabels: labels,
 			},
@@ -189,7 +189,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatStatfsFiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_stafs_files",
+				Name:        "group_statfs_totalfiles",
 				Help:        "Group Files",
 				ConstLabels: labels,
 			},
@@ -198,7 +198,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		DevStatStatfsFilled: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_statfs_dev_filled",
+				Name:        "group_statfs_filled_dev",
 				Help:        "Group Dev Filled",
 				ConstLabels: labels,
 			},
@@ -207,7 +207,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		AvgStatStatfsFilled: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_statfs_avg_filled",
+				Name:        "group_statfs_filled_avg",
 				Help:        "Group Avg Filled",
 				ConstLabels: labels,
 			},
@@ -216,7 +216,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SigStatStatfsFilled: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "group_stat_statfs_sig_filled",
+				Name:        "group_statfs_filled_sig",
 				Help:        "Group Sig Filled",
 				ConstLabels: labels,
 			},
@@ -225,7 +225,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		CfgStatBalancing: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "group_stat_balancing",
+				Name:        "group_balancer_status",
 				Help:        "Status of group balancing 0=idle, 1=balancing, 2=drainwait",
 				ConstLabels: labels,
 			},
@@ -234,7 +234,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatBalancerRunning: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "group_sum_stat_balancer_running",
+				Name:        "group_balancer_running",
 				Help:        "Group Stat Balancer Running",
 				ConstLabels: labels,
 			},
@@ -243,7 +243,7 @@ func NewGroupCollector(cluster string) *GroupCollector {
 		SumStatDrainerRunning: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "group_sum_stat_drainer_running",
+				Name:        "group_drainer_running",
 				Help:        "Group Stat Drainer Running",
 				ConstLabels: labels,
 			},

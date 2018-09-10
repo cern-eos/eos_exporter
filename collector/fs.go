@@ -66,7 +66,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatBoot: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_boot",
+				Name:        "fs_boot_status",
 				Help:        "FS Status 0=booted, 1=booting, 2=bootfailure, 3=opserror, 4=down",
 				ConstLabels: labels,
 			},
@@ -75,7 +75,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		Configstatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_configstatus",
+				Name:        "fs_config_status",
 				Help:        "Configstatus: 0=rw,1=ro,2=drain,3=empty",
 				ConstLabels: labels,
 			},
@@ -93,7 +93,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatDiskReadratemb: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_disk_readratemb",
+				Name:        "fs_disk_readratemb",
 				Help:        "FS stat Disk Read Rate in MB/s",
 				ConstLabels: labels,
 			},
@@ -102,7 +102,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatDiskWriteratemb: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_disk_writeratemb",
+				Name:        "fs_disk_writeratemb",
 				Help:        "FS Stat Disk Write Rate in MB/s",
 				ConstLabels: labels,
 			},
@@ -111,7 +111,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatNetEthratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_net_ethratemib",
+				Name:        "fs_net_ethratemib",
 				Help:        "FS Stat Net Eth Rate in MiB/s",
 				ConstLabels: labels,
 			},
@@ -120,7 +120,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatNetInratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_net_inratemib",
+				Name:        "fs_net_inratemib",
 				Help:        "FS Stat Net In Rate MiB/s",
 				ConstLabels: labels,
 			},
@@ -129,7 +129,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatNetOutratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_net_outratemib",
+				Name:        "fs_net_outratemib",
 				Help:        "FS Stat Net Out Rate MiB/s",
 				ConstLabels: labels,
 			},
@@ -138,7 +138,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatRopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_ropen",
+				Name:        "fs_disk_ropen",
 				Help:        "FS Open reads",
 				ConstLabels: labels,
 			},
@@ -147,7 +147,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatWopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_wopen",
+				Name:        "fs_disk_wopen",
 				Help:        "FS Open writes",
 				ConstLabels: labels,
 			},
@@ -156,7 +156,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatStatfsUsedbytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_statfs_usedbytes",
+				Name:        "fs_statfs_usedbytes",
 				Help:        "FS StatFs Used Bytes",
 				ConstLabels: labels,
 			},
@@ -165,7 +165,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatStatfsFreebytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_statfs_freebytes",
+				Name:        "fs_statfs_freebytes",
 				Help:        "FS StatFs Free Bytes",
 				ConstLabels: labels,
 			},
@@ -174,7 +174,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatStatfsCapacity: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_statfs_capacity_bytes",
+				Name:        "fs_statfs_sizebytes",
 				Help:        "FS StatFs Capacity",
 				ConstLabels: labels,
 			},
@@ -183,7 +183,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatStatfsFused: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_used_files",
+				Name:        "fs_statfs_usedfiles",
 				Help:        "FS Used Files",
 				ConstLabels: labels,
 			},
@@ -192,7 +192,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatStatfsFfree: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_stafs_ffree",
+				Name:        "fs_statfs_freefiles",
 				Help:        "FS Free-Files",
 				ConstLabels: labels,
 			},
@@ -201,7 +201,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatStatfsFiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_stafs_files",
+				Name:        "fs_statfs_totalfiles",
 				Help:        "FS Files",
 				ConstLabels: labels,
 			},
@@ -219,7 +219,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatDrainprogress: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_drain_progress",
+				Name:        "fs_drain_progress",
 				Help:        "FS Drain progress %",
 				ConstLabels: labels,
 			},
@@ -228,7 +228,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatDrainfiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_drain_filesleft",
+				Name:        "fs_drain_filesleft",
 				Help:        "FS Drain files left",
 				ConstLabels: labels,
 			},
@@ -237,7 +237,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatDrainbytesleft: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_drain_bytesleft",
+				Name:        "fs_drain_bytesleft",
 				Help:        "FS Drain bytes left",
 				ConstLabels: labels,
 			},
@@ -246,7 +246,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatDrainretry: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_drain_retries",
+				Name:        "fs_drain_retries",
 				Help:        "FS Drain retries",
 				ConstLabels: labels,
 			},
@@ -255,7 +255,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatDrainFailed: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_drain_failed",
+				Name:        "fs_drain_failed",
 				Help:        "FS Drain failed",
 				ConstLabels: labels,
 			},
@@ -264,7 +264,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatActive: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_active",
+				Name:        "fs_status",
 				Help:        "Status of fs: 0=offline,1=online",
 				ConstLabels: labels,
 			},
@@ -273,7 +273,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatBalancerRunning: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_balancer_running",
+				Name:        "fs_balancer_running",
 				Help:        "FS Stat Balancer Running",
 				ConstLabels: labels,
 			},
@@ -282,7 +282,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatDrainerRunning: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_drainer_running",
+				Name:        "fs_drain_running",
 				Help:        "FS Stat Drainer Running",
 				ConstLabels: labels,
 			},
@@ -291,7 +291,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatDiskIops: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_disk_iops",
+				Name:        "fs_disk_iops",
 				Help:        "FS Stat Disk IOPS",
 				ConstLabels: labels,
 			},
@@ -300,7 +300,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatDiskBw: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_disk_bw_MB",
+				Name:        "fs_disk_bw_MB",
 				Help:        "FS Stat Disk BW MB/Sec",
 				ConstLabels: labels,
 			},
@@ -309,7 +309,7 @@ func NewFSCollector(cluster string) *FSCollector {
 		StatHealth: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fs_stat_health",
+				Name:        "fs_health",
 				Help:        "FS Stat Health: 0=OK,1=other",
 				ConstLabels: labels,
 			},

@@ -77,8 +77,8 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		AvgStatDiskLoad: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_avg_stat_disk_load",
-				Help:        "Space Avg Stat disk load",
+				Name:        "space_disk_load_avg",
+				Help:        "Space Avg disk load",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -86,8 +86,8 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SigStatDiskLoad: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_sig_stat_disk_load",
-				Help:        "Space Sig Stat disk load",
+				Name:        "space_disk_load_sig",
+				Help:        "Space Sig disk load",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -95,8 +95,8 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatDiskReadratemb: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_sum_stat_disk_readratemb",
-				Help:        "Space Sum Stat Disk Read Rate in MB/s",
+				Name:        "space_disk_readratemb",
+				Help:        "Space Disk Read Rate in MB/s",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -104,8 +104,8 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatDiskWriteratemb: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_sum_stat_disk_writeratemb",
-				Help:        "Space Sum Stat Disk Write Rate in MB/s",
+				Name:        "space_disk_writeratemb",
+				Help:        "Space Sum Disk Write Rate in MB/s",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -113,8 +113,8 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatNetEthratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_stat_net_ethratemib",
-				Help:        "Space Stat Net Eth Rate in MiB/s",
+				Name:        "space_net_ethratemib",
+				Help:        "Space Net Eth Rate in MiB/s",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -122,8 +122,8 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatNetInratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_stat_net_inratemib",
-				Help:        "Space Stat Net In Rate MiB/s",
+				Name:        "space_net_inratemib",
+				Help:        "Space Net In Rate MiB/s",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -131,8 +131,8 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatNetOutratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_stat_net_outratemib",
-				Help:        "Space Stat Net Out Rate MiB/s",
+				Name:        "space_net_outratemib",
+				Help:        "Space Net Out Rate MiB/s",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -140,7 +140,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatRopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_sum_stat_ropen",
+				Name:        "space_disk_ropen",
 				Help:        "Space Open reads",
 				ConstLabels: labels,
 			},
@@ -149,7 +149,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatWopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_sum_stat_wopen",
+				Name:        "space_disk_wopen",
 				Help:        "Space Open writes",
 				ConstLabels: labels,
 			},
@@ -158,7 +158,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatStatfsUsedbytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_stat_statfs_usedbytes",
+				Name:        "space_statfs_usedbytes",
 				Help:        "Space StatFs Used Bytes",
 				ConstLabels: labels,
 			},
@@ -167,7 +167,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatStatfsFreebytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_stat_statfs_freebytes",
+				Name:        "space_statfs_freebytes",
 				Help:        "Space StatFs Free Bytes",
 				ConstLabels: labels,
 			},
@@ -176,8 +176,8 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatStatfsCapacity: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_stat_statfs_capacity_bytes",
-				Help:        "Space StatFs Capacity",
+				Name:        "space_statfs_sizebytes",
+				Help:        "Space StatFs Size",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -185,7 +185,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatUsedfiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_stat_used_files",
+				Name:        "space_statfs_usedfiles",
 				Help:        "Space Used Files",
 				ConstLabels: labels,
 			},
@@ -194,8 +194,8 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatStatfsFfiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_stat_stafs_ffiles",
-				Help:        "Space F-Files",
+				Name:        "space_statfs_freefiles",
+				Help:        "Space Free Files",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -203,7 +203,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatStatfsFiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_stat_stafs_files",
+				Name:        "space_statfs_files",
 				Help:        "Space Files",
 				ConstLabels: labels,
 			},
@@ -212,7 +212,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatStatfsCapacityConfigstatusRw: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "space_stat_statfs_capacity_configstatus_rw",
+				Name:        "space_statfs_sizebytes_configrw",
 				Help:        "Space StatFs Capacity ConfigStatus RW",
 				ConstLabels: labels,
 			},
@@ -221,7 +221,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumNofsConfigstatusRw: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "space_nofs_configstatus_rw",
+				Name:        "space_nofs_configrw",
 				Help:        "Space Number of filesystems in FS with configstatus=rw",
 				ConstLabels: labels,
 			},
@@ -231,7 +231,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
 				Name:        "space_cfg_quota",
-				Help:        "Space Quota",
+				Help:        "Space Quota Status: 0=off, 1=on",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -248,8 +248,8 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		CfgBalancer: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "space_cfg_balancer",
-				Help:        "Space Group Balancer",
+				Name:        "space_cfg_balancer_status",
+				Help:        "Space Group Balancer Status: 0=off, 1=on",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -266,7 +266,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatBalancerRunning: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "space_sum_stat_balancer_running",
+				Name:        "space_balancer_running",
 				Help:        "Space Stat Balancer Running",
 				ConstLabels: labels,
 			},
@@ -275,7 +275,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatDrainerRunning: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "space_sum_stat_drainer_running",
+				Name:        "space_drainer_running",
 				Help:        "Space Stat Drainer Running",
 				ConstLabels: labels,
 			},
@@ -284,7 +284,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatDiskIopsConfigstatusRw: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "space_sum_stat_disk_iops_configstatus_rw",
+				Name:        "space_disk_iops_configrw",
 				Help:        "Space Stat Disk IOPS configstatus=rw",
 				ConstLabels: labels,
 			},
@@ -293,7 +293,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 		SumStatDiskBwConfigstatusRw: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "space_sum_stat_disk_bandwidth_configstatus_rw",
+				Name:        "space_disk_bw_configrw",
 				Help:        "Space Stat Disk Bandwidth configstatus=rw",
 				ConstLabels: labels,
 			},
@@ -304,8 +304,8 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 
 func (o *SpaceCollector) collectorList() []prometheus.Collector {
 	return []prometheus.Collector{
-		o.CfgGroupSize, //unrelevant
-		o.CfgGroupMod, //unrelevant
+		o.CfgGroupSize,
+		o.CfgGroupMod,
 		o.Nofs,
 		o.AvgStatDiskLoad,
 		o.SigStatDiskLoad,
@@ -317,17 +317,17 @@ func (o *SpaceCollector) collectorList() []prometheus.Collector {
 		o.SumStatRopen,
 		o.SumStatWopen,
 		o.SumStatStatfsUsedbytes,
-		o.SumStatStatfsFreebytes, // easy to calculate
+		o.SumStatStatfsFreebytes,
 		o.SumStatStatfsCapacity,
 		o.SumStatUsedfiles,
-		o.SumStatStatfsFfiles, //not sure what is this
+		o.SumStatStatfsFfiles, // seems that this metric is broken in EOS
 		o.SumStatStatfsFiles,
 		o.SumStatStatfsCapacityConfigstatusRw,
 		o.SumNofsConfigstatusRw,
-		o.CfgQuota, //unrelevant
-		o.CfgNominalsize, //unrelevant
-		o.CfgBalancer, //unrelevant
-		o.CfgBalancerThreshold, //unrelevant
+		o.CfgQuota,
+		o.CfgNominalsize,
+		o.CfgBalancer,
+		o.CfgBalancerThreshold,
 		o.SumStatBalancerRunning,
 		o.SumStatDrainerRunning,
 		o.SumStatDiskIopsConfigstatusRw,
@@ -454,6 +454,51 @@ func (o *SpaceCollector) collectSpaceDF() error {
 		if err == nil {
 			o.SumStatDiskBwConfigstatusRw.WithLabelValues(m.Name).Set(bwrw)
 		}
+
+		// Balancer Status
+
+		balancer_status := 0
+		switch stat := m.CfgBalancer; stat {
+		case "on":
+			balancer_status = 1
+		default:
+			balancer_status = 0
+		}
+
+		o.CfgBalancer.WithLabelValues(m.Name).Set(float64(balancer_status))
+
+		balt, err := strconv.ParseFloat(m.CfgBalancerThreshold, 64)
+		if err == nil {
+			o.CfgBalancerThreshold.WithLabelValues(m.Name).Set(balt)
+		}
+
+		gsize, err := strconv.ParseFloat(m.CfgGroupSize, 64)
+		if err == nil {
+			o.CfgGroupSize.WithLabelValues(m.Name).Set(gsize)
+		}
+
+		gmod, err := strconv.ParseFloat(m.CfgGroupMod, 64)
+		if err == nil {
+			o.CfgGroupMod.WithLabelValues(m.Name).Set(gmod)
+		}
+
+		// Quota Status
+
+		quota_status := 0
+		switch stat := m.CfgQuota; stat {
+		case "on":
+			quota_status = 1
+		default:
+			quota_status = 0
+		}
+
+		o.CfgQuota.WithLabelValues(m.Name).Set(float64(quota_status))
+
+		nomsize, err := strconv.ParseFloat(m.CfgNominalsize, 64)
+		if err == nil {
+			o.CfgNominalsize.WithLabelValues(m.Name).Set(nomsize)
+		}
+
 	}
 
 	return nil

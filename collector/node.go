@@ -51,7 +51,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		SumStatStatfsFree: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_stat_free_bytes",
+				Name:        "node_statfs_freebytes",
 				Help:        "Node Free Bytes",
 				ConstLabels: labels,
 			},
@@ -60,7 +60,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		SumStatStatfsUsed: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_stat_used_bytes",
+				Name:        "node_statfs_usedbytes",
 				Help:        "Node Used Bytes",
 				ConstLabels: labels,
 			},
@@ -69,7 +69,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		SumStatStatfsTotal: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_stat_total_bytes",
+				Name:        "node_statfs_sizebytes",
 				Help:        "Node Total Bytes",
 				ConstLabels: labels,
 			},
@@ -78,7 +78,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		SumStatStatFilesFree: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_stat_free_files",
+				Name:        "node_statfs_freefiles",
 				Help:        "Node Free Files",
 				ConstLabels: labels,
 			},
@@ -87,7 +87,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		SumStatStatFilesUsed: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_stat_used_files",
+				Name:        "node_statfs_usedfiles",
 				Help:        "Node Used Files",
 				ConstLabels: labels,
 			},
@@ -96,7 +96,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		SumStatStatFilesTotal: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_stat_total_files",
+				Name:        "node_statfs_totalfiles",
 				Help:        "Node Total Files",
 				ConstLabels: labels,
 			},
@@ -105,7 +105,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		SumStatRopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_sum_stat_r_open",
+				Name:        "node_disk_ropen",
 				Help:        "Node Open reads",
 				ConstLabels: labels,
 			},
@@ -114,7 +114,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		SumStatWopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_sum_stat_w_open",
+				Name:        "node_disk_wopen",
 				Help:        "Node Open writes",
 				ConstLabels: labels,
 			},
@@ -123,7 +123,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		CfgStatSysThreads: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_cfg_sys_threads",
+				Name:        "node_threads",
 				Help:        "Node Number of threads",
 				ConstLabels: labels,
 			},
@@ -132,7 +132,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		SumStatNetInratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_sum_stat_net_in_rate_mib",
+				Name:        "node_net_inratemib",
 				Help:        "Node Net in Rate in Mib",
 				ConstLabels: labels,
 			},
@@ -141,7 +141,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		SumStatNetOutratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_sum_stat_net_out_rate_mib",
+				Name:        "node_net_outratemib",
 				Help:        "Node Net out Rate in Mib",
 				ConstLabels: labels,
 			},
