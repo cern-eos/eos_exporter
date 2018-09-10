@@ -8,7 +8,7 @@ CERN [EOS](https://eos.web.cern.ch) metrics exporter for Prometheus
 ```
 go build
 ```
-- Run (on EOS headnode or in a pre-configured client with root privilegies)
+- Run (on EOS headnode or in a pre-configured client with root privilegies on EOS)
 
 ```
 ./eos_exporter --eos-instance="<eos_instance>"
