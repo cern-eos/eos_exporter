@@ -3,7 +3,7 @@ CERN [EOS](https://eos.web.cern.ch) metrics exporter for Prometheus
 
 ## Usage
 
-- Compile
+- Compile ([Go](https://golang.org/doc/install) environment needed)
 
 ```
 go build
