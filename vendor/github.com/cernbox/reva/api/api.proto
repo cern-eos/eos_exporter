@@ -1,0 +1,414 @@
+syntax = "proto3";
+
+
+package api;
+
+service Auth {
+	rpc ForgeUserToken(ForgeUserTokenReq) returns (TokenResponse) {}
+	rpc DismantleUserToken(TokenReq) returns (UserResponse) {}
+	rpc ForgePublicLinkToken(ForgePublicLinkTokenReq) returns (TokenResponse) {}
+	rpc DismantlePublicLinkToken(TokenReq) returns (PublicLinkResponse) {}
+}
+
+
+service Storage {
+	rpc CreateDir(PathReq) returns (EmptyResponse) {}
+	rpc Delete(PathReq) returns (EmptyResponse) {}
+	rpc Move(MoveReq) returns (EmptyResponse) {}
+	rpc Inspect(PathReq) returns (MetadataResponse) {}
+	rpc ListFolder(PathReq) returns (stream MetadataResponse) {}
+	rpc StartWriteTx(EmptyReq) returns (TxInfoResponse) {}
+	rpc WriteChunk(stream TxChunk) returns (WriteSummaryResponse) {}
+	rpc FinishWriteTx(TxEnd) returns (EmptyResponse) {}
+	rpc ReadFile(PathReq) returns (stream DataChunkResponse) {}
+	rpc ListRevisions(PathReq) returns (stream RevisionResponse) {}
+	rpc ReadRevision(RevisionReq) returns (stream DataChunkResponse) {}
+	rpc RestoreRevision(RevisionReq) returns (EmptyResponse) {}
+	rpc ListRecycle(PathReq) returns (stream RecycleEntryResponse) {}
+	rpc RestoreRecycleEntry(RecycleEntryReq) returns (EmptyResponse) {}
+	rpc EmptyRecycle(PathReq) returns (EmptyResponse) {}
+	rpc SetACL(ACLReq) returns (EmptyResponse) {}
+	rpc UpdateACL(ACLReq) returns (EmptyResponse) {}
+	rpc UnsetACL(ACLReq) returns (EmptyResponse) {}
+	rpc GetQuota(QuotaReq) returns (QuotaResponse) {}
+}
+
+service Tagger {
+	rpc GetTags(TagReq) returns (stream TagResponse) {}
+	rpc SetTag(TagReq) returns (EmptyResponse) {}
+	rpc UnSetTag(TagReq) returns (EmptyResponse) {}
+}
+
+service Share {
+	// with user context, relative to the user logged in
+	rpc CreatePublicLink(NewLinkReq) returns (PublicLinkResponse) {}
+	rpc UpdatePublicLink(UpdateLinkReq) returns  (PublicLinkResponse) {}
+	rpc InspectPublicLink(ShareIDReq) returns (PublicLinkResponse) {}
+	rpc RevokePublicLink(ShareIDReq) returns  (EmptyResponse) {}
+	rpc ListPublicLinks(EmptyReq) returns (stream PublicLinkResponse) {}
+	
+	// with user context, relative to user logged in
+	rpc AddFolderShare(NewFolderShareReq) returns (FolderShareResponse) {}
+	rpc UpdateFolderShare(UpdateFolderShareReq) returns (FolderShareResponse) {}
+	rpc ListFolderShares(ListFolderSharesReq) returns (stream FolderShareResponse) {}
+	rpc UnshareFolder(UnshareFolderReq) returns (EmptyResponse) {}
+	rpc GetFolderShare(ShareIDReq) returns (FolderShareResponse) {}
+
+	// with user context, relative to the user logged in, in this case, the receiver
+	rpc ListReceivedShares(EmptyReq) returns (stream ReceivedShareResponse) {}
+	rpc MountReceivedShare(ReceivedShareReq) returns (EmptyResponse) {}
+	rpc UnmountReceivedShare(ReceivedShareReq) returns (EmptyResponse) {} 
+}
+
+service Preview {
+	rpc ReadPreview(PathReq) returns (stream DataChunkResponse) {}
+}
+
+message TagReq {
+	string tag_key = 1;
+	string tag_val = 2;
+	string path = 3;
+}
+
+message Tag {
+	int64 id = 1;
+	ItemType item_type = 2;
+	string uid = 3;
+	string file_id_prefix = 4;
+	string file_id = 5;
+	string tag_key = 6;
+	string tag_value = 7;
+	
+	enum ItemType {
+		FOLDER = 0;
+		FILE = 1;
+	}
+}
+
+message TagResponse {
+	StatusCode status = 1;
+	Tag tag = 2;
+
+}
+
+message IsPublicLinkProtectedResponse {
+	StatusCode status = 1;
+	bool protected = 2;
+}
+
+message ForgePublicLinkTokenReq {
+	string token  = 1;
+	string password = 2;
+}
+
+message ForgePublicLinkTokenResponse {
+	StatusCode status = 1;
+	bool valid = 2;
+}
+
+message VerifyPublicLinkTokenReq {
+	string token  = 1;
+}
+
+message VerifyPublicLinkTokenResponse {
+	StatusCode status = 1;
+	PublicLink public_link = 2;
+}
+
+message EmptyResponse {
+	StatusCode status = 1;
+}
+
+message EmptyReq {}
+
+message QuotaReq {
+	string path = 1;
+}
+
+message QuotaResponse {
+	StatusCode status = 1;
+	int64 total_bytes = 2;
+	int64 used_bytes = 3;
+}
+
+message UserResponse {
+	StatusCode status = 1;
+	User user = 2;
+}
+
+message User {
+	string account_id = 1;
+	repeated string groups = 2;
+}
+
+enum StatusCode {
+	OK = 0;
+	UNKNOWN = 1;
+	STORAGE_NOT_FOUND = 2;
+	STORAGE_ALREADY_EXISTS = 3;
+	STORAGE_PERMISSIONDENIED = 4;
+	CONTEXT_USER_REQUIRED = 5;
+	PATH_INVALID = 6;
+	PUBLIC_LINK_NOT_FOUND = 7;
+	PUBLIC_LINK_INVALID_DATE = 8;
+	PUBLIC_LINK_INVALID_PASSWORD = 9;
+	STORAGE_NOT_SUPPORTED = 10;
+	USER_NOT_FOUND = 11;
+	TOKEN_INVALID = 12;
+	FOLDER_SHARE_NOT_FOUND = 13;
+}
+
+
+message TxInfoResponse {
+	StatusCode status = 1;
+	TxInfo txInfo = 2;
+}
+
+message TxInfo {
+	string tx_id = 1;
+}
+
+message ForgeUserTokenReq {
+	string client_id = 1;
+	string client_secret = 2;
+}
+
+
+message TokenResponse {
+	StatusCode status = 1;
+	string token = 2;
+}
+
+message  TokenReq {
+	string token = 1;
+}
+
+message MetadataResponse {
+	StatusCode status = 1;
+	Metadata metadata = 2;
+}
+
+message Metadata {
+	string id = 1;
+	string path = 2;
+	uint64 size = 3;
+	uint64 mtime = 4;
+	bool is_dir = 5;
+	string etag = 6;
+	string checksum = 7;
+	string deref_path = 8;
+	bool is_read_only = 9;
+	bool is_shareable = 10;
+	string mime = 11;
+	bytes sys = 12; // sys is for storing arbitrary data
+
+	// EOS filesytem extended metadata records
+	string eos_file = 13;
+	string eos_instance = 14;
+
+	// Share extended metadata records
+	string share_target = 15;
+
+	// Migration extended metadata records
+	string mig_id = 16;
+	string mig_path = 17;
+}
+
+message PathReq {
+	string path = 1;
+}
+
+message MoveReq {
+	string old_path = 1;
+	string new_path = 2;
+}
+
+// maybe add checksum data ?
+message TxChunk {
+	string tx_id = 1;
+	uint64 length = 2;
+	uint64 offset = 3;
+	bytes data = 4;  
+}
+
+
+message WriteSummaryResponse {
+	StatusCode status = 1;
+	WriteSummary writeSummary = 2;
+}
+message WriteSummary {
+	uint64 nchunks = 1;
+	uint64 total_size = 2;
+}
+
+message TxEnd {
+	string tx_id = 1;
+	string path = 2;
+	string checksum = 3;
+}
+
+
+message DataChunkResponse {
+	StatusCode status = 1;
+	DataChunk dataChunk = 2;
+}
+
+message DataChunk {
+	uint64 length = 1;
+	uint64 offset = 2;
+	bytes data = 3;  
+}
+
+message RevisionResponse {
+	StatusCode status = 1;
+	Revision revision = 2;
+}
+
+message Revision {
+	string rev_key = 1;
+	uint64 size = 2;
+	uint64 mtime = 3;
+	bool is_dir = 4;
+}
+
+message RevisionReq {
+	string path = 1;
+	string rev_key = 2;
+}
+
+message RecycleEntryResponse {
+	StatusCode status = 1;
+	RecycleEntry recycleEntry = 2;
+}
+
+message RecycleEntry {
+	string restore_path = 1;
+	string restore_key = 2;
+	uint64 size = 3;
+	uint64 del_mtime = 4;
+	bool is_dir = 5;
+}
+
+message RecycleEntryReq {
+	string restore_key = 1;
+}
+
+message LinkPermissions {
+	bool read = 1;
+	bool write = 2;
+}
+
+message NewLinkReq {
+	string path = 1;
+	bool read_only = 2;
+	string password = 3;
+	uint64 expires = 4;
+}
+
+message UpdateLinkReq {
+	string id = 1;
+	bool update_password = 2;
+	string password = 3;
+	bool update_expiration = 4;
+	uint64 expiration = 5;
+	bool read_only = 6;
+	bool update_read_only = 7;
+}
+
+message PublicLinkResponse {
+	StatusCode status = 1;
+	PublicLink publicLink = 2;
+}
+
+message ShareRecipient {
+	string identity = 1;
+	RecipientType type = 2;
+
+	enum RecipientType{
+		USER = 0;
+		GROUP = 1;
+		UNIX = 2;
+	}
+}
+
+message ACLReq {
+	string path = 1;
+	ShareRecipient recipient = 2;
+	bool read_only = 3;
+	repeated FolderShare shares = 4;
+}
+
+message PublicLink {
+	string id = 1;
+	string token = 2;
+	string path = 3;
+	bool protected = 4;
+	uint64 expires = 5;
+	bool read_only = 6;
+	uint64 mtime = 7;
+	ItemType item_type = 8;
+	string owner_id = 9;
+	string name = 10;
+
+	enum ItemType {
+		FILE = 0;
+		FOLDER = 1;
+	}
+}
+
+message PublicLinkTokenReq {
+	string token = 1;
+
+}
+
+message ShareIDReq{
+	string id = 1;
+
+}
+
+message FolderShareResponse {
+	StatusCode status = 1;
+	FolderShare folderShare = 2;
+}
+
+message FolderShare {
+	string id = 1;
+	string path = 2;
+	string owner_id = 3;
+	ShareRecipient recipient = 4;
+	bool read_only = 5;
+	uint64 ctime = 6;
+	uint64 mtime = 7;
+	string target = 8;
+}
+
+
+message ReceivedShareResponse {
+	StatusCode status = 1;
+	FolderShare  share = 2;
+}
+
+message NewFolderShareReq {
+	string path = 1;  
+	ShareRecipient recipient = 2;
+	bool read_only = 3;
+}
+
+message UpdateFolderShareReq {
+	string id = 1;
+	bool update_read_only = 2;
+	bool read_only = 3;
+}
+
+message UnshareFolderReq {
+	string id = 1;
+}
+
+message ListFolderSharesReq {
+	string path = 1;
+}
+
+message ReceivedShareReq {
+	string share_id = 1;
+}
+
