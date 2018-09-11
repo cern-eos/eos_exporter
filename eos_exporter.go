@@ -67,7 +67,7 @@ func main() {
 	var (
 		listenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9373").String()
 		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
-		eosInstance	  = kingpin.Flag("eos-instance","EOS instance name").Default("eospps").String()
+		eosInstance	  = kingpin.Arg("eos-instance","EOS instance name").Required().String()
 	)
 
 	log.AddFlags(kingpin.CommandLine)
