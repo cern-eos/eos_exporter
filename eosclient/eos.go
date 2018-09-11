@@ -16,8 +16,10 @@ import (
 
 	"github.com/cernbox/reva/api"
 	"go.uber.org/zap"
+	"time"
 )
 
+var cmdTimeout = 10*time.Second // Time-out for the EOS commands
 
 type Options struct {
 	// Location of the eos binary. Default is /usr/bin/eos.
@@ -241,7 +243,15 @@ func (c *Client) ListNode(ctx context.Context, username string) ([]*NodeInfo, er
 	if err != nil {
 		return nil, err
 	}
-	cmd := exec.Command("/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "node", "ls", "-m")
+	var (
+		ctxWt context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "node", "ls", "-m")
 	stdout, _, err := c.execute(cmd)
 	if err != nil {
 		return nil, err
@@ -255,7 +265,16 @@ func (c *Client) ListSpace(ctx context.Context, username string) ([]*SpaceInfo, 
 	if err != nil {
 		return nil, err
 	}
-	cmd := exec.Command("/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "space", "ls", "-m")
+
+	var (
+		ctxWt context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "space", "ls", "-m")
 	stdout, _, err := c.execute(cmd)
 	if err != nil {
 		return nil, err
@@ -269,7 +288,16 @@ func (c *Client) ListGroup(ctx context.Context, username string) ([]*GroupInfo, 
 	if err != nil {
 		return nil, err
 	}
-	cmd := exec.Command("/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "group", "ls", "-m")
+
+	var (
+		ctxWt context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "group", "ls", "-m")
 	stdout, _, err := c.execute(cmd)
 	if err != nil {
 		return nil, err
@@ -283,7 +311,16 @@ func (c *Client) ListFS(ctx context.Context, username string) ([]*FSInfo, error)
 	if err != nil {
 		return nil, err
 	}
-	cmd := exec.Command("/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "fs", "ls", "-m")
+
+	var (
+		ctxWt context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "fs", "ls", "-m")
 	stdout, _, err := c.execute(cmd)
 	if err != nil {
 		return nil, err
