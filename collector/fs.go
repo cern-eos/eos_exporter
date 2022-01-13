@@ -4,7 +4,7 @@ import (
 	"log"
 	"context"
 	"github.com/prometheus/client_golang/prometheus"
-	"eos_exporter/eosclient"
+	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
 	"strconv"
 )
 
@@ -353,7 +353,7 @@ func (o *FSCollector) collectorList() []prometheus.Collector {
 
 func (o *FSCollector) collectFSDF() error {
 
-	opt := &eosclient.Options{URL: "root://eospps.cern.ch"}
+	opt := &eosclient.Options{URL: "root://eoshomecanary.cern.ch"}
     client, err := eosclient.New(opt)
     if err != nil {
     	panic(err)

@@ -17,7 +17,7 @@ package main
 import (
 	"sync"
 	"github.com/prometheus/client_golang/prometheus"
-	"eos_exporter/collector"
+	"gitlab.cern.ch/rvalverd/eos_exporter/collector"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/common/log"

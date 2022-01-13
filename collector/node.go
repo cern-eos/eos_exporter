@@ -5,7 +5,7 @@ import (
 	"context"
 	"github.com/prometheus/client_golang/prometheus"
 	"strconv"
-	"eos_exporter/eosclient"
+	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
 )
 
 const (
@@ -169,7 +169,7 @@ func (o *NodeCollector) collectorList() []prometheus.Collector {
 
 func (o *NodeCollector) collectNodeDF() error {
 
-	opt := &eosclient.Options{URL: "root://eospps.cern.ch"}
+	opt := &eosclient.Options{URL: "root://eoshomecanary.cern.ch"}
     client, err := eosclient.New(opt)
     if err != nil {
     	panic(err)

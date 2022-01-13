@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"unicode"
 
-	"github.com/cernbox/reva/api"
+	// "github.com/cernbox/reva/api"
 	"go.uber.org/zap"
 	"time"
 )
@@ -230,7 +230,7 @@ func (c *Client) execute(cmd *exec.Cmd) (string, string, error) {
 		if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 			switch status.ExitStatus() {
 			case 2:
-				err = api.NewError(api.StorageNotFoundErrorCode)
+				err = fmt.Errorf("error: FIXME") // api.NewError(api.StorageNotFoundErrorCode)
 			}
 		}
 	}
