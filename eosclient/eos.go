@@ -195,6 +195,21 @@ type FSInfo struct {
 	StatHealthIndicator        string
 }
 
+type VSInfo struct {
+	EOSmgm					   string
+	Hostport				   string
+	Geotag					   string
+	Vsize					   string
+	Rss					   string
+	Threads					   string
+	Sockets					   string
+	EOSfst					   string
+	Xrootdfst				   string
+	KernelV					   string
+	Start					   string
+	Uptime					   string
+}
+
 func New(opt *Options) (*Client, error) {
 	opt.init()
 	c := new(Client)
@@ -326,6 +341,35 @@ func (c *Client) ListFS(ctx context.Context, username string) ([]*FSInfo, error)
 		return nil, err
 	}
 	return c.parseFSsInfo(stdout)
+}
+
+// List the version of different nodes in the instance
+func (c *Client) ListVS(ctx context.Context, username string) ([]*VSInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		ctxWt context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "version", "|", "grep","SERVER", "|", "awk", "'{print $1}'")
+	stdout_mgm, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd = exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "-b", "node", "ls","-m", "--sys", "|", "grep", "cern.ch", "|", "sort", "-t:", "-uk1,1")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseVSsInfo(stdout_mgm, stdout)
 }
 
 // Convert a monitoring format line into a map
@@ -580,4 +624,74 @@ func (c *Client) parseFSInfo(line string) (*FSInfo, error) {
 		kv["stat.health.indicator"],
 	}
 	return fs, nil
+}
+
+// Gathers information of versions of nodes
+func (c *Client) parseVSsInfo(mgm_version string,raw string) ([]*VSInfo, error) {
+	vsinfos := []*VSInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" {
+			continue
+		}
+		vs, err := c.parseVSInfo(mgm_version, rl)
+
+		if err != nil {
+			return nil, err
+		}
+		vsinfos = append(vsinfos, vs)
+	}
+	return vsinfos, nil
+}
+
+// Gathers information of one single version of a node
+func (c *Client) parseVSInfo(mgm_vs string, line string) (*VSInfo, error) {
+	kv := map[string]string{}
+	vs_fields := strings.Split(line,"\t")
+	var vs *VSInfo
+	for idx,fld := range vs_fields {
+	    if fld == "" {
+	        continue
+	    }
+	    switch idx {
+	        case 0:
+			kv["hostport"]=fld
+		case 1:
+			kv["geotag"]=fld
+		case 2:
+			kv["vsize"]=fld
+		case 3:
+			kv["rss"]=fld
+		case 4:
+			kv["threads"]=fld
+		case 5:
+			kv["sockets"]=fld
+		case 6:
+			kv["eos"]=fld
+		case 7:
+			kv["xrootd"]=fld
+		case 8:
+			kv["kernel_ver"]=fld
+		case 9:
+			kv["start"]=fld
+		case 10:
+			kv["uptime"]=fld
+	    }
+	    vs = &VSInfo{
+		mgm_vs,
+		kv["hostport"],
+		kv["geotag"],
+		kv["vsize"],
+		kv["rss"],
+		kv["threads"],
+		kv["sockets"],
+		kv["eos"],
+		kv["xrootd"],
+		kv["kernel_ver"],
+		kv["start"],
+		kv["uptime"],
+	    }
+
+    }
+	return vs, nil
 }
