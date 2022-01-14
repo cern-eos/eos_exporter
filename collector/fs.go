@@ -6,6 +6,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
 	"strconv"
+	"os"
+	"bufio"
+	"fmt"
+	"strings"
 )
 
 type FSCollector struct {
@@ -351,9 +355,36 @@ func (o *FSCollector) collectorList() []prometheus.Collector {
 	}
 }
 
-func (o *FSCollector) collectFSDF() error {
+func getEOSInstance() string {
+    // Get the EOS instance name from MGM's filesystem
+    var str string
 
-	opt := &eosclient.Options{URL: "root://eoshomecanary.cern.ch"}
+    file, err := os.Open("/etc/sysconfig/eos_env")
+    if err != nil {
+        fmt.Println(err)
+    }
+    defer file.Close()
+ 
+    scanner := bufio.NewScanner(file)
+    for scanner.Scan() {
+        l := scanner.Text()
+	if strings.HasPrefix(l,"EOS_INSTANCE_NAME="){
+	    s := strings.Split(l,"EOS_INSTANCE_NAME=")
+	    str = strings.Replace(s[1],"\"","",-1)
+	}
+    }
+ 
+    if err := scanner.Err(); err != nil {
+        fmt.Println(err)
+    }
+
+    return str
+}
+
+func (o *FSCollector) collectFSDF() error {
+    ins := getEOSInstance()
+    url := "root://" + ins + ".cern.ch"
+    opt := &eosclient.Options{URL: url}
     client, err := eosclient.New(opt)
     if err != nil {
     	panic(err)
