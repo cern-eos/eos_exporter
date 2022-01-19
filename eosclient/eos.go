@@ -6,20 +6,24 @@ package eosclient
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	osuser "os/user"
+	"strconv"
 	"strings"
 	"syscall"
 	"unicode"
 
 	// "github.com/cernbox/reva/api"
-	"go.uber.org/zap"
 	"time"
+
+	"go.uber.org/zap"
 )
 
-var cmdTimeout = 10*time.Second // Time-out for the EOS commands
+var cmdTimeout = 10 * time.Second // Time-out for the EOS commands
 
 type Options struct {
 	// Location of the eos binary. Default is /usr/bin/eos.
@@ -74,65 +78,65 @@ type NodeInfo struct {
 	Hostport              string
 	Status                string
 	Nofs                  string
-	SumStatStatfsFree	  string
-	SumStatStatfsUsed	  string
+	SumStatStatfsFree     string
+	SumStatStatfsUsed     string
 	SumStatStatfsTotal    string
 	SumStatStatFilesFree  string
 	SumStatStatFilesUsed  string
 	SumStatStatFilesTotal string
-	SumStatRopen		  string
-	SumStatWopen		  string
-	CfgStatSysThreads	  string
-	SumStatNetInratemib	  string
+	SumStatRopen          string
+	SumStatWopen          string
+	CfgStatSysThreads     string
+	SumStatNetInratemib   string
 	SumStatNetOutratemib  string
 }
 
 type SpaceInfo struct {
-	Type							    string
-	Name								string
-	CfgGroupSize 						string
-	CfgGroupMod			  				string
-	Nofs	  							string
-	AvgStatDiskLoad 	    			string
-	SigStatDiskLoad  					string
-	SumStatDiskReadratemb  				string
-	SumStatDiskWriteratemb 				string
-	SumStatNetEthratemib		  		string
-	SumStatNetInratemib		  			string
-	SumStatNetOutratemib	  			string
-	SumStatRopen	  					string
-	SumStatWopen  						string
-	SumStatStatfsUsedbytes 				string
-	SumStatStatfsFreebytes 				string
-	SumStatStatfsCapacity 				string
-	SumStatUsedfiles 					string
-	SumStatStatfsFfiles 				string
-	SumStatStatfsFiles 					string
+	Type                                string
+	Name                                string
+	CfgGroupSize                        string
+	CfgGroupMod                         string
+	Nofs                                string
+	AvgStatDiskLoad                     string
+	SigStatDiskLoad                     string
+	SumStatDiskReadratemb               string
+	SumStatDiskWriteratemb              string
+	SumStatNetEthratemib                string
+	SumStatNetInratemib                 string
+	SumStatNetOutratemib                string
+	SumStatRopen                        string
+	SumStatWopen                        string
+	SumStatStatfsUsedbytes              string
+	SumStatStatfsFreebytes              string
+	SumStatStatfsCapacity               string
+	SumStatUsedfiles                    string
+	SumStatStatfsFfiles                 string
+	SumStatStatfsFiles                  string
 	SumStatStatfsCapacityConfigstatusRw string
-	SumNofsConfigstatusRw 				string
-	CfgQuota 							string
-	CfgNominalsize 						string
-	CfgBalancer 						string
-	CfgBalancerThreshold 				string
-	SumStatBalancerRunning 				string
-	SumStatDrainerRunning 				string
-	SumStatDiskIopsConfigstatusRw 		string
-	SumStatDiskBwConfigstatusRw 		string
+	SumNofsConfigstatusRw               string
+	CfgQuota                            string
+	CfgNominalsize                      string
+	CfgBalancer                         string
+	CfgBalancerThreshold                string
+	SumStatBalancerRunning              string
+	SumStatDrainerRunning               string
+	SumStatDiskIopsConfigstatusRw       string
+	SumStatDiskBwConfigstatusRw         string
 }
 
 type GroupInfo struct {
-	Name 				   string
-	CfgStatus 			   string
-	Nofs 				   string
-	AvgStatDiskLoad 	   string
+	Name                   string
+	CfgStatus              string
+	Nofs                   string
+	AvgStatDiskLoad        string
 	SigStatDiskLoad        string
 	SumStatDiskReadratemb  string
 	SumStatDiskWriteratemb string
 	SumStatNetEthratemib   string
 	SumStatNetInratemib    string
 	SumStatNetOutratemib   string
-	SumStatRopen      	   string
-	SumStatWopen 		   string
+	SumStatRopen           string
+	SumStatWopen           string
 	SumStatStatfsUsedbytes string
 	SumStatStatfsFreebytes string
 	SumStatStatfsCapacity  string
@@ -148,17 +152,17 @@ type GroupInfo struct {
 }
 
 type FSInfo struct {
-	Host 					   string
-	Port 					   string
-	Id 						   string
-	Uuid 					   string
-	Path 					   string
-	Schedgroup 				   string
-	StatBoot 				   string
-	Configstatus 			   string
-	Headroom 				   string
-	StatErrc 				   string
-	StatErrmsg 				   string
+	Host                       string
+	Port                       string
+	Id                         string
+	Uuid                       string
+	Path                       string
+	Schedgroup                 string
+	StatBoot                   string
+	Configstatus               string
+	Headroom                   string
+	StatErrc                   string
+	StatErrmsg                 string
 	StatDiskLoad               string
 	StatDiskReadratemb         string
 	StatDiskWriteratemb        string
@@ -167,11 +171,11 @@ type FSInfo struct {
 	StatNetOutratemib          string
 	StatRopen                  string
 	StatWopen                  string
-	StatStatfsFreebytes 	   string
-	StatStatfsUsedbytes 	   string
-	StatStatfsCapacity 		   string
+	StatStatfsFreebytes        string
+	StatStatfsUsedbytes        string
+	StatStatfsCapacity         string
 	StatUsedfiles              string
-	StatStatfsFfree 		   string
+	StatStatfsFfree            string
 	StatStatfsFused            string
 	StatStatfsFiles            string
 	Drainstatus                string
@@ -193,6 +197,56 @@ type FSInfo struct {
 	StatHealthDrivesFailed     string
 	StatHealthDrivesTotal      string
 	StatHealthIndicator        string
+}
+
+type VSInfo struct {
+	EOSmgm    string
+	Hostname  string
+	Geotag    string
+	Vsize     string
+	Rss       string
+	Threads   string
+	Sockets   string
+	EOSfst    string
+	Xrootdfst string
+	KernelV   string
+	Start     string
+	Uptime    string
+}
+
+type Sys struct {
+	Eos struct {
+		Start   string `json:"start"`
+		Version string `json:"version"`
+	} `json:"eos"`
+	Kernel  string `json:"kernel"`
+	Rss     int    `json:"rss"`
+	Sockets int    `json:"sockets"`
+	Threads int    `json:"threads"`
+	Uptime  string `json:"uptime"`
+	Vsize   int    `json:"vsize"`
+	Xrootd  struct {
+		Version string `json:"version"`
+	} `json:"xrootd"`
+}
+
+type Stat struct {
+	Geotag string `json:"geotag"`
+	Sys    Sys    `json:"sys"`
+}
+
+type NodeLSCfg struct {
+	Stat Stat `json:"stat"`
+}
+
+type NodeLS struct {
+	HostPort string     `json:"hostport"` // "hostname:port"
+	Cfg      *NodeLSCfg `json:"cfg"`
+}
+
+type NodeLSResponse struct {
+	ErrorMsg string    `json:"errormsg"`
+	Result   []*NodeLS `json:"result"`
 }
 
 func New(opt *Options) (*Client, error) {
@@ -244,7 +298,7 @@ func (c *Client) ListNode(ctx context.Context, username string) ([]*NodeInfo, er
 		return nil, err
 	}
 	var (
-		ctxWt context.Context
+		ctxWt  context.Context
 		cancel context.CancelFunc
 	)
 
@@ -267,7 +321,7 @@ func (c *Client) ListSpace(ctx context.Context, username string) ([]*SpaceInfo, 
 	}
 
 	var (
-		ctxWt context.Context
+		ctxWt  context.Context
 		cancel context.CancelFunc
 	)
 
@@ -290,7 +344,7 @@ func (c *Client) ListGroup(ctx context.Context, username string) ([]*GroupInfo, 
 	}
 
 	var (
-		ctxWt context.Context
+		ctxWt  context.Context
 		cancel context.CancelFunc
 	)
 
@@ -313,7 +367,7 @@ func (c *Client) ListFS(ctx context.Context, username string) ([]*FSInfo, error)
 	}
 
 	var (
-		ctxWt context.Context
+		ctxWt  context.Context
 		cancel context.CancelFunc
 	)
 
@@ -326,6 +380,54 @@ func (c *Client) ListFS(ctx context.Context, username string) ([]*FSInfo, error)
 		return nil, err
 	}
 	return c.parseFSsInfo(stdout)
+}
+
+func (c *Client) getEosMGMVersion(ctx context.Context) (string, error) {
+	out, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "version"))
+	if err != nil {
+		return "", err
+	}
+	stdo_mgm := strings.Split(out, "\n")
+	for _, l := range stdo_mgm {
+		if strings.HasPrefix(l, "EOS_SERVER_VERSION=") {
+			s := strings.Split(l, " ")
+			return strings.Split(s[0], "EOS_SERVER_VERSION=")[1], nil
+		}
+	}
+	return "", errors.New("version not found")
+}
+
+// List the version of different nodes in the instance
+func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
+
+	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	mgmVersion, err := c.getEosMGMVersion(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	//cmd = exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "-b", "node", "ls","-m", "--sys", "|", "grep", "cern.ch", "|", "sort", "-t:", "-uk1,1")
+	stdout, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "--json", "node", "ls"))
+	//fmt.Println(stdout)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeLSResponse := &NodeLSResponse{}
+	err = json.Unmarshal([]byte(stdout), nodeLSResponse)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return c.parseVSsInfo(mgmVersion, nodeLSResponse)
+}
+
+func getHostname(hostport string) string {
+	split := strings.Split(hostport, ":")
+	return split[0]
 }
 
 // Convert a monitoring format line into a map
@@ -383,24 +485,23 @@ func (c *Client) parseNodeInfo(line string) (*NodeInfo, error) {
 	//kv := make(map[string]string)
 	kv := getMap(line)
 	fst := &NodeInfo{
-		Hostport: 				kv["hostport"],
-		Status:   				kv["status"],
-		Nofs:     				kv["nofs"],
-		SumStatStatfsFree:		kv["sum.stat.statfs.freebytes"],
-		SumStatStatfsUsed:	    kv["sum.stat.statfs.usedbytes"],
-		SumStatStatfsTotal: 	kv["sum.stat.statfs.capacity"],
-		SumStatStatFilesFree:   kv["sum.stat.statfs.ffree"],
-		SumStatStatFilesUsed:   kv["sum.stat.usedfiles"],
-		SumStatStatFilesTotal:  kv["sum.stat.statfs.files"],
-		SumStatRopen:		    kv["sum.stat.ropen"],
-		SumStatWopen:		    kv["sum.stat.wopen"],
-		CfgStatSysThreads:	    kv["cfg.stat.sys.threads"],
-		SumStatNetInratemib:	kv["sum.stat.net.inratemib"],
-		SumStatNetOutratemib:   kv["sum.stat.net.outratemib"],
+		Hostport:              kv["hostport"],
+		Status:                kv["status"],
+		Nofs:                  kv["nofs"],
+		SumStatStatfsFree:     kv["sum.stat.statfs.freebytes"],
+		SumStatStatfsUsed:     kv["sum.stat.statfs.usedbytes"],
+		SumStatStatfsTotal:    kv["sum.stat.statfs.capacity"],
+		SumStatStatFilesFree:  kv["sum.stat.statfs.ffree"],
+		SumStatStatFilesUsed:  kv["sum.stat.usedfiles"],
+		SumStatStatFilesTotal: kv["sum.stat.statfs.files"],
+		SumStatRopen:          kv["sum.stat.ropen"],
+		SumStatWopen:          kv["sum.stat.wopen"],
+		CfgStatSysThreads:     kv["cfg.stat.sys.threads"],
+		SumStatNetInratemib:   kv["sum.stat.net.inratemib"],
+		SumStatNetOutratemib:  kv["sum.stat.net.outratemib"],
 	}
 	return fst, nil
 }
-
 
 // Gathers the information of all spaces.
 func (c *Client) parseSpacesInfo(raw string) ([]*SpaceInfo, error) {
@@ -580,4 +681,40 @@ func (c *Client) parseFSInfo(line string) (*FSInfo, error) {
 		kv["stat.health.indicator"],
 	}
 	return fs, nil
+}
+
+// Gathers information of versions of nodes
+func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse) ([]*VSInfo, error) {
+	vsinfos := []*VSInfo{}
+
+	if nodeLSResponse.ErrorMsg != "" {
+		return nil, errors.New(nodeLSResponse.ErrorMsg)
+	}
+
+	set := make(map[string]struct{})
+	for _, node := range nodeLSResponse.Result {
+		hostname := getHostname(node.HostPort)
+		if _, ok := set[hostname]; ok {
+			continue
+		}
+		set[hostname] = struct{}{}
+
+		info := &VSInfo{
+			EOSmgm:    mgmVersion,
+			Hostname:  hostname,
+			Geotag:    node.Cfg.Stat.Geotag,
+			Vsize:     strconv.Itoa(node.Cfg.Stat.Sys.Vsize),
+			Rss:       strconv.Itoa(node.Cfg.Stat.Sys.Rss),
+			Threads:   strconv.Itoa(node.Cfg.Stat.Sys.Threads),
+			Sockets:   strconv.Itoa(node.Cfg.Stat.Sys.Sockets),
+			EOSfst:    node.Cfg.Stat.Sys.Eos.Version,
+			Xrootdfst: node.Cfg.Stat.Sys.Xrootd.Version,
+			KernelV:   node.Cfg.Stat.Sys.Kernel,
+			Start:     node.Cfg.Stat.Sys.Eos.Start,
+			Uptime:    node.Cfg.Stat.Sys.Uptime,
+		}
+		vsinfos = append(vsinfos, info)
+	}
+
+	return vsinfos, nil
 }
