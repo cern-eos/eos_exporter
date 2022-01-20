@@ -694,10 +694,15 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 	set := make(map[string]struct{})
 	for _, node := range nodeLSResponse.Result {
 		hostname := getHostname(node.HostPort)
+		// Make sure each FST is only registered once.
 		if _, ok := set[hostname]; ok {
 			continue
 		}
 		set[hostname] = struct{}{}
+
+		// Parse uptime to days
+		s := strings.Split(node.Cfg.Stat.Sys.Uptime,"%20days,")[0]
+		uptime := strings.Split(s,"up%20")[1]
 
 		info := &VSInfo{
 			EOSmgm:    mgmVersion,
@@ -711,7 +716,7 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 			Xrootdfst: node.Cfg.Stat.Sys.Xrootd.Version,
 			KernelV:   node.Cfg.Stat.Sys.Kernel,
 			Start:     node.Cfg.Stat.Sys.Eos.Start,
-			Uptime:    node.Cfg.Stat.Sys.Uptime,
+			Uptime:    uptime,
 		}
 		vsinfos = append(vsinfos, info)
 	}

@@ -75,7 +75,7 @@ func NewVSCollector(cluster string) *VSCollector {
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
 				Name:        "vs_uptime",
-				Help:        "Uptime: Amount of time the FST has been up",
+				Help:        "Uptime: Amount of days the FST has been up",
 				ConstLabels: labels,
 			},
 			[]string{"mgm_version", "node", "geotag", "eos_v_fst", "xrd_v_fst", "kernel_v"},
@@ -84,7 +84,7 @@ func NewVSCollector(cluster string) *VSCollector {
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
 				Name:        "vs_start",
-				Help:        "Uptime: Start time the FST has been up",
+				Help:        "Start: Time when EOS was started.",
 				ConstLabels: labels,
 			},
 			[]string{"mgm_version", "node", "geotag", "eos_v_fst", "xrd_v_fst", "kernel_v"},
