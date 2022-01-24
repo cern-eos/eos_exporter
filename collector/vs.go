@@ -20,7 +20,7 @@ type VSCollector struct {
 	Vsize     *prometheus.GaugeVec
 	Rss       *prometheus.GaugeVec
 	Threads   *prometheus.GaugeVec
-	Sockets   *prometheus.GaugeVec
+	Versions   *prometheus.GaugeVec
 	EOSfst    *prometheus.GaugeVec
 	Xrootdfst *prometheus.GaugeVec
 	KernelV   *prometheus.GaugeVec
@@ -38,7 +38,7 @@ func NewVSCollector(cluster string) *VSCollector {
 		Vsize: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "vs_vsize",
+				Name:        "versions_vsize_bytes",
 				Help:        "Vsize: ",
 				ConstLabels: labels,
 			},
@@ -47,7 +47,7 @@ func NewVSCollector(cluster string) *VSCollector {
 		Rss: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "vs_rss",
+				Name:        "versions_rss_bytes",
 				Help:        "Rss: ",
 				ConstLabels: labels,
 			},
@@ -56,34 +56,34 @@ func NewVSCollector(cluster string) *VSCollector {
 		Threads: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "vs_threads",
+				Name:        "versions_threads_total",
 				Help:        "Threads: ",
 				ConstLabels: labels,
 			},
 			[]string{"mgm_version", "node", "geotag", "eos_v_fst", "xrd_v_fst", "kernel_v"},
 		),
-		Sockets: prometheus.NewGaugeVec(
+		Versions: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "vs_sockets",
-				Help:        "Sockets: ",
+				Name:        "versions_total",
+				Help:        "Verions: Amount of daemons attached to a node",
 				ConstLabels: labels,
 			},
-			[]string{"mgm_version", "node", "geotag", "eos_v_fst", "xrd_v_fst", "kernel_v"},
+			[]string{"mgm_version", "node", "port", "geotag", "eos_v_fst", "xrd_v_fst", "kernel_v"},
 		),
 		Uptime: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "vs_uptime",
-				Help:        "Uptime: Amount of days the FST has been up",
+				Name:        "versions_uptime_seconds",
+				Help:        "Uptime: Amount of seconds the FST has been up",
 				ConstLabels: labels,
 			},
-			[]string{"mgm_version", "node", "geotag", "eos_v_fst", "xrd_v_fst", "kernel_v"},
+			[]string{"node"},
 		),
 		Start: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "vs_start",
+				Name:        "versions_start_seconds",
 				Help:        "Start: Time when EOS was started.",
 				ConstLabels: labels,
 			},
@@ -100,7 +100,7 @@ func (o *VSCollector) collectorList() []prometheus.Collector {
 		o.Vsize,
 		o.Rss,
 		o.Threads,
-		o.Sockets,
+		o.Versions,
 		//	o.EOSfst,
 		//	o.Xrootdfst,
 		//	o.KernelV,
@@ -125,38 +125,18 @@ func (o *VSCollector) collectVSDF() error {
 
 	for _, m := range mds {
 
-		// Vsize
+		// Versions
 
-		vsize, err := strconv.ParseFloat(m.Vsize, 64)
+		versions, err := strconv.ParseFloat("1", 64)
 		if err == nil {
-			o.Vsize.WithLabelValues(m.EOSmgm, m.Hostname, m.Geotag, m.EOSfst, m.Xrootdfst, m.KernelV).Set(vsize)
-		}
-
-		// Rss
-		rss, err := strconv.ParseFloat(m.Rss, 64)
-		if err == nil {
-			o.Rss.WithLabelValues(m.EOSmgm, m.Hostname, m.Geotag, m.EOSfst, m.Xrootdfst, m.KernelV).Set(rss)
-		}
-
-		// Threads.
-
-		threads, err := strconv.ParseFloat(m.Threads, 64)
-		if err == nil {
-			o.Threads.WithLabelValues(m.EOSmgm, m.Hostname, m.Geotag, m.EOSfst, m.Xrootdfst, m.KernelV).Set(threads)
-		}
-
-		// Sockets
-
-		sockets, err := strconv.ParseFloat(m.Sockets, 64)
-		if err == nil {
-			o.Sockets.WithLabelValues(m.EOSmgm, m.Hostname, m.Geotag, m.EOSfst, m.Xrootdfst, m.KernelV).Set(sockets)
+			o.Versions.WithLabelValues(m.EOSmgm, m.Hostname, m.Port, m.Geotag, m.EOSfst, m.Xrootdfst, m.KernelV).Set(versions)
 		}
 
 		// Uptime
 
 		uptime, err := strconv.ParseFloat(m.Uptime, 64)
 		if err == nil {
-			o.Uptime.WithLabelValues(m.EOSmgm, m.Hostname, m.Geotag, m.EOSfst, m.Xrootdfst, m.KernelV).Set(uptime)
+			o.Uptime.WithLabelValues(m.Hostname).Set(uptime*3600*24)
 		}
 	}
 

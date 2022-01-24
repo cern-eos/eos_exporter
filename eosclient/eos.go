@@ -202,6 +202,7 @@ type FSInfo struct {
 type VSInfo struct {
 	EOSmgm    string
 	Hostname  string
+	Port      string
 	Geotag    string
 	Vsize     string
 	Rss       string
@@ -425,9 +426,9 @@ func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
 	return c.parseVSsInfo(mgmVersion, nodeLSResponse)
 }
 
-func getHostname(hostport string) string {
+func getHostname(hostport string) (string,string) {
 	split := strings.Split(hostport, ":")
-	return split[0]
+	return split[0],split[1]
 }
 
 // Convert a monitoring format line into a map
@@ -691,22 +692,30 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 		return nil, errors.New(nodeLSResponse.ErrorMsg)
 	}
 
-	set := make(map[string]struct{})
+	//set := make(map[string]struct{})
 	for _, node := range nodeLSResponse.Result {
-		hostname := getHostname(node.HostPort)
-		// Make sure each FST is only registered once.
+		hostname,port := getHostname(node.HostPort)
+		/* // Make sure each FST is only registered once.
 		if _, ok := set[hostname]; ok {
 			continue
 		}
 		set[hostname] = struct{}{}
-
+		*/
 		// Parse uptime to days
 		s := strings.Split(node.Cfg.Stat.Sys.Uptime,"%20days,")[0]
-		uptime := strings.Split(s,"up%20")[1]
+		upt := strings.Split(s,"up%20")
+		var uptime string
+		if len(upt) < 2 {
+			fmt.Println("Wrong uptime: ",upt)
+			uptime = "0"
+		} else {
+			uptime = upt[1]
+		}
 
 		info := &VSInfo{
 			EOSmgm:    mgmVersion,
 			Hostname:  hostname,
+			Port:      port,
 			Geotag:    node.Cfg.Stat.Geotag,
 			Vsize:     strconv.Itoa(node.Cfg.Stat.Sys.Vsize),
 			Rss:       strconv.Itoa(node.Cfg.Stat.Sys.Rss),
