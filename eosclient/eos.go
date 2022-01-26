@@ -215,6 +215,26 @@ type VSInfo struct {
 	Uptime    string
 }
 
+type NSInfo struct {
+	Parameter	string
+	Value		string
+}
+
+type NSActivityInfo struct {
+	User		string
+	Gid		string
+	Operation	string
+	Sum		string
+	Last_5s		string
+	Last_60s	string
+	Last_300s	string
+	Last_3600s	string
+	Exec		string
+	Sigma		string
+	Exec99		string
+	Max		string
+}
+
 type Sys struct {
 	Eos struct {
 		Start   string `json:"start"`
@@ -411,7 +431,6 @@ func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
 
 	//cmd = exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "-b", "node", "ls","-m", "--sys", "|", "grep", "cern.ch", "|", "sort", "-t:", "-uk1,1")
 	stdout, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "--json", "node", "ls"))
-	//fmt.Println(stdout)
 	if err != nil {
 		return nil, err
 	}
@@ -419,11 +438,24 @@ func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
 	nodeLSResponse := &NodeLSResponse{}
 	err = json.Unmarshal([]byte(stdout), nodeLSResponse)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
 	return c.parseVSsInfo(mgmVersion, nodeLSResponse)
+}
+
+// List the activity of different users in the instance
+func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, error) {
+
+	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	stdout, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "ns", "stat", "-a", "-m"))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return c.parseNSsInfo(stdout)
 }
 
 func getHostname(hostport string) (string,string) {
@@ -732,3 +764,65 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 
 	return vsinfos, nil
 }
+
+// Gathers information of the namespace
+func (c *Client) parseNSsInfo(raw string) ([]*NSInfo, []*NSActivityInfo, error) {
+	var kv map[string]string
+	var nsinfo *NSInfo
+	var nsactinfo *NSActivityInfo
+	nsinfos := []*NSInfo{}
+	nsactinfos := []*NSActivityInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" {
+			continue
+		}
+		kv = getMap(rl)
+		// Only expose global data, without breakdown of users
+		if kv["uid"] == "all" && kv["gid"] == "all" {
+			// Separate activity info from namespace statistics info
+			if _, ok := kv["cmd"];ok {
+				if kv["5s"]=="0.00" && kv["60s"]=="0.00" && kv["300s"]=="0.00" && kv["3600s"]=="0.00" {
+				} else {
+					nsactinfo = &NSActivityInfo {
+						kv["uid"],
+						kv["gid"],
+						kv["cmd"],
+						kv["total"],
+						kv["5s"],
+						kv["60s"],
+						kv["300s"],
+						kv["3600s"],
+						kv["exec"],
+						kv["execsig"],
+						kv["exec99"],
+						kv["execmax"],
+					}
+				}
+			} else {
+				if len(kv) <= 3 {
+					for k := range kv {
+						if k != "uid" && k!= "gid" {
+							if _, err := strconv.ParseFloat(kv[k], 64); err != nil {
+								fmt.Println(fmt.Sprintf("Value of '%s': '%s' is not floatable",k,kv[k]))
+							}
+							nsinfo = &NSInfo {
+								k,
+								kv[k],
+							}
+						}
+					}
+				}
+			}
+
+		}
+		if nsinfo != nil {
+			nsinfos = append(nsinfos, nsinfo)
+		}
+		if nsactinfo != nil {
+			nsactinfos = append(nsactinfos, nsactinfo)
+		}
+	}
+	return nsinfos, nsactinfos, nil
+}
+
