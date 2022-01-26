@@ -292,7 +292,7 @@ func (c *Client) execute(cmd *exec.Cmd) (string, string, error) {
 	return outBuf.String(), errBuf.String(), err
 }
 
-// List the nodes on the cluster
+// List the nodes on the instance
 func (c *Client) ListNode(ctx context.Context, username string) ([]*NodeInfo, error) {
 	unixUser, err := getUnixUser(username)
 	if err != nil {
@@ -314,7 +314,7 @@ func (c *Client) ListNode(ctx context.Context, username string) ([]*NodeInfo, er
 	return c.parseNodesInfo(stdout)
 }
 
-// List the spaces on the cluster
+// List the spaces on the instance
 func (c *Client) ListSpace(ctx context.Context, username string) ([]*SpaceInfo, error) {
 	unixUser, err := getUnixUser(username)
 	if err != nil {
@@ -337,7 +337,7 @@ func (c *Client) ListSpace(ctx context.Context, username string) ([]*SpaceInfo, 
 	return c.parseSpacesInfo(stdout)
 }
 
-// List the scheduling groups on the cluster
+// List the scheduling groups on the instance
 func (c *Client) ListGroup(ctx context.Context, username string) ([]*GroupInfo, error) {
 	unixUser, err := getUnixUser(username)
 	if err != nil {
@@ -360,7 +360,7 @@ func (c *Client) ListGroup(ctx context.Context, username string) ([]*GroupInfo, 
 	return c.parseGroupsInfo(stdout)
 }
 
-// List the filesystems on the cluster
+// List the filesystems on the instance
 func (c *Client) ListFS(ctx context.Context, username string) ([]*FSInfo, error) {
 	unixUser, err := getUnixUser(username)
 	if err != nil {

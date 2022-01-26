@@ -11,7 +11,7 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 
-// Command EOS_exporter provides a Prometheus exporter for a EOS cluster.
+// Command EOS_exporter provides a Prometheus exporter for a EOS instance.
 package main
 
 import (
@@ -35,14 +35,14 @@ type EOSExporter struct {
 var _ prometheus.Collector = &EOSExporter{}
 
 // NewEOSExporter creates an instance to EOSExporter
-func NewEOSExporter(cluster string) *EOSExporter {
+func NewEOSExporter(instance string) *EOSExporter {
 	return &EOSExporter{
 		collectors: []prometheus.Collector{
-			collector.NewSpaceCollector(cluster), // eos space stats
-			collector.NewGroupCollector(cluster), // eos scheduling group stats
-			collector.NewNodeCollector(cluster), // eos node stats
-			collector.NewFSCollector(cluster), // eos filesystem stats
-			collector.NewVSCollector(cluster), // eos filesystem stats
+			collector.NewSpaceCollector(instance), // eos space stats
+			collector.NewGroupCollector(instance), // eos scheduling group stats
+			collector.NewNodeCollector(instance), // eos node stats
+			collector.NewFSCollector(instance), // eos filesystem stats
+			collector.NewVSCollector(instance), // eos filesystem stats
 		},
 	}
 }
@@ -79,7 +79,7 @@ func main() {
 	log.Infoln("Starting eos_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
 
-	log.Infoln("Starting eos exporter for cluster: %s", *eosInstance)
+	log.Infoln("Starting eos exporter for instance: %s", *eosInstance)
 	prometheus.Register(NewEOSExporter(*eosInstance))
 
 	http.Handle(*metricsPath, promhttp.Handler())

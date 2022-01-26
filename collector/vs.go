@@ -30,9 +30,9 @@ type VSCollector struct {
 
 //NewFSCollector creates an instance of the FSCollector and instantiates
 // the individual metrics that show information about the FS.
-func NewVSCollector(cluster string) *VSCollector {
+func NewVSCollector(instance string) *VSCollector {
 	labels := make(prometheus.Labels)
-	labels["cluster"] = cluster
+	labels["instance"] = instance
 	namespace := "eos"
 	return &VSCollector{
 		Vsize: prometheus.NewGaugeVec(

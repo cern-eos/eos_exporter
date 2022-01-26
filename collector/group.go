@@ -37,9 +37,9 @@ type GroupCollector struct {
 
 //NewGroupCollector creates an instance of the GroupCollector and instantiates
 // the individual metrics that show information about the Group.
-func NewGroupCollector(cluster string) *GroupCollector {
+func NewGroupCollector(instance string) *GroupCollector {
 	labels := make(prometheus.Labels)
-	labels["cluster"] = cluster
+	labels["instance"] = instance
 	namespace := "eos"
 	return &GroupCollector{
 		CfgStatus: prometheus.NewGaugeVec(

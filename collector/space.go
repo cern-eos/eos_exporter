@@ -41,9 +41,9 @@ type SpaceCollector struct {
 }
 
 //NewSpaceCollector creates an instance of the SpaceCollector
-func NewSpaceCollector(cluster string) *SpaceCollector {
+func NewSpaceCollector(instance string) *SpaceCollector {
 	labels := make(prometheus.Labels)
-	labels["cluster"] = cluster
+	labels["instance"] = instance
 	namespace := "eos"
 	return &SpaceCollector{
 

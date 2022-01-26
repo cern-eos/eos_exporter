@@ -28,5 +28,5 @@ go build
   - targets:
     - eospps.cern.ch:9373
     labels:
-      cluster: eospps
+      instance: eospps
 ```
