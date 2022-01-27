@@ -216,8 +216,37 @@ type VSInfo struct {
 }
 
 type NSInfo struct {
-	Parameter	string
-	Value		string
+	Boot_file_time					string
+	Boot_status					string
+	Boot_time					string
+	Cache_container_maxsize				string
+	Cache_container_occupancy			string
+	Cache_files_maxsize				string
+	Cache_files_occupancy				string
+	Fds_all						string
+	Fusex_activeclients				string
+	Fusex_caps					string
+	Fusex_clients					string
+	Fusex_lockedclients				string
+	Latency_dirs					string
+	Latency_files					string
+	Latency_pending_updates				string
+	Latencypeak_eosviewmutex_1min			string
+	Latencypeak_eosviewmutex_2min			string
+	Latencypeak_eosviewmutex_5min			string
+	Latencypeak_eosviewmutex_last			string
+	Memory_growth					string
+	Memory_resident					string
+	Memory_share					string
+	Memory_virtual					string
+	Stat_threads					string
+	Total_directories				string
+	Total_directories_changelog_avg_entry_size	string
+	Total_directories_changelog_size		string
+	Total_files					string
+	Total_files_changelog_avg_entry_size		string
+	Total_files_changelog_size			string
+	Uptime						string
 }
 
 type NSActivityInfo struct {
@@ -804,11 +833,40 @@ func (c *Client) parseNSsInfo(raw string) ([]*NSInfo, []*NSActivityInfo, error) 
 					for k := range kv {
 						if k != "uid" && k!= "gid" {
 							if _, err := strconv.ParseFloat(kv[k], 64); err != nil {
-								fmt.Println(fmt.Sprintf("Value of '%s': '%s' is not floatable",k,kv[k]))
+								fmt.Sprintf("Value of '%s': '%s' is not floatable",k,kv[k])
 							}
 							nsinfo = &NSInfo {
-								k,
-								kv[k],
+								kv["ns.boot.file.time"],
+								kv["ns.boot.status"],
+								kv["ns.boot.time"],
+								kv["ns.cache.containers.maxsize"],
+								kv["ns.cache.containers.occupancy"],
+								kv["ns.cache.files.maxsize"],
+								kv["ns.cache.files.occupancy"],
+								kv["ns.fds.all"],
+								kv["ns.fusex.activeclients"],
+								kv["ns.fusex.caps"],
+								kv["ns.fusex.clients"],
+								kv["ns.fusex.lockedclients"],
+								kv["ns.latency.dirs"],
+								kv["ns.latency.files"],
+								kv["ns.latency.pending.updates"],
+								kv["ns.latencypeak.eosviewmutex.1min"],
+								kv["ns.latencypeak.eosviewmutex.2min"],
+								kv["ns.latencypeak.eosviewmutex.5min"],
+								kv["ns.latencypeak.eosviewmutex.last"],
+								kv["ns.memory.growth"],
+								kv["ns.memory.resident"],
+								kv["ns.memory.share"],
+								kv["ns.memory.virtual"],
+								kv["ns.stat.threads"],
+								kv["ns.total.directories"],
+								kv["ns.total.directories.changelog.avg_entry_size"],
+								kv["ns.total.directories.changelog.size"],
+								kv["ns.total.files"],
+								kv["ns.total.files.changelog.avg_entry_size"],
+								kv["ns.total.files.changelog.size"],
+								kv["ns.uptime"],
 							}
 						}
 					}

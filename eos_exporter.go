@@ -42,8 +42,9 @@ func NewEOSExporter(instance string) *EOSExporter {
 			collector.NewGroupCollector(instance), // eos scheduling group stats
 			collector.NewNodeCollector(instance), // eos node stats
 			collector.NewFSCollector(instance), // eos filesystem stats
-			collector.NewVSCollector(instance), // eos filesystem stats
+			collector.NewVSCollector(instance), // eos FST versions information
 			collector.NewNSCollector(instance), // eos namespace information
+			collector.NewNSActivityCollector(instance), // eos namespace activity information
 		},
 	}
 }
