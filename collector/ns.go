@@ -363,7 +363,7 @@ func NewNSActivityCollector(cluster string) *NSActivityCollector {
 		Sum: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "ns_sum_total",
+				Name:        "ns_stat_sum_total",
 				Help:        "Sum: Cummulated ocurrences of the operation.",
 				ConstLabels: labels,
 			},
@@ -372,7 +372,7 @@ func NewNSActivityCollector(cluster string) *NSActivityCollector {
 		Last_5s: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "ns_last5s_total",
+				Name:        "ns_stat_last5s",
 				Help:        "Last_5s: Cummulated ocurrences of the operation in the last 5s.",
 				ConstLabels: labels,
 			},
@@ -381,7 +381,7 @@ func NewNSActivityCollector(cluster string) *NSActivityCollector {
 		Last_60s: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "ns_last1min_total",
+				Name:        "ns_stat_last1min",
 				Help:        "Last_60s: Cummulated ocurrences of the operation in the last minute.",
 				ConstLabels: labels,
 			},
@@ -390,7 +390,7 @@ func NewNSActivityCollector(cluster string) *NSActivityCollector {
 		Last_300s: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "ns_last5min_total",
+				Name:        "ns_stat_last5min",
 				Help:        "Last_300s: Cummulated ocurrences of the operation in the last 5 min.",
 				ConstLabels: labels,
 			},
@@ -399,7 +399,7 @@ func NewNSActivityCollector(cluster string) *NSActivityCollector {
 		Last_3600s: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "ns_last1h_total",
+				Name:        "ns_stat_last1h",
 				Help:        "Last_3600s: Cummulated ocurrences of the operation in the last hour.",
 				ConstLabels: labels,
 			},
