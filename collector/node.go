@@ -32,10 +32,10 @@ type NodeCollector struct {
 
 }
 
-//NewNodeCollector creates an instance of the NodeCollector
-func NewNodeCollector(instance string) *NodeCollector {
+//NewNodeCollector creates an cluster of the NodeCollector
+func NewNodeCollector(cluster string) *NodeCollector {
 	labels := make(prometheus.Labels)
-	labels["instance"] = instance
+	labels["cluster"] = cluster
 
 	return &NodeCollector{
 

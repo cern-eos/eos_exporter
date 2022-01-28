@@ -40,10 +40,10 @@ type SpaceCollector struct {
 	SumStatDiskBwConfigstatusRw 			*prometheus.GaugeVec
 }
 
-//NewSpaceCollector creates an instance of the SpaceCollector
-func NewSpaceCollector(instance string) *SpaceCollector {
+//NewSpaceCollector creates an cluster of the SpaceCollector
+func NewSpaceCollector(cluster string) *SpaceCollector {
 	labels := make(prometheus.Labels)
-	labels["instance"] = instance
+	labels["cluster"] = cluster
 	namespace := "eos"
 	return &SpaceCollector{
 

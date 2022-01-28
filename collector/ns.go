@@ -78,17 +78,17 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Boot_file_time: TODO.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
-		Boot_status: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Namespace:   namespace,
-				Name:        "ns_boot_status",
-				Help:        "Boot_status: Shows '1' if it's booted and '0' if it's not.",
-				ConstLabels: labels,
-			},
-			[]string{"whatever"},
-		),
+		//Boot_status: prometheus.NewGaugeVec(
+		//	prometheus.GaugeOpts{
+		//		Namespace:   namespace,
+		//		Name:        "ns_boot_status",
+		//		Help:        "Boot_status: Shows '1' if it's booted and '0' if it's not.",
+		//		ConstLabels: labels,
+		//	},
+		//	[]string{},
+		//),
 		Boot_time: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -96,7 +96,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Boot_time: Time to perform the last boot.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Cache_container_maxsize: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -105,7 +105,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Cache_container_maxsize: Max number of containers allowed in this namespace.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Cache_container_occupancy: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -114,7 +114,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Cache_container_occupancy: Total number of containers occupied in cache.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Cache_files_maxsize: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -123,7 +123,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Cache_files_maxsize: Number of max cache files.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Cache_files_occupancy: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -132,7 +132,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Cache_files_occupancy: Number of cache files occupied.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Fds_all: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -141,7 +141,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Fds_all: TODO.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Fusex_activeclients: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -150,7 +150,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Fusex_clients: Active FUSEX clients.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Fusex_caps: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -159,7 +159,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Fusex_caps: Current FUSEX caps performed.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Fusex_clients: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -168,7 +168,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Fusex_clients: Total FUSEX clients.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Fusex_lockedclients: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -177,7 +177,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Fusex_lockedclients: Locked FUSEX clients.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Latency_dirs: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -186,7 +186,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Latency_dirs: Directory latency in seconds.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Latency_files: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -195,7 +195,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Latency_files: Files' latency in seconds.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Latency_pending_updates: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -204,7 +204,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Latency_pending_updates:  Latency of pending updates is seconds.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Latencypeak_eosviewmutex_1min: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -213,7 +213,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Latencypeak_eosviewmutex_1min: TODO.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Latencypeak_eosviewmutex_2min: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -222,7 +222,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Latencypeak_eosviewmutex_2min: TODO.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Latencypeak_eosviewmutex_5min: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -231,7 +231,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Latencypeak_eosviewmutex_5min: TODO.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Latencypeak_eosviewmutex_last: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -240,7 +240,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Latencypeak_eosviewmutex_last: TODO.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Memory_growth: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -249,7 +249,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Memory_growth: TODO in bytes.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Memory_resident: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -258,7 +258,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Memory_resident: Resident memory size in bytes.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Memory_share: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -267,7 +267,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Memory_share: Shared memory size in bytes.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Memory_virtual: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -276,7 +276,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Memory_virtual: Virtual memory size in bytes.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Stat_threads: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -285,7 +285,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Stat_threads: Number of used threads.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Total_directories: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -294,7 +294,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Total_directories: Number of directories present in this namespace.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Total_directories_changelog_avg_entry_size: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -303,7 +303,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Total_directories_changelog_avg_entry_size: TODO",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Total_directories_changelog_size: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -312,7 +312,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Total_directories_changelog_size: TODO",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Total_files: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -321,7 +321,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Total_files: Total files residing in the namespace.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Total_files_changelog_avg_entry_size: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -330,7 +330,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Total_files_changelog_avg_entry_size: TODO",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Total_files_changelog_size: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -339,7 +339,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Total_files_changelog_size: TODO",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 		Uptime: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -348,7 +348,7 @@ func NewNSCollector(cluster string) *NSCollector {
 				Help:        "Uptime: Time since the namespace was started last time in seconds.",
 				ConstLabels: labels,
 			},
-			[]string{"whatever"},
+			[]string{},
 		),
 	}
 }
@@ -411,7 +411,7 @@ func NewNSActivityCollector(cluster string) *NSActivityCollector {
 func (o *NSCollector) collectorList() []prometheus.Collector {
 	return []prometheus.Collector{
 		o.Boot_file_time,
-		o.Boot_status,
+		//o.Boot_status,
 		o.Boot_time,
 		o.Cache_container_maxsize,
 		o.Cache_container_occupancy,
@@ -474,227 +474,227 @@ func getNSData() ([]*eosclient.NSInfo,[]*eosclient.NSActivityInfo, error) {
 
 func (o *NSCollector) collectNSDF() error {
 
-	var boot_status float64
+	//var boot_status float64
 	for _, m := range Mds {
 
 		// Boot_file_time
 
 		boot_ft, err := strconv.ParseFloat(m.Boot_file_time, 64)
 		if err == nil {
-			o.Boot_file_time.WithLabelValues("a").Set(boot_ft)
+			o.Boot_file_time.WithLabelValues().Set(boot_ft)
 		}
 
-		// Boot_status
+		//// Boot_status
 
-		switch stat := m.Boot_status; stat {
-			case "booted":
-				boot_status = 1
-			default:
-				boot_status = 0
-		}
+		//switch stat := m.Boot_status; stat {
+		//	case "booted":
+		//		boot_status = 1
+		//	default:
+		//		boot_status = 0
+		//}
 
-		o.Boot_status.WithLabelValues("a").Set(float64(boot_status))
+		//o.Boot_status.WithLabelValues().Set(float64(boot_status))
 
 		// Boot_time
 
 		boot_time, err := strconv.ParseFloat(m.Boot_time, 64)
 		if err == nil {
-			o.Boot_time.WithLabelValues("a").Set(boot_time)
+			o.Boot_time.WithLabelValues().Set(boot_time)
 		}
 
 		// Cache_container_maxsize
 
 		cache_cont_max, err := strconv.ParseFloat(m.Cache_container_maxsize, 64)
 		if err == nil {
-			o.Cache_container_maxsize.WithLabelValues("a").Set(cache_cont_max)
+			o.Cache_container_maxsize.WithLabelValues().Set(cache_cont_max)
 		}
 
 		// Cache_container_occupancy
 
 		cache_cont_occ, err := strconv.ParseFloat(m.Cache_container_occupancy, 64)
 		if err == nil {
-			o.Cache_container_occupancy.WithLabelValues("a").Set(cache_cont_occ)
+			o.Cache_container_occupancy.WithLabelValues().Set(cache_cont_occ)
 		}
 
 		// Cache_files_maxsize
 
 		cache_files_max, err := strconv.ParseFloat(m.Cache_files_maxsize, 64)
 		if err == nil {
-			o.Cache_files_maxsize.WithLabelValues("a").Set(cache_files_max)
+			o.Cache_files_maxsize.WithLabelValues().Set(cache_files_max)
 		}
 
 		// Cache_files_occupancy
 
 		cache_files_occ, err := strconv.ParseFloat(m.Cache_files_occupancy, 64)
 		if err == nil {
-			o.Cache_files_occupancy.WithLabelValues("a").Set(cache_files_occ)
+			o.Cache_files_occupancy.WithLabelValues().Set(cache_files_occ)
 		}
 
 		// Fds_all
 
 		fds_all, err := strconv.ParseFloat(m.Fds_all, 64)
 		if err == nil {
-			o.Fds_all.WithLabelValues("a").Set(fds_all)
+			o.Fds_all.WithLabelValues().Set(fds_all)
 		}
 
 		// Fusex_activeclients
 
 		fusex_actclients, err := strconv.ParseFloat(m.Fusex_activeclients, 64)
 		if err == nil {
-			o.Fusex_activeclients.WithLabelValues("a").Set(fusex_actclients)
+			o.Fusex_activeclients.WithLabelValues().Set(fusex_actclients)
 		}
 
 		// Fusex_caps
 
 		fusex_caps, err := strconv.ParseFloat(m.Fusex_caps, 64)
 		if err == nil {
-			o.Fusex_caps.WithLabelValues("a").Set(fusex_caps)
+			o.Fusex_caps.WithLabelValues().Set(fusex_caps)
 		}
 
 		// Fusex_clients
 
 		fusex_clients, err := strconv.ParseFloat(m.Fusex_clients, 64)
 		if err == nil {
-			o.Fusex_clients.WithLabelValues("a").Set(fusex_clients)
+			o.Fusex_clients.WithLabelValues().Set(fusex_clients)
 		}
 
 		// Fusex_lockedclients
 
 		fusex_lockedcs, err := strconv.ParseFloat(m.Fusex_lockedclients, 64)
 		if err == nil {
-			o.Fusex_lockedclients.WithLabelValues("a").Set(fusex_lockedcs)
+			o.Fusex_lockedclients.WithLabelValues().Set(fusex_lockedcs)
 		}
 
 		// Latency_dirs
 
 		lat_dirs, err := strconv.ParseFloat(m.Latency_dirs, 64)
 		if err == nil {
-			o.Latency_dirs.WithLabelValues("a").Set(lat_dirs)
+			o.Latency_dirs.WithLabelValues().Set(lat_dirs)
 		}
 
 		// Latency_files
 
 		lat_files, err := strconv.ParseFloat(m.Latency_files, 64)
 		if err == nil {
-			o.Latency_files.WithLabelValues("a").Set(lat_files)
+			o.Latency_files.WithLabelValues().Set(lat_files)
 		}
 
 		// Latency_pending_updates
 
 		lat_pen_upd, err := strconv.ParseFloat(m.Latency_pending_updates, 64)
 		if err == nil {
-			o.Latency_pending_updates.WithLabelValues("a").Set(lat_pen_upd)
+			o.Latency_pending_updates.WithLabelValues().Set(lat_pen_upd)
 		}
 
 		// Latencypeak_eosviewmutex_1min
 
 		lat_eosvm_1m, err := strconv.ParseFloat(m.Latencypeak_eosviewmutex_1min, 64)
 		if err == nil {
-			o.Latencypeak_eosviewmutex_1min.WithLabelValues("a").Set(lat_eosvm_1m)
+			o.Latencypeak_eosviewmutex_1min.WithLabelValues().Set(lat_eosvm_1m)
 		}
 
 		// Latencypeak_eosviewmutex_2min
 
 		lat_eosvm_2m, err := strconv.ParseFloat(m.Latencypeak_eosviewmutex_2min, 64)
 		if err == nil {
-			o.Latencypeak_eosviewmutex_2min.WithLabelValues("a").Set(lat_eosvm_2m)
+			o.Latencypeak_eosviewmutex_2min.WithLabelValues().Set(lat_eosvm_2m)
 		}
 
 		// Latencypeak_eosviewmutex_5min
 
 		lat_eosvm_5m, err := strconv.ParseFloat(m.Latencypeak_eosviewmutex_5min, 64)
 		if err == nil {
-			o.Latencypeak_eosviewmutex_5min.WithLabelValues("a").Set(lat_eosvm_5m)
+			o.Latencypeak_eosviewmutex_5min.WithLabelValues().Set(lat_eosvm_5m)
 		}
 
 		// Latencypeak_eosviewmutex_last
 
 		lat_eosvm_last, err := strconv.ParseFloat(m.Latencypeak_eosviewmutex_last, 64)
 		if err == nil {
-			o.Latencypeak_eosviewmutex_last.WithLabelValues("a").Set(lat_eosvm_last)
+			o.Latencypeak_eosviewmutex_last.WithLabelValues().Set(lat_eosvm_last)
 		}
 
 		// Memory_growth
 
 		mem_growth, err := strconv.ParseFloat(m.Memory_growth, 64)
 		if err == nil {
-			o.Memory_growth.WithLabelValues("a").Set(mem_growth)
+			o.Memory_growth.WithLabelValues().Set(mem_growth)
 		}
 
 		// Memory_resident
 
 		mem_res, err := strconv.ParseFloat(m.Memory_resident, 64)
 		if err == nil {
-			o.Memory_resident.WithLabelValues("a").Set(mem_res)
+			o.Memory_resident.WithLabelValues().Set(mem_res)
 		}
 
 		// Memory_share
 		mem_share, err := strconv.ParseFloat(m.Memory_share, 64)
 		if err == nil {
-			o.Memory_share.WithLabelValues("a").Set(mem_share)
+			o.Memory_share.WithLabelValues().Set(mem_share)
 		}
 
 		// Memory_virtual
 
 		mem_virt, err := strconv.ParseFloat(m.Memory_virtual, 64)
 		if err == nil {
-			o.Memory_virtual.WithLabelValues("a").Set(mem_virt)
+			o.Memory_virtual.WithLabelValues().Set(mem_virt)
 		}
 
 		// Stat_threads
 
 		stat_threads, err := strconv.ParseFloat(m.Stat_threads, 64)
 		if err == nil {
-			o.Stat_threads.WithLabelValues("a").Set(stat_threads)
+			o.Stat_threads.WithLabelValues().Set(stat_threads)
 		}
 
 		// Total_directories
 
 		total_dirs, err := strconv.ParseFloat(m.Total_directories, 64)
 		if err == nil {
-			o.Total_directories.WithLabelValues("a").Set(total_dirs)
+			o.Total_directories.WithLabelValues().Set(total_dirs)
 		}
 
 		// Total_directories_changelog_avg_entry_size
 		total_dirs_clog_avg_entry_size, err := strconv.ParseFloat(m.Total_directories_changelog_avg_entry_size, 64)
 
 		if err == nil {
-			o.Total_directories_changelog_avg_entry_size.WithLabelValues("a").Set(total_dirs_clog_avg_entry_size,)
+			o.Total_directories_changelog_avg_entry_size.WithLabelValues().Set(total_dirs_clog_avg_entry_size,)
 		}
 
 		// Total_directories_changelog_size
 
 		total_dirs_clog_size, err := strconv.ParseFloat(m.Total_directories_changelog_size, 64)
 		if err == nil {
-			o.Total_directories_changelog_size.WithLabelValues("a").Set(total_dirs_clog_size)
+			o.Total_directories_changelog_size.WithLabelValues().Set(total_dirs_clog_size)
 		}
 
 		// Total_files
 
 		total_files, err := strconv.ParseFloat(m.Total_files, 64)
 		if err == nil {
-			o.Total_files.WithLabelValues("a").Set(total_files)
+			o.Total_files.WithLabelValues().Set(total_files)
 		}
 
 		// Total_files_changelog_avg_entry_size
 
 		total_files_clog_avg_entry_size, err := strconv.ParseFloat(m.Total_files_changelog_avg_entry_size, 64)
 		if err == nil {
-			o.Total_files_changelog_avg_entry_size.WithLabelValues("a").Set(total_files_clog_avg_entry_size)
+			o.Total_files_changelog_avg_entry_size.WithLabelValues().Set(total_files_clog_avg_entry_size)
 		}
 
 		// Total_files_changelog_size
 
 		total_files_clog_size, err := strconv.ParseFloat(m.Total_files_changelog_size, 64)
 		if err == nil {
-			o.Total_files_changelog_size.WithLabelValues("a").Set(total_files_clog_size)
+			o.Total_files_changelog_size.WithLabelValues().Set(total_files_clog_size)
 		}
 
 		// Uptime
 
 		uptime, err := strconv.ParseFloat(m.Uptime, 64)
 		if err == nil {
-			o.Uptime.WithLabelValues("a").Set(uptime)
+			o.Uptime.WithLabelValues().Set(uptime)
 		}
 	}
 

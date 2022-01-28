@@ -35,11 +35,11 @@ type GroupCollector struct {
 	SumStatDrainerRunning  *prometheus.GaugeVec
 }
 
-//NewGroupCollector creates an instance of the GroupCollector and instantiates
+//NewGroupCollector creates an cluster of the GroupCollector and instantiates
 // the individual metrics that show information about the Group.
-func NewGroupCollector(instance string) *GroupCollector {
+func NewGroupCollector(cluster string) *GroupCollector {
 	labels := make(prometheus.Labels)
-	labels["instance"] = instance
+	labels["cluster"] = cluster
 	namespace := "eos"
 	return &GroupCollector{
 		CfgStatus: prometheus.NewGaugeVec(

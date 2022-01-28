@@ -60,11 +60,11 @@ type FSCollector struct {
 	StatHealthIndicator        *prometheus.GaugeVec
 }
 
-//NewFSCollector creates an instance of the FSCollector and instantiates
+//NewFSCollector creates an cluster of the FSCollector and instantiates
 // the individual metrics that show information about the FS.
-func NewFSCollector(instance string) *FSCollector {
+func NewFSCollector(cluster string) *FSCollector {
 	labels := make(prometheus.Labels)
-	labels["instance"] = instance
+	labels["cluster"] = cluster
 	namespace := "eos"
 	return &FSCollector{
 		StatBoot: prometheus.NewGaugeVec(
@@ -356,7 +356,7 @@ func (o *FSCollector) collectorList() []prometheus.Collector {
 }
 
 func getEOSInstance() string {
-    // Get the EOS instance name from MGM's filesystem
+    // Get the EOS cluster name from MGM's filesystem
     var str string
 
     file, err := os.Open("/etc/sysconfig/eos_env")

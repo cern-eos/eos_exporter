@@ -28,11 +28,11 @@ type VSCollector struct {
 	Uptime    *prometheus.GaugeVec
 }
 
-//NewFSCollector creates an instance of the FSCollector and instantiates
+//NewFSCollector creates an cluster of the FSCollector and instantiates
 // the individual metrics that show information about the FS.
-func NewVSCollector(instance string) *VSCollector {
+func NewVSCollector(cluster string) *VSCollector {
 	labels := make(prometheus.Labels)
-	labels["instance"] = instance
+	labels["cluster"] = cluster
 	namespace := "eos"
 	return &VSCollector{
 		Vsize: prometheus.NewGaugeVec(
