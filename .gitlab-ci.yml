@@ -1,6 +1,7 @@
 stages:
         - publish
 compile:
+        stage: publish
         script:
                 - make build
 release:
