@@ -15,7 +15,7 @@ descr:
 	"You are building the EOS exporter binary."
 
 build:
-	go mod tidy
+	go mod init
 	go build .
 run:
 	go run eos_exporter.go
