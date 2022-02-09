@@ -7,11 +7,7 @@ compile:
                 - make build
 release:
         stage: publish
-        image: gitlab-registry.cern.ch/linuxsupport/cc7-base
-        script:
-                - yum install -y golang
-        tags:
-                - docker-cc7
+        image: golang:1.17
         retry: 2
         only:
                 - tags@eos_exporter
