@@ -6,6 +6,4 @@ compile:
                 - make build
         image: golang:1.17
         retry: 2
-        only:
-                - tags@eos_exporter
 
