@@ -1,9 +1,12 @@
 stages:
-        - publish
+  - publish
 compile:
-        stage: publish
-        script:
-                - make build
-        image: golang:1.17
-        retry: 2
-
+  stage: publish
+  script:
+    - make build
+  image: golang:1.17
+  retry: 2
+  artifacts:
+    paths:
+      - eos_exporter
+    expire_in: 1 week
