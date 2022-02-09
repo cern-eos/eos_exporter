@@ -3,10 +3,7 @@ stages:
 compile:
         stage: publish
         script:
-                - yum install -y golang
                 - make build
-release:
-        stage: publish
         image: golang:1.17
         retry: 2
         only:
