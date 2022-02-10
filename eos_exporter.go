@@ -15,14 +15,31 @@
 package main
 
 import (
-	"sync"
-	"github.com/prometheus/client_golang/prometheus"
-	"gitlab.cern.ch/rvalverd/eos_exporter/collector"
-	"gopkg.in/alecthomas/kingpin.v2"
-	"github.com/prometheus/common/version"
-	"github.com/prometheus/common/log"
+	"errors"
+	"flag"
+	"fmt"
 	"net/http"
+	"os"
+	"sync"
+
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/log"
+	"gitlab.cern.ch/rvalverd/eos_exporter/collector"
+
+	_ "embed"
+)
+
+//go:generate sh get_build_info.sh
+var (
+	//go:embed .git_commit
+	gitCommit string
+	//go:embed .build_date
+	buildDate string
+	//go:embed .version
+	version string
+	// go:embed .go_version
+	goVersion string
 )
 
 // EOSExporter wraps all the EOS collectors and provides a single global exporter to extracts metrics out of.
@@ -38,12 +55,12 @@ var _ prometheus.Collector = &EOSExporter{}
 func NewEOSExporter(instance string) *EOSExporter {
 	return &EOSExporter{
 		collectors: []prometheus.Collector{
-			collector.NewSpaceCollector(instance), // eos space stats
-			collector.NewGroupCollector(instance), // eos scheduling group stats
-			collector.NewNodeCollector(instance), // eos node stats
-			collector.NewFSCollector(instance), // eos filesystem stats
-			collector.NewVSCollector(instance), // eos FST versions information
-			collector.NewNSCollector(instance), // eos namespace information
+			collector.NewSpaceCollector(instance),      // eos space stats
+			collector.NewGroupCollector(instance),      // eos scheduling group stats
+			collector.NewNodeCollector(instance),       // eos node stats
+			collector.NewFSCollector(instance),         // eos filesystem stats
+			collector.NewVSCollector(instance),         // eos FST versions information
+			collector.NewNSCollector(instance),         // eos namespace information
 			collector.NewNSActivityCollector(instance), // eos namespace activity information
 		},
 	}
@@ -66,37 +83,78 @@ func (c *EOSExporter) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+type Options struct {
+	ListenAddress string
+	MetricsPath   string
+	EOSInstance   string
+	Version       bool
+	Help          bool
+}
+
+var cmdOptions *Options = &Options{}
+
+func init() {
+	flag.StringVar(&cmdOptions.ListenAddress, "listen-address", ":9373", "Address on which to expose metrics and web interface.")
+	flag.StringVar(&cmdOptions.MetricsPath, "telemetry-path", "/metrics", "Path under which to expose metrics.")
+	flag.StringVar(&cmdOptions.EOSInstance, "eos-instance", "", "EOS instance name.")
+	flag.BoolVar(&cmdOptions.Help, "help", false, "Show the help and exit.")
+	flag.BoolVar(&cmdOptions.Version, "version", false, "Show the version and exit.")
+	flag.Parse()
+
+	err := validate()
+	if err != nil {
+		fmt.Printf("Error: %s\n", err.Error())
+		printUsage()
+	}
+}
+
+func validate() error {
+	// TODO (gdelmont): check that ListenAddress is a valid address:port string
+
+	// EOSInstamce is required
+	if cmdOptions.EOSInstance == "" {
+		return errors.New("Specify an EOS instance using the -eos-instance flag")
+	}
+
+	return nil
+}
+
+func printUsage() {
+	fmt.Printf("Usage: %s [flags]\n", os.Args[0])
+	flag.PrintDefaults()
+	os.Exit(1)
+}
+
+func printVersion() {
+
+}
+
 func main() {
-	var (
-		listenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9373").String()
-		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
-		eosInstance	  = kingpin.Arg("eos-instance","EOS instance name").Required().String()
-	)
 
-	log.AddFlags(kingpin.CommandLine)
-	kingpin.Version(version.Print("eos_exporter"))
-	kingpin.HelpFlag.Short('h')
-	kingpin.Parse()
+	if cmdOptions.Help {
+		printUsage()
+	}
 
-	log.Infoln("Starting eos_exporter", version.Info())
-	log.Infoln("Build context", version.BuildContext())
+	if cmdOptions.Version {
+		printVersion()
+	}
 
-	log.Infoln("Starting eos exporter for instance: %s", *eosInstance)
-	prometheus.Register(NewEOSExporter(*eosInstance))
+	fmt.Printf("Starting eos exporter for instance: %s", cmdOptions.EOSInstance)
+	prometheus.Register(NewEOSExporter(cmdOptions.EOSInstance))
 
-	http.Handle(*metricsPath, promhttp.Handler())
+	http.Handle(cmdOptions.MetricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 			<head><title>EOS Exporter</title></head>
 			<body>
 			<h1>EOS Exporter</h1>
-			<p><a href="` + *metricsPath + `">Metrics</a></p>
+			<p><a href="` + cmdOptions.MetricsPath + `">Metrics</a></p>
 			</body>
 			</html>`))
 	})
 
-	log.Infoln("Listening on", *listenAddress)
-	err := http.ListenAndServe(*listenAddress, nil)
+	log.Infoln("Listening on", cmdOptions.ListenAddress)
+	err := http.ListenAndServe(cmdOptions.ListenAddress, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
