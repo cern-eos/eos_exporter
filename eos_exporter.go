@@ -111,6 +111,11 @@ func init() {
 func validate() error {
 	// TODO (gdelmont): check that ListenAddress is a valid address:port string
 
+	// skip all check when either help or version flags are provided
+	if cmdOptions.Help || cmdOptions.Version {
+		return nil
+	}
+
 	// EOSInstamce is required
 	if cmdOptions.EOSInstance == "" {
 		return errors.New("Specify an EOS instance using the -eos-instance flag")
