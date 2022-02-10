@@ -1,5 +1,5 @@
 #!/bin/bash
-git rev-parse --short HEAD > .git_commit
-date +%FT%T%z > .build_date
-git describe --always > .version
-go version | awk '{print $3}' > .go_version
+git rev-parse --short HEAD | tr -d "\n" > .git_commit
+date +%FT%T%z | tr -d "\n" > .build_date
+git describe --always | tr -d "\n" > .version
+go version | awk '{print $3}' | tr -d "\n" > .go_version
