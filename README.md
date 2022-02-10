@@ -14,7 +14,7 @@ go build
 ./eos_exporter --eos-instance="<eos_instance>"
 ```
 
-- By default, the exporter exposes the metrics on the port `9373` and url `/metrics`. 
+- By default, the exporter exposes the metrics on the port `9986` and url `/metrics`. 
     - Change the port with the argument `--web.listen-address` 
     - Change the url with `--web.telemetry-path`
 - For more options, use `--help`
@@ -26,7 +26,7 @@ go build
   scrape_interval: 30s
   static_configs:
   - targets:
-    - eospps.cern.ch:9373
+    - eospps.cern.ch:9986
     labels:
       instance: eospps
 ```

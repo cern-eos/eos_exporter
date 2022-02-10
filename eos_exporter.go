@@ -94,7 +94,7 @@ type Options struct {
 var cmdOptions *Options = &Options{}
 
 func init() {
-	flag.StringVar(&cmdOptions.ListenAddress, "listen-address", ":9373", "Address on which to expose metrics and web interface.")
+	flag.StringVar(&cmdOptions.ListenAddress, "listen-address", ":9986", "Address on which to expose metrics and web interface.")
 	flag.StringVar(&cmdOptions.MetricsPath, "telemetry-path", "/metrics", "Path under which to expose metrics.")
 	flag.StringVar(&cmdOptions.EOSInstance, "eos-instance", "", "EOS instance name.")
 	flag.BoolVar(&cmdOptions.Help, "help", false, "Show the help and exit.")
