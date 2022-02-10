@@ -216,52 +216,52 @@ type VSInfo struct {
 }
 
 type NSInfo struct {
-	Boot_file_time					string
-	Boot_status					string
-	Boot_time					string
-	Cache_container_maxsize				string
-	Cache_container_occupancy			string
-	Cache_files_maxsize				string
-	Cache_files_occupancy				string
-	Fds_all						string
-	Fusex_activeclients				string
-	Fusex_caps					string
-	Fusex_clients					string
-	Fusex_lockedclients				string
-	Latency_dirs					string
-	Latency_files					string
-	Latency_pending_updates				string
-	Latencypeak_eosviewmutex_1min			string
-	Latencypeak_eosviewmutex_2min			string
-	Latencypeak_eosviewmutex_5min			string
-	Latencypeak_eosviewmutex_last			string
-	Memory_growth					string
-	Memory_resident					string
-	Memory_share					string
-	Memory_virtual					string
-	Stat_threads					string
-	Total_directories				string
-	Total_directories_changelog_avg_entry_size	string
-	Total_directories_changelog_size		string
-	Total_files					string
-	Total_files_changelog_avg_entry_size		string
-	Total_files_changelog_size			string
-	Uptime						string
+	Boot_file_time                             string
+	Boot_status                                string
+	Boot_time                                  string
+	Cache_container_maxsize                    string
+	Cache_container_occupancy                  string
+	Cache_files_maxsize                        string
+	Cache_files_occupancy                      string
+	Fds_all                                    string
+	Fusex_activeclients                        string
+	Fusex_caps                                 string
+	Fusex_clients                              string
+	Fusex_lockedclients                        string
+	Latency_dirs                               string
+	Latency_files                              string
+	Latency_pending_updates                    string
+	Latencypeak_eosviewmutex_1min              string
+	Latencypeak_eosviewmutex_2min              string
+	Latencypeak_eosviewmutex_5min              string
+	Latencypeak_eosviewmutex_last              string
+	Memory_growth                              string
+	Memory_resident                            string
+	Memory_share                               string
+	Memory_virtual                             string
+	Stat_threads                               string
+	Total_directories                          string
+	Total_directories_changelog_avg_entry_size string
+	Total_directories_changelog_size           string
+	Total_files                                string
+	Total_files_changelog_avg_entry_size       string
+	Total_files_changelog_size                 string
+	Uptime                                     string
 }
 
 type NSActivityInfo struct {
-	User		string
-	Gid		string
-	Operation	string
-	Sum		string
-	Last_5s		string
-	Last_60s	string
-	Last_300s	string
-	Last_3600s	string
-	Exec		string
-	Sigma		string
-	Exec99		string
-	Max		string
+	User       string
+	Gid        string
+	Operation  string
+	Sum        string
+	Last_5s    string
+	Last_60s   string
+	Last_300s  string
+	Last_3600s string
+	Exec       string
+	Sigma      string
+	Exec99     string
+	Max        string
 }
 
 type Sys struct {
@@ -487,9 +487,9 @@ func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, erro
 	return c.parseNSsInfo(stdout)
 }
 
-func getHostname(hostport string) (string,string) {
+func getHostname(hostport string) (string, string) {
 	split := strings.Split(hostport, ":")
-	return split[0],split[1]
+	return split[0], split[1]
 }
 
 // Convert a monitoring format line into a map
@@ -755,7 +755,7 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 
 	//set := make(map[string]struct{})
 	for _, node := range nodeLSResponse.Result {
-		hostname,port := getHostname(node.HostPort)
+		hostname, port := getHostname(node.HostPort)
 		/* // Make sure each FST is only registered once.
 		if _, ok := set[hostname]; ok {
 			continue
@@ -763,11 +763,11 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 		set[hostname] = struct{}{}
 		*/
 		// Parse uptime to days
-		s := strings.Split(node.Cfg.Stat.Sys.Uptime,"%20days,")[0]
-		upt := strings.Split(s,"up%20")
+		s := strings.Split(node.Cfg.Stat.Sys.Uptime, "%20days,")[0]
+		upt := strings.Split(s, "up%20")
 		var uptime string
 		if len(upt) < 2 {
-			fmt.Println("Wrong uptime: ",upt)
+			fmt.Println("Wrong uptime: ", upt)
 			uptime = "0"
 		} else {
 			uptime = upt[1]
@@ -810,10 +810,10 @@ func (c *Client) parseNSsInfo(raw string) ([]*NSInfo, []*NSActivityInfo, error) 
 		// Only expose global data, without breakdown of users
 		if kv["uid"] == "all" && kv["gid"] == "all" {
 			// Separate activity info from namespace statistics info
-			if _, ok := kv["cmd"];ok {
-				if kv["5s"]=="0.00" && kv["60s"]=="0.00" && kv["300s"]=="0.00" && kv["3600s"]=="0.00" {
+			if _, ok := kv["cmd"]; ok {
+				if kv["5s"] == "0.00" && kv["60s"] == "0.00" && kv["300s"] == "0.00" && kv["3600s"] == "0.00" {
 				} else {
-					nsactinfo = &NSActivityInfo {
+					nsactinfo = &NSActivityInfo{
 						kv["uid"],
 						kv["gid"],
 						kv["cmd"],
@@ -831,11 +831,11 @@ func (c *Client) parseNSsInfo(raw string) ([]*NSInfo, []*NSActivityInfo, error) 
 			} else {
 				if len(kv) <= 3 {
 					for k := range kv {
-						if k != "uid" && k!= "gid" {
+						if k != "uid" && k != "gid" {
 							if _, err := strconv.ParseFloat(kv[k], 64); err != nil {
-								fmt.Sprintf("Value of '%s': '%s' is not floatable",k,kv[k])
+								fmt.Sprintf("Value of '%s': '%s' is not floatable", k, kv[k])
 							}
-							nsinfo = &NSInfo {
+							nsinfo = &NSInfo{
 								kv["ns.boot.file.time"],
 								kv["ns.boot.status"],
 								kv["ns.boot.time"],
@@ -883,4 +883,3 @@ func (c *Client) parseNSsInfo(raw string) ([]*NSInfo, []*NSActivityInfo, error) 
 	}
 	return nsinfos, nsactinfos, nil
 }
-

@@ -20,7 +20,7 @@ type VSCollector struct {
 	Vsize     *prometheus.GaugeVec
 	Rss       *prometheus.GaugeVec
 	Threads   *prometheus.GaugeVec
-	Versions   *prometheus.GaugeVec
+	Versions  *prometheus.GaugeVec
 	EOSfst    *prometheus.GaugeVec
 	Xrootdfst *prometheus.GaugeVec
 	KernelV   *prometheus.GaugeVec
@@ -136,7 +136,7 @@ func (o *VSCollector) collectVSDF() error {
 
 		uptime, err := strconv.ParseFloat(m.Uptime, 64)
 		if err == nil {
-			o.Uptime.WithLabelValues(m.Hostname).Set(uptime*3600*24)
+			o.Uptime.WithLabelValues(m.Hostname).Set(uptime * 3600 * 24)
 		}
 	}
 

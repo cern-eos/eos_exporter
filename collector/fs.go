@@ -1,58 +1,59 @@
 package collector
 
 import (
-	"log"
+	"bufio"
 	"context"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
-	"strconv"
-	"os"
-	"bufio"
-	"fmt"
-	"strings"
 )
 
 type FSCollector struct {
-	Host 					   *prometheus.GaugeVec
-	Port 					   *prometheus.GaugeVec
-	Id 						   *prometheus.GaugeVec
-	Uuid 					   *prometheus.GaugeVec
-	Path 					   *prometheus.GaugeVec
-	Schedgroup 				   *prometheus.GaugeVec
-	StatBoot 				   *prometheus.GaugeVec
-	Configstatus 			   *prometheus.GaugeVec
-	Headroom 				   *prometheus.GaugeVec
-	StatErrc 				   *prometheus.GaugeVec
-	StatErrmsg 			       *prometheus.GaugeVec
-	StatDiskLoad 			   *prometheus.GaugeVec
-	StatDiskReadratemb 		   *prometheus.GaugeVec
-	StatDiskWriteratemb 	   *prometheus.GaugeVec
-	StatNetEthratemib 		   *prometheus.GaugeVec
-	StatNetInratemib 		   *prometheus.GaugeVec
-	StatNetOutratemib 		   *prometheus.GaugeVec
-	StatRopen 				   *prometheus.GaugeVec
-	StatWopen 				   *prometheus.GaugeVec
-	StatStatfsFreebytes 	   *prometheus.GaugeVec
-	StatStatfsUsedbytes 	   *prometheus.GaugeVec
-	StatStatfsCapacity 		   *prometheus.GaugeVec
-	StatUsedfiles 			   *prometheus.GaugeVec
-	StatStatfsFfree 		   *prometheus.GaugeVec
-	StatStatfsFused 		   *prometheus.GaugeVec
-	StatStatfsFiles 		   *prometheus.GaugeVec
-	Drainstatus 			   *prometheus.GaugeVec
-	StatDrainprogress 		   *prometheus.GaugeVec
+	Host                       *prometheus.GaugeVec
+	Port                       *prometheus.GaugeVec
+	Id                         *prometheus.GaugeVec
+	Uuid                       *prometheus.GaugeVec
+	Path                       *prometheus.GaugeVec
+	Schedgroup                 *prometheus.GaugeVec
+	StatBoot                   *prometheus.GaugeVec
+	Configstatus               *prometheus.GaugeVec
+	Headroom                   *prometheus.GaugeVec
+	StatErrc                   *prometheus.GaugeVec
+	StatErrmsg                 *prometheus.GaugeVec
+	StatDiskLoad               *prometheus.GaugeVec
+	StatDiskReadratemb         *prometheus.GaugeVec
+	StatDiskWriteratemb        *prometheus.GaugeVec
+	StatNetEthratemib          *prometheus.GaugeVec
+	StatNetInratemib           *prometheus.GaugeVec
+	StatNetOutratemib          *prometheus.GaugeVec
+	StatRopen                  *prometheus.GaugeVec
+	StatWopen                  *prometheus.GaugeVec
+	StatStatfsFreebytes        *prometheus.GaugeVec
+	StatStatfsUsedbytes        *prometheus.GaugeVec
+	StatStatfsCapacity         *prometheus.GaugeVec
+	StatUsedfiles              *prometheus.GaugeVec
+	StatStatfsFfree            *prometheus.GaugeVec
+	StatStatfsFused            *prometheus.GaugeVec
+	StatStatfsFiles            *prometheus.GaugeVec
+	Drainstatus                *prometheus.GaugeVec
+	StatDrainprogress          *prometheus.GaugeVec
 	StatDrainfiles             *prometheus.GaugeVec
-	StatDrainbytesleft 		   *prometheus.GaugeVec
-	StatDrainretry 			   *prometheus.GaugeVec
-	StatDrainFailed 		   *prometheus.GaugeVec
-	Graceperiod  			   *prometheus.GaugeVec
-	StatTimeleft 			   *prometheus.GaugeVec
-	StatActive 				   *prometheus.GaugeVec
-	StatBalancerRunning 	   *prometheus.GaugeVec
-	StatDrainerRunning 		   *prometheus.GaugeVec
-	StatDiskIops 			   *prometheus.GaugeVec
-	StatDiskBw 				   *prometheus.GaugeVec
-	StatGeotag  			   *prometheus.GaugeVec
+	StatDrainbytesleft         *prometheus.GaugeVec
+	StatDrainretry             *prometheus.GaugeVec
+	StatDrainFailed            *prometheus.GaugeVec
+	Graceperiod                *prometheus.GaugeVec
+	StatTimeleft               *prometheus.GaugeVec
+	StatActive                 *prometheus.GaugeVec
+	StatBalancerRunning        *prometheus.GaugeVec
+	StatDrainerRunning         *prometheus.GaugeVec
+	StatDiskIops               *prometheus.GaugeVec
+	StatDiskBw                 *prometheus.GaugeVec
+	StatGeotag                 *prometheus.GaugeVec
 	StatHealth                 *prometheus.GaugeVec
 	StatHealthRedundancyFactor *prometheus.GaugeVec
 	StatHealthDrivesFailed     *prometheus.GaugeVec
@@ -74,7 +75,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Status 0=booted, 1=booting, 2=bootfailure, 3=opserror, 4=down",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		Configstatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -83,7 +84,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "Configstatus: 0=rw,1=ro,2=drain,3=empty",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatDiskLoad: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -92,7 +93,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS disk load",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatDiskReadratemb: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -101,7 +102,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS stat Disk Read Rate in MB/s",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatDiskWriteratemb: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -110,7 +111,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Stat Disk Write Rate in MB/s",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatNetEthratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -119,7 +120,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Stat Net Eth Rate in MiB/s",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatNetInratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -128,7 +129,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Stat Net In Rate MiB/s",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatNetOutratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -137,7 +138,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Stat Net Out Rate MiB/s",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatRopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -146,7 +147,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Open reads",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatWopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -155,7 +156,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Open writes",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatStatfsUsedbytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -164,7 +165,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS StatFs Used Bytes",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatStatfsFreebytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -173,7 +174,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS StatFs Free Bytes",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatStatfsCapacity: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -182,7 +183,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS StatFs Capacity",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatStatfsFused: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -191,7 +192,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Used Files",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatStatfsFfree: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -200,7 +201,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Free-Files",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatStatfsFiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -209,7 +210,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Files",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		Drainstatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -218,7 +219,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Drain status: 0=nodrain,1=drained,2=draining,3=stalling,4=expired",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatDrainprogress: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -227,7 +228,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Drain progress %",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatDrainfiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -236,7 +237,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Drain files left",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatDrainbytesleft: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -245,7 +246,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Drain bytes left",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatDrainretry: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -254,7 +255,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Drain retries",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatDrainFailed: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -263,7 +264,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Drain failed",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatActive: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -272,7 +273,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "Status of fs: 0=offline,1=online",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatBalancerRunning: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -281,7 +282,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Stat Balancer Running",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatDrainerRunning: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -290,7 +291,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Stat Drainer Running",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatDiskIops: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -299,7 +300,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Stat Disk IOPS",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatDiskBw: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -308,7 +309,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Stat Disk BW MB/Sec",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 		StatHealth: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -317,7 +318,7 @@ func NewFSCollector(cluster string) *FSCollector {
 				Help:        "FS Stat Health: 0=OK,1=other",
 				ConstLabels: labels,
 			},
-			[]string{"fs","node"},
+			[]string{"fs", "node"},
 		),
 	}
 }
@@ -356,51 +357,51 @@ func (o *FSCollector) collectorList() []prometheus.Collector {
 }
 
 func getEOSInstance() string {
-    // Get the EOS cluster name from MGM's filesystem
-    var str string
+	// Get the EOS cluster name from MGM's filesystem
+	var str string
 
-    file, err := os.Open("/etc/sysconfig/eos_env")
-    if err != nil {
-        fmt.Println(err)
-    }
-    defer file.Close()
- 
-    scanner := bufio.NewScanner(file)
-    for scanner.Scan() {
-        l := scanner.Text()
-	if strings.HasPrefix(l,"EOS_INSTANCE_NAME="){
-	    s := strings.Split(l,"EOS_INSTANCE_NAME=")
-	    str = strings.Replace(s[1],"\"","",-1)
+	file, err := os.Open("/etc/sysconfig/eos_env")
+	if err != nil {
+		fmt.Println(err)
 	}
-    }
- 
-    if err := scanner.Err(); err != nil {
-        fmt.Println(err)
-    }
+	defer file.Close()
 
-    return str
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		l := scanner.Text()
+		if strings.HasPrefix(l, "EOS_INSTANCE_NAME=") {
+			s := strings.Split(l, "EOS_INSTANCE_NAME=")
+			str = strings.Replace(s[1], "\"", "", -1)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println(err)
+	}
+
+	return str
 }
 
 func (o *FSCollector) collectFSDF() error {
-    ins := getEOSInstance()
-    url := "root://" + ins + ".cern.ch"
-    opt := &eosclient.Options{URL: url}
-    client, err := eosclient.New(opt)
-    if err != nil {
-    	panic(err)
-    }
+	ins := getEOSInstance()
+	url := "root://" + ins + ".cern.ch"
+	opt := &eosclient.Options{URL: url}
+	client, err := eosclient.New(opt)
+	if err != nil {
+		panic(err)
+	}
 
-    mds, err := client.ListFS(context.Background(), "root")
-    if err != nil {
-    	panic(err)
-    }
+	mds, err := client.ListFS(context.Background(), "root")
+	if err != nil {
+		panic(err)
+	}
 
-    for _, m := range mds {
+	for _, m := range mds {
 
-    	// Boot Status
+		// Boot Status
 
-    	boot_status := 0
-    	switch stat := m.StatBoot; stat {
+		boot_status := 0
+		switch stat := m.StatBoot; stat {
 		case "booted":
 			boot_status = 0
 		case "booting":
@@ -417,7 +418,7 @@ func (o *FSCollector) collectFSDF() error {
 
 		o.StatBoot.WithLabelValues(m.Id, m.Host).Set(float64(boot_status))
 
-    	// Config Status
+		// Config Status
 
 		config_status := 0
 		switch stat := m.Configstatus; stat {
@@ -510,7 +511,7 @@ func (o *FSCollector) collectFSDF() error {
 		drain_status := 0
 		switch stat := m.Drainstatus; stat {
 		case "nodrain":
-			drain_status= 0
+			drain_status = 0
 		case "drained":
 			drain_status = 1
 		case "draining":
@@ -560,7 +561,7 @@ func (o *FSCollector) collectFSDF() error {
 		active_status := 0
 		switch stat := m.StatActive; stat {
 		case "offline":
-			active_status= 0
+			active_status = 0
 		case "online":
 			active_status = 1
 		default:
@@ -583,7 +584,6 @@ func (o *FSCollector) collectFSDF() error {
 	return nil
 
 } // collectFSDF()
-
 
 // Describe sends the descriptors of each FSCollector related metrics we have defined
 func (o *FSCollector) Describe(ch chan<- *prometheus.Desc) {

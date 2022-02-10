@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
+
 	//"os"
 	//"bufio"
 	"fmt"
@@ -14,45 +15,45 @@ import (
 )
 
 type NSCollector struct {
-	Boot_file_time					*prometheus.GaugeVec
-	Boot_status					*prometheus.GaugeVec
-	Boot_time					*prometheus.GaugeVec
-	Cache_container_maxsize				*prometheus.GaugeVec
-	Cache_container_occupancy			*prometheus.GaugeVec
-	Cache_files_maxsize				*prometheus.GaugeVec
-	Cache_files_occupancy				*prometheus.GaugeVec
-	Fds_all						*prometheus.GaugeVec
-	Fusex_activeclients				*prometheus.GaugeVec
-	Fusex_caps					*prometheus.GaugeVec
-	Fusex_clients					*prometheus.GaugeVec
-	Fusex_lockedclients				*prometheus.GaugeVec
-	Latency_dirs					*prometheus.GaugeVec
-	Latency_files					*prometheus.GaugeVec
-	Latency_pending_updates				*prometheus.GaugeVec
-	Latencypeak_eosviewmutex_1min			*prometheus.GaugeVec
-	Latencypeak_eosviewmutex_2min			*prometheus.GaugeVec
-	Latencypeak_eosviewmutex_5min			*prometheus.GaugeVec
-	Latencypeak_eosviewmutex_last			*prometheus.GaugeVec
-	Memory_growth					*prometheus.GaugeVec
-	Memory_resident					*prometheus.GaugeVec
-	Memory_share					*prometheus.GaugeVec
-	Memory_virtual					*prometheus.GaugeVec
-	Stat_threads					*prometheus.GaugeVec
-	Total_directories				*prometheus.GaugeVec
-	Total_directories_changelog_avg_entry_size	*prometheus.GaugeVec
-	Total_directories_changelog_size		*prometheus.GaugeVec
-	Total_files					*prometheus.GaugeVec
-	Total_files_changelog_avg_entry_size		*prometheus.GaugeVec
-	Total_files_changelog_size			*prometheus.GaugeVec
-	Uptime						*prometheus.GaugeVec
+	Boot_file_time                             *prometheus.GaugeVec
+	Boot_status                                *prometheus.GaugeVec
+	Boot_time                                  *prometheus.GaugeVec
+	Cache_container_maxsize                    *prometheus.GaugeVec
+	Cache_container_occupancy                  *prometheus.GaugeVec
+	Cache_files_maxsize                        *prometheus.GaugeVec
+	Cache_files_occupancy                      *prometheus.GaugeVec
+	Fds_all                                    *prometheus.GaugeVec
+	Fusex_activeclients                        *prometheus.GaugeVec
+	Fusex_caps                                 *prometheus.GaugeVec
+	Fusex_clients                              *prometheus.GaugeVec
+	Fusex_lockedclients                        *prometheus.GaugeVec
+	Latency_dirs                               *prometheus.GaugeVec
+	Latency_files                              *prometheus.GaugeVec
+	Latency_pending_updates                    *prometheus.GaugeVec
+	Latencypeak_eosviewmutex_1min              *prometheus.GaugeVec
+	Latencypeak_eosviewmutex_2min              *prometheus.GaugeVec
+	Latencypeak_eosviewmutex_5min              *prometheus.GaugeVec
+	Latencypeak_eosviewmutex_last              *prometheus.GaugeVec
+	Memory_growth                              *prometheus.GaugeVec
+	Memory_resident                            *prometheus.GaugeVec
+	Memory_share                               *prometheus.GaugeVec
+	Memory_virtual                             *prometheus.GaugeVec
+	Stat_threads                               *prometheus.GaugeVec
+	Total_directories                          *prometheus.GaugeVec
+	Total_directories_changelog_avg_entry_size *prometheus.GaugeVec
+	Total_directories_changelog_size           *prometheus.GaugeVec
+	Total_files                                *prometheus.GaugeVec
+	Total_files_changelog_avg_entry_size       *prometheus.GaugeVec
+	Total_files_changelog_size                 *prometheus.GaugeVec
+	Uptime                                     *prometheus.GaugeVec
 }
 
 type NSActivityCollector struct {
-	Sum		*prometheus.GaugeVec
-	Last_5s		*prometheus.GaugeVec
-	Last_60s	*prometheus.GaugeVec
-	Last_300s	*prometheus.GaugeVec
-	Last_3600s	*prometheus.GaugeVec
+	Sum        *prometheus.GaugeVec
+	Last_5s    *prometheus.GaugeVec
+	Last_60s   *prometheus.GaugeVec
+	Last_300s  *prometheus.GaugeVec
+	Last_3600s *prometheus.GaugeVec
 }
 
 var Mds []*eosclient.NSInfo
@@ -454,7 +455,7 @@ func (o *NSActivityCollector) collectorList() []prometheus.Collector {
 	}
 }
 
-func getNSData() ([]*eosclient.NSInfo,[]*eosclient.NSActivityInfo, error) {
+func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, error) {
 	ins := getEOSInstance()
 	url := "root://" + ins + ".cern.ch"
 	opt := &eosclient.Options{URL: url}
@@ -659,7 +660,7 @@ func (o *NSCollector) collectNSDF() error {
 		total_dirs_clog_avg_entry_size, err := strconv.ParseFloat(m.Total_directories_changelog_avg_entry_size, 64)
 
 		if err == nil {
-			o.Total_directories_changelog_avg_entry_size.WithLabelValues().Set(total_dirs_clog_avg_entry_size,)
+			o.Total_directories_changelog_avg_entry_size.WithLabelValues().Set(total_dirs_clog_avg_entry_size)
 		}
 
 		// Total_directories_changelog_size
@@ -704,7 +705,7 @@ func (o *NSCollector) collectNSDF() error {
 
 func (o *NSActivityCollector) collectNSActivityDF() error {
 
-	for _, n := range Mdsact{
+	for _, n := range Mdsact {
 		// Sum
 
 		sum, err := strconv.ParseFloat(n.Sum, 64)

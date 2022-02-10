@@ -1,11 +1,12 @@
 package collector
 
 import (
-	"log"
 	"context"
+	"log"
+	"strconv"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
-	"strconv"
 )
 
 type GroupCollector struct {
@@ -281,30 +282,30 @@ func (o *GroupCollector) collectorList() []prometheus.Collector {
 }
 
 func (o *GroupCollector) collectGroupDF() error {
-    ins := getEOSInstance()
-    url := "root://" + ins + ".cern.ch"
-    opt := &eosclient.Options{URL: url}
-    client, err := eosclient.New(opt)
-    if err != nil {
-    	panic(err)
-    }
+	ins := getEOSInstance()
+	url := "root://" + ins + ".cern.ch"
+	opt := &eosclient.Options{URL: url}
+	client, err := eosclient.New(opt)
+	if err != nil {
+		panic(err)
+	}
 
-    mds, err := client.ListGroup(context.Background(), "root")
-    if err != nil {
-    	panic(err)
-    }
+	mds, err := client.ListGroup(context.Background(), "root")
+	if err != nil {
+		panic(err)
+	}
 
-    for _, m := range mds {
+	for _, m := range mds {
 
-    	cfgstatus := 0
-    	if m.CfgStatus == "on" {
-    		cfgstatus = 1
+		cfgstatus := 0
+		if m.CfgStatus == "on" {
+			cfgstatus = 1
 		}
 
 		status := float64(cfgstatus)
 		o.CfgStatus.WithLabelValues(m.Name).Set(status)
 
-    	nofs, err := strconv.ParseFloat(m.Nofs, 64)
+		nofs, err := strconv.ParseFloat(m.Nofs, 64)
 		if err == nil {
 			o.Nofs.WithLabelValues(m.Name).Set(nofs)
 		}
@@ -429,7 +430,6 @@ func (o *GroupCollector) collectGroupDF() error {
 	return nil
 
 } // collectGroupDF()
-
 
 // Describe sends the descriptors of each GroupCollector related metrics we have defined
 func (o *GroupCollector) Describe(ch chan<- *prometheus.Desc) {

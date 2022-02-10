@@ -1,10 +1,11 @@
 package collector
 
 import (
-	"log"
 	"context"
-	"github.com/prometheus/client_golang/prometheus"
+	"log"
 	"strconv"
+
+	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
 )
 
@@ -15,21 +16,20 @@ const (
 type NodeCollector struct {
 
 	// UsedBytes displays the total used bytes in the Node
-	Hostport 				*prometheus.GaugeVec
-	Status 					*prometheus.GaugeVec
-	Nofs 					*prometheus.GaugeVec
-	SumStatStatfsFree	  	*prometheus.GaugeVec
-	SumStatStatfsUsed	  	*prometheus.GaugeVec
-	SumStatStatfsTotal 	    *prometheus.GaugeVec
-	SumStatStatFilesFree  	*prometheus.GaugeVec
-	SumStatStatFilesUsed  	*prometheus.GaugeVec
-	SumStatStatFilesTotal 	*prometheus.GaugeVec
-	SumStatRopen		  	*prometheus.GaugeVec
-	SumStatWopen		  	*prometheus.GaugeVec
-	CfgStatSysThreads	  	*prometheus.GaugeVec
-	SumStatNetInratemib	  	*prometheus.GaugeVec
-	SumStatNetOutratemib  	*prometheus.GaugeVec
-
+	Hostport              *prometheus.GaugeVec
+	Status                *prometheus.GaugeVec
+	Nofs                  *prometheus.GaugeVec
+	SumStatStatfsFree     *prometheus.GaugeVec
+	SumStatStatfsUsed     *prometheus.GaugeVec
+	SumStatStatfsTotal    *prometheus.GaugeVec
+	SumStatStatFilesFree  *prometheus.GaugeVec
+	SumStatStatFilesUsed  *prometheus.GaugeVec
+	SumStatStatFilesTotal *prometheus.GaugeVec
+	SumStatRopen          *prometheus.GaugeVec
+	SumStatWopen          *prometheus.GaugeVec
+	CfgStatSysThreads     *prometheus.GaugeVec
+	SumStatNetInratemib   *prometheus.GaugeVec
+	SumStatNetOutratemib  *prometheus.GaugeVec
 }
 
 //NewNodeCollector creates an cluster of the NodeCollector
@@ -168,20 +168,20 @@ func (o *NodeCollector) collectorList() []prometheus.Collector {
 }
 
 func (o *NodeCollector) collectNodeDF() error {
-    ins := getEOSInstance()
-    url := "root://" + ins + ".cern.ch"
-    opt := &eosclient.Options{URL: url}
-    client, err := eosclient.New(opt)
-    if err != nil {
-    	panic(err)
-    }
+	ins := getEOSInstance()
+	url := "root://" + ins + ".cern.ch"
+	opt := &eosclient.Options{URL: url}
+	client, err := eosclient.New(opt)
+	if err != nil {
+		panic(err)
+	}
 
-    mds, err := client.ListNode(context.Background(), "root")
-    if err != nil {
-    	panic(err)
-    }
+	mds, err := client.ListNode(context.Background(), "root")
+	if err != nil {
+		panic(err)
+	}
 
-    for _, m := range mds {
+	for _, m := range mds {
 
 		nofs, err := strconv.ParseFloat(m.Nofs, 64)
 		if err == nil {
@@ -247,7 +247,6 @@ func (o *NodeCollector) collectNodeDF() error {
 	return nil
 
 } // collectNodeDF()
-
 
 // Describe sends the descriptors of each NodeCollector related metrics we have defined
 func (o *NodeCollector) Describe(ch chan<- *prometheus.Desc) {

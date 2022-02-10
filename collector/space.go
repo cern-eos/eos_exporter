@@ -1,43 +1,43 @@
 package collector
 
 import (
-	"log"
 	"context"
+	"log"
+	"strconv"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
-	"strconv"
 )
 
 type SpaceCollector struct {
-
-	CfgGroupSize 							*prometheus.GaugeVec
-	CfgGroupMod			  					*prometheus.GaugeVec
-	Nofs	  								*prometheus.GaugeVec
-	AvgStatDiskLoad 	    				*prometheus.GaugeVec
-	SigStatDiskLoad  						*prometheus.GaugeVec
-	SumStatDiskReadratemb  					*prometheus.GaugeVec
-	SumStatDiskWriteratemb 					*prometheus.GaugeVec
-	SumStatNetEthratemib		  			*prometheus.GaugeVec
-	SumStatNetInratemib		  				*prometheus.GaugeVec
-	SumStatNetOutratemib	  				*prometheus.GaugeVec
-	SumStatRopen	  						*prometheus.GaugeVec
-	SumStatWopen  							*prometheus.GaugeVec
-	SumStatStatfsUsedbytes 					*prometheus.GaugeVec
-    SumStatStatfsFreebytes 					*prometheus.GaugeVec
-	SumStatStatfsCapacity 					*prometheus.GaugeVec
-	SumStatUsedfiles 						*prometheus.GaugeVec
-	SumStatStatfsFfiles 					*prometheus.GaugeVec
-	SumStatStatfsFiles 						*prometheus.GaugeVec
-	SumStatStatfsCapacityConfigstatusRw 	*prometheus.GaugeVec
-	SumNofsConfigstatusRw 					*prometheus.GaugeVec
-	CfgQuota 								*prometheus.GaugeVec
-	CfgNominalsize 							*prometheus.GaugeVec
-	CfgBalancer 							*prometheus.GaugeVec
-	CfgBalancerThreshold 					*prometheus.GaugeVec
-	SumStatBalancerRunning 					*prometheus.GaugeVec
-	SumStatDrainerRunning 					*prometheus.GaugeVec
-	SumStatDiskIopsConfigstatusRw 			*prometheus.GaugeVec
-	SumStatDiskBwConfigstatusRw 			*prometheus.GaugeVec
+	CfgGroupSize                        *prometheus.GaugeVec
+	CfgGroupMod                         *prometheus.GaugeVec
+	Nofs                                *prometheus.GaugeVec
+	AvgStatDiskLoad                     *prometheus.GaugeVec
+	SigStatDiskLoad                     *prometheus.GaugeVec
+	SumStatDiskReadratemb               *prometheus.GaugeVec
+	SumStatDiskWriteratemb              *prometheus.GaugeVec
+	SumStatNetEthratemib                *prometheus.GaugeVec
+	SumStatNetInratemib                 *prometheus.GaugeVec
+	SumStatNetOutratemib                *prometheus.GaugeVec
+	SumStatRopen                        *prometheus.GaugeVec
+	SumStatWopen                        *prometheus.GaugeVec
+	SumStatStatfsUsedbytes              *prometheus.GaugeVec
+	SumStatStatfsFreebytes              *prometheus.GaugeVec
+	SumStatStatfsCapacity               *prometheus.GaugeVec
+	SumStatUsedfiles                    *prometheus.GaugeVec
+	SumStatStatfsFfiles                 *prometheus.GaugeVec
+	SumStatStatfsFiles                  *prometheus.GaugeVec
+	SumStatStatfsCapacityConfigstatusRw *prometheus.GaugeVec
+	SumNofsConfigstatusRw               *prometheus.GaugeVec
+	CfgQuota                            *prometheus.GaugeVec
+	CfgNominalsize                      *prometheus.GaugeVec
+	CfgBalancer                         *prometheus.GaugeVec
+	CfgBalancerThreshold                *prometheus.GaugeVec
+	SumStatBalancerRunning              *prometheus.GaugeVec
+	SumStatDrainerRunning               *prometheus.GaugeVec
+	SumStatDiskIopsConfigstatusRw       *prometheus.GaugeVec
+	SumStatDiskBwConfigstatusRw         *prometheus.GaugeVec
 }
 
 //NewSpaceCollector creates an cluster of the SpaceCollector
@@ -336,20 +336,20 @@ func (o *SpaceCollector) collectorList() []prometheus.Collector {
 }
 
 func (o *SpaceCollector) collectSpaceDF() error {
-    ins := getEOSInstance()
-    url := "root://" + ins + ".cern.ch"
-    opt := &eosclient.Options{URL: url}
-    client, err := eosclient.New(opt)
-    if err != nil {
-    	panic(err)
-    }
+	ins := getEOSInstance()
+	url := "root://" + ins + ".cern.ch"
+	opt := &eosclient.Options{URL: url}
+	client, err := eosclient.New(opt)
+	if err != nil {
+		panic(err)
+	}
 
-    mds, err := client.ListSpace(context.Background(), "root")
-    if err != nil {
-    	panic(err)
-    }
+	mds, err := client.ListSpace(context.Background(), "root")
+	if err != nil {
+		panic(err)
+	}
 
-    for _, m := range mds {
+	for _, m := range mds {
 
 		nofs, err := strconv.ParseFloat(m.Nofs, 64)
 		if err == nil {
@@ -505,7 +505,6 @@ func (o *SpaceCollector) collectSpaceDF() error {
 	return nil
 
 } // collectSpaceDF()
-
 
 // Describe sends the descriptors of each SpaceCollector related metrics we have defined
 func (o *SpaceCollector) Describe(ch chan<- *prometheus.Desc) {
