@@ -132,9 +132,9 @@ func printUsage() {
 
 func printVersion() {
 	msg := `%s [%s]
-	go version = %s
-	build date = %s
-	commit = %s
+  go version = %s
+  build date = %s
+  commit = %s
 `
 	fmt.Printf(msg, os.Args[0], version, goVersion, buildDate, gitCommit)
 	os.Exit(0)
