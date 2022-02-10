@@ -3,11 +3,9 @@ module gitlab.cern.ch/rvalverd/eos_exporter
 go 1.17
 
 require (
-	github.com/gdexlab/go-render v1.0.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.26.0
 	go.uber.org/zap v1.20.0
-	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 )
 
 require (
@@ -25,4 +23,5 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40 // indirect
 	google.golang.org/protobuf v1.26.0-rc.1 // indirect
+	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 )
