@@ -11,7 +11,7 @@ go build
 - Run (on EOS headnode or in a pre-configured client with root privilegies on EOS)
 
 ```
-./eos_exporter --eos-instance="<eos_instance>"
+./eos_exporter -eos-instance="<eos_instance>"
 ```
 
 - By default, the exporter exposes the metrics on the port `9986` and url `/metrics`. 

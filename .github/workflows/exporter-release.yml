@@ -16,11 +16,11 @@ jobs:
       - name: "Build & test"
         run: |
           make build
-          echo "done!"
+          echo "built done!"
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
-          repo_token: "${{ secrets.MY_TOKEN }}"
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
             eos_exporter
