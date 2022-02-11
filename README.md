@@ -1,5 +1,5 @@
 # eos_exporter
-CERN [EOS](https://eos.web.cern.ch) metrics exporter for Prometheus
+[CERN](https://home.cern/) [EOS](https://eos.web.cern.ch) metrics exporter for Prometheus
 
 ## Usage
 
@@ -8,6 +8,11 @@ CERN [EOS](https://eos.web.cern.ch) metrics exporter for Prometheus
 ```
 go build
 ```
+
+- There is also a Makefile available that can be launched in the following way:
+```
+make build
+```
 - Run (on EOS headnode or in a pre-configured client with root privilegies on EOS)
 
 ```
@@ -15,8 +20,8 @@ go build
 ```
 
 - By default, the exporter exposes the metrics on the port `9986` and url `/metrics`. 
-    - Change the port with the argument `--web.listen-address` 
-    - Change the url with `--web.telemetry-path`
+    - Change the port with the argument `-listen-address`
+    - Change the url with `-telemetry-path`
 - For more options, use `--help`
 
 ## Prometheus example configuration
