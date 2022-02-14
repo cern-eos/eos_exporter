@@ -18,6 +18,7 @@ jobs:
   tagged-release:
     name: "Tagged Release"
     runs-on: "ubuntu-latest"
+    #runs-on: "golangci/golangci-lint"
 
     steps:
       # ...
@@ -26,8 +27,6 @@ jobs:
           go version
           make build
           echo "built done!"
-        with:
-          go-version: "1.16.0"
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
