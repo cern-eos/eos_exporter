@@ -24,8 +24,9 @@ jobs:
       # ...
       - name: "Build & test"
         run: |
-          pwd
-          make build
+          go generate
+          go build .
+          #make build
           echo "built done!"
 
       - uses: "marvinpinto/action-automatic-releases@latest"
