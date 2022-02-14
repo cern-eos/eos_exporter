@@ -19,7 +19,6 @@ jobs:
     name: "Tagged Release"
     #runs-on: "golangci/golangci-lint"
     runs-on: self-hosted
-    runs-on: "ubuntu-latest"
 
     steps:
       # ...
