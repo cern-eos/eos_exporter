@@ -24,7 +24,7 @@ jobs:
       # ...
       - name: "Build & test"
         run: |
-          go version
+          pwd
           make build
           echo "built done!"
 
