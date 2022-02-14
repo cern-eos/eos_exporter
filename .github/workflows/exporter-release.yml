@@ -24,7 +24,7 @@ jobs:
       # ...
       - name: "Build & test"
         run: |
-          go mod init
+          go mod init example.com/m
           go build .
           #make build
           echo "built done!"
