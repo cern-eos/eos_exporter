@@ -1,5 +1,6 @@
 stages:
   - publish
+  - deploy
 compile:
   stage: publish
   script:
