@@ -3,9 +3,9 @@ stages:
   - deploy
 compile:
   stage: publish
+  image: centos:7
   script:
     - |
-      make build
       yum install -y epel-release && yum update -y && yum install -y golang && yum groupinstall -y "Development Tools"
       
       # install git from source, as the one in the centos repo is too old
