@@ -4,29 +4,9 @@ stages:
   - release
 compile:
   stage: publish
-  image: centos:7
+  image: gitlab-registry.cern.ch/rvalverd/eos_exporter:lastest
   script:
     - |
-      yum install -y epel-release && yum update -y && yum install -y golang && yum groupinstall -y "Development Tools"
-      
-      # install git from source, as the one in the centos repo is too old
-      yum -y install epel-release
-      yum -y groupinstall "Development Tools"
-      yum -y install wget perl-CPAN gettext-devel perl-devel  openssl-devel  zlib-devel curl-devel expat-devel  getopt asciidoc xmlto docbook2X
-      ln -s /usr/bin/db2x_docbook2texi /usr/bin/docbook2x-texi
-
-      yum -y install wget
-      export VER="2.32.0"
-      wget https://github.com/git/git/archive/v${VER}.tar.gz
-      tar -xvf v${VER}.tar.gz
-      rm -f v${VER}.tar.gz
-      cd git-*
-      make configure
-      ./configure --prefix=/usr
-      make
-      make install
-      cd ..
-      
       # compile eos_exporter
       mkdir public
       make rpm
@@ -46,12 +26,12 @@ compile:
 deployment:
   stage: deploy
   # Execute only on tag on master
-  only:
-    refs:
+#  only:
 #    - tags
-      - gl-ci-test
-  except:
-    - branches
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'gl-ci-test'
+#  except:
+#    - branches
   image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer:latest
   script:
     - |
