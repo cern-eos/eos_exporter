@@ -46,7 +46,8 @@ deployment:
   stage: deploy
   # Execute only on tag on master
   only:
-    - tags
+#    - tags
+    - gl-ci-test
   except:
     - branches
   image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer:latest
