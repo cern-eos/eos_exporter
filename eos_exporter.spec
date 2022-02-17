@@ -45,8 +45,6 @@ rm -rf %buildroot/
 
 %files
 %defattr(-,root,root,-)
-/etc/
-/etc/logrotate.d/eos_exporter*
 /var/log/eos_exporter
 /opt/eos_exporter/bin/*
 
