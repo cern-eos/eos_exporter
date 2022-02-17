@@ -31,7 +31,6 @@ compile:
       make rpm
       cp *.rpm public
 
-  image: golang:1.17
   retry: 2
   artifacts:
     name: eos_exporter_"$CI_COMMIT_REF_NAME"
