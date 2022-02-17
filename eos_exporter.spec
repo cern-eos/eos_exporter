@@ -33,7 +33,7 @@ mkdir -p %buildroot/usr/local/bin
 mkdir -p %buildroot/opt/eos_exporter/bin
 mkdir -p %buildroot/etc/logrotate.d
 mkdir -p %buildroot/var/log/eos_exporter
-install -m 755 cernboxcop %buildroot/opt/eos_exporter/bin/eos_exporter
+install -m 755 eos_exporter %buildroot/opt/eos_exporter/bin/eos_exporter
 
 %clean
 rm -rf %buildroot/
