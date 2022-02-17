@@ -3,9 +3,9 @@
 #
 
 Name: eos_exporter
-Summary: The Prometheus EOs exporter exposes EOS metrics.
+Summary: The Prometheus EOS exporter exposes EOS metrics.
 Version: 0.0.4
-#Release: 1
+Release: 1
 License: AGPLv3
 BuildRoot: %{_tmppath}/%{name}-buildroot
 Group: CERN-IT/ST
@@ -46,7 +46,7 @@ rm -rf %buildroot/
 %files
 %defattr(-,root,root,-)
 /etc/
-/etc/logrotate.d/eos_exporter
+/etc/logrotate.d/eos_exporter*
 /var/log/eos_exporter
 /opt/eos_exporter/bin/*
 

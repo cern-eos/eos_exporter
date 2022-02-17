@@ -31,7 +31,7 @@ compile:
       make rpm
       cp *.rpm public
 
-  retry: 2
+  retry: 1
   artifacts:
     name: eos_exporter_"$CI_COMMIT_REF_NAME"
     paths:
