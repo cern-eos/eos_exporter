@@ -39,7 +39,7 @@ dist: clean
 	
 	@mkdir -p $(PACKAGE)-$(VERSION)
 	@cp -r $(FILES_TO_RPM) $(PACKAGE)-$(VERSION)
-	tar cpfz ./eos_exporter.tar.gz $(PACKAGE)-$(VERSION)
+	tar cpfz ./$(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)-$(VERSION)
 
 prepare: dist
 	@mkdir -p $(rpmbuild)/RPMS/x86_64
@@ -47,7 +47,7 @@ prepare: dist
 	@mkdir -p $(rpmbuild)/SPECS/
 	@mkdir -p $(rpmbuild)/SOURCES/
 	@mkdir -p $(rpmbuild)/BUILD/
-	@mv eos_exporter.tar.gz $(rpmbuild)/SOURCES 
+	@mv $(PACKAGE)-$(VERSION).tar.gz $(rpmbuild)/SOURCES 
 	@cp $(SPECFILE) $(rpmbuild)/SOURCES 
 
 srpm: prepare $(SPECFILE)
