@@ -21,6 +21,11 @@ This RPM provides a binary and a systemd unit to run the eos_exporter in the EOS
 %{?systemd_requires}
 BuildRequires: systemd
 
+#Pre installation/upgrade of RPM section
+%pre      
+%{_unitdir}
+%systemd_pre %{pkgname}.service
+
 %prep
 %setup -n %{name}-%{version}
 
@@ -43,14 +48,6 @@ rm -rf %buildroot/
 /var/log/eos_exporter
 /opt/eos_exporter/bin/*
 
-#Pre installation/upgrade of RPM section
-%pre      
-  #Upgrading
-  if [ $1 -eq 2 ]; then
-    %{_unitdir}
-    /usr/bin/systemctl stop %{pkgname}.service >/dev/null 2>&1 ||:
-  fi
-
 %post
 %{_unitdir}
 %systemd_post %{pkgname}.service
@@ -58,20 +55,6 @@ rm -rf %buildroot/
 %preun
 %{_unitdir}
 %systemd_preun %{pkgname}.service
-  #old package
-  #uninstall
-  if [ $1 -eq 0 ]; then
-    %{_unitdir}
-    /usr/bin/systemctl --no-reload disable %{pkgname}.service
-    /usr/bin/systemctl stop %{pkgname}.service >/dev/null 2>&1 ||:
-    /usr/bin/systemctl disable %{pkgname}.service
-  
-  fi
-  if [ $1 -eq 1 ]; then
-    %{_unitdir}
-    /usr/bin/systemctl --no-reload disable %{pkgname}.service
-    /usr/bin/systemctl stop %{pkgname}.service
-  fi
 
 %changelog
 * Thu Feb 17 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.4-1
