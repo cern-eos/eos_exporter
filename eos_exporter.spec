@@ -38,11 +38,6 @@ install -m 755 eos_exporter %buildroot/opt/eos_exporter/bin/eos_exporter
 %clean
 rm -rf %buildroot/
 
-%preun
-
-%post
-%systemd_post eos-exporter.service
-
 %files
 %defattr(-,root,root,-)
 /var/log/eos_exporter
