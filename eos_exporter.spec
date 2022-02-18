@@ -48,6 +48,30 @@ rm -rf %buildroot/
 /var/log/eos_exporter
 /opt/eos_exporter/bin/*
 
+#Pre installation/upgrade of RPM section
+%pre      
+  #Upgrading
+  if [ $1 -eq 2 ]; then
+    /usr/bin/systemctl stop %{pkgname}.service >/dev/null 2>&1 ||:
+  fi
+
+%post
+%systemd_post %{pkgname}.service
+
+%preun
+%systemd_preun %{pkgname}.service
+  #old package
+  #uninstall
+  if [ $1 -eq 0 ]; then
+    /usr/bin/systemctl --no-reload disable %{pkgname}.service
+    /usr/bin/systemctl stop %{pkgname}.service >/dev/null 2>&1 ||:
+    /usr/bin/systemctl disable %{pkgname}.service
+  
+  fi
+  if [ $1 -eq 1 ]; then
+    /usr/bin/systemctl --no-reload disable %{pkgname}.service
+    /usr/bin/systemctl stop %{pkgname}.service
+  fi
 
 %changelog
 * Thu Feb 17 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.4-1
