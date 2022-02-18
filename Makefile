@@ -1,4 +1,4 @@
-FILES_TO_RPM = eos_exporter
+FILES_TO_RPM = eos_exporter res/eos_exporter.unit
 SPECFILE = $(shell find . -type f -name *.spec)
 BUILD_DATE = $(shell date +%FT%T%z)
 GO_VERSION = $(shell go version | awk '{print $$3}')
