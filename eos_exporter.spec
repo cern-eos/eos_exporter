@@ -47,23 +47,28 @@ rm -rf %buildroot/
 %pre      
   #Upgrading
   if [ $1 -eq 2 ]; then
+    %{_unitdir}
     /usr/bin/systemctl stop %{pkgname}.service >/dev/null 2>&1 ||:
   fi
 
 %post
+%{_unitdir}
 %systemd_post %{pkgname}.service
 
 %preun
+%{_unitdir}
 %systemd_preun %{pkgname}.service
   #old package
   #uninstall
   if [ $1 -eq 0 ]; then
+    %{_unitdir}
     /usr/bin/systemctl --no-reload disable %{pkgname}.service
     /usr/bin/systemctl stop %{pkgname}.service >/dev/null 2>&1 ||:
     /usr/bin/systemctl disable %{pkgname}.service
   
   fi
   if [ $1 -eq 1 ]; then
+    %{_unitdir}
     /usr/bin/systemctl --no-reload disable %{pkgname}.service
     /usr/bin/systemctl stop %{pkgname}.service
   fi
