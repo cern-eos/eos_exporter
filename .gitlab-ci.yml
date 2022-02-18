@@ -1,7 +1,6 @@
 stages:
   - publish
   - deploy
-  - release
 compile:
   stage: publish
   image: gitlab-registry.cern.ch/rvalverd/eos_exporter:latest
@@ -16,7 +15,7 @@ compile:
   artifacts:
     name: eos_exporter_"$CI_COMMIT_REF_NAME"
     paths:
-      - eos_exporter
+      - public
     expire_in: 1 week
     when: on_success
     public: true
