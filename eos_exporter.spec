@@ -11,6 +11,7 @@ BuildRoot: %{_tmppath}/%{name}-buildroot
 Group: CERN-IT/ST
 BuildArch: x86_64
 Source: %{name}-%{version}.tar.gz
+Source1: %{name}.unit
 
 BuildRequires: systemd
 
@@ -40,6 +41,7 @@ mkdir -p %buildroot/opt/eos_exporter/bin
 mkdir -p %buildroot/etc/logrotate.d
 mkdir -p %buildroot/var/log/eos_exporter
 install -m 755 eos_exporter %buildroot/opt/eos_exporter/bin/eos_exporter
+install -D -m 644 %{SOURCE1} %{buildroot}%{_unitdir}/%{name}.service
 
 %clean
 rm -rf %buildroot/
