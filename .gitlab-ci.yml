@@ -4,7 +4,7 @@ stages:
   - release
 compile:
   stage: publish
-  image: gitlab-registry.cern.ch/rvalverd/eos_exporter:lastest
+  image: gitlab-registry.cern.ch/rvalverd/eos_exporter:latest
   script:
     - |
       # compile eos_exporter
