@@ -12,6 +12,8 @@ Group: CERN-IT/ST
 BuildArch: x86_64
 Source: %{name}-%{version}.tar.gz
 
+BuildRequires: systemd
+
 %description
 This RPM provides a binary and a systemd unit to run the eos_exporter in the EOS instance's MGMs.
 
@@ -19,12 +21,11 @@ This RPM provides a binary and a systemd unit to run the eos_exporter in the EOS
 %define __os_install_post %{nil}
 
 %{?systemd_requires}
-BuildRequires: systemd
+Requires: systemd
 
 #Pre installation/upgrade of RPM section
 %pre      
-%{_unitdir}
-%systemd_pre %{pkgname}.service
+%systemd_pre %{name}.service
 
 %prep
 %setup -n %{name}-%{version}
@@ -47,14 +48,13 @@ rm -rf %buildroot/
 %defattr(-,root,root,-)
 /var/log/eos_exporter
 /opt/eos_exporter/bin/*
+%{_unitdir}/%{name}.service
 
 %post
-%{_unitdir}
-%systemd_post %{pkgname}.service
+%systemd_post %{name}.service
 
 %preun
-%{_unitdir}
-%systemd_preun %{pkgname}.service
+%systemd_preun %{name}.service
 
 %changelog
 * Thu Feb 17 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.4-1
