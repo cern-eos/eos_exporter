@@ -35,6 +35,7 @@ Requires: systemd
 
 # installation
 rm -rf %buildroot/
+ls -lha
 cp %{name}.unit %{_sourcedir}
 mkdir -p %buildroot/usr/local/bin
 mkdir -p %buildroot/opt/eos_exporter/bin
