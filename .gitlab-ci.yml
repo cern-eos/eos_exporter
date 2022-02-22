@@ -3,39 +3,19 @@ stages:
   - deploy
 compile:
   stage: publish
-  image: centos:7
+  image: gitlab-registry.cern.ch/rvalverd/eos_exporter:latest
   script:
     - |
-      yum install -y epel-release && yum update -y && yum install -y golang && yum groupinstall -y "Development Tools"
-      
-      # install git from source, as the one in the centos repo is too old
-      yum -y install epel-release
-      yum -y groupinstall "Development Tools"
-      yum -y install wget perl-CPAN gettext-devel perl-devel  openssl-devel  zlib-devel curl-devel expat-devel  getopt asciidoc xmlto docbook2X
-      ln -s /usr/bin/db2x_docbook2texi /usr/bin/docbook2x-texi
-
-      yum -y install wget
-      export VER="2.32.0"
-      wget https://github.com/git/git/archive/v${VER}.tar.gz
-      tar -xvf v${VER}.tar.gz
-      rm -f v${VER}.tar.gz
-      cd git-*
-      make configure
-      ./configure --prefix=/usr
-      make
-      make install
-      cd ..
-      
-      # compile cernboxcop
+      # compile eos_exporter
       mkdir public
       make rpm
       cp *.rpm public
 
-  retry: 2
+  retry: 1
   artifacts:
     name: eos_exporter_"$CI_COMMIT_REF_NAME"
     paths:
-      - eos_exporter
+      - public
     expire_in: 1 week
     when: on_success
     public: true
@@ -47,6 +27,8 @@ deployment:
   # Execute only on tag on master
   only:
     - tags
+#  rules:
+#    - if: $CI_COMMIT_BRANCH == 'gl-ci-test'
   except:
     - branches
   image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer:latest
@@ -54,4 +36,3 @@ deployment:
     - |
       echo "ssh -o StrictHostKeyChecking=no -o GSSAPITrustDns=yes -o GSSAPIAuthentication=yes -o GSSAPIDelegateCredentials=yes $EOS_ACCOUNT_USERNAME@lxplus.cern.ch createrepo --update $EOS_PATH" >> /sbin/deploy-eos-xrdcp.sh
       deploy-eos
-

@@ -1,4 +1,4 @@
-FILES_TO_RPM = eos_exporter
+FILES_TO_RPM = eos_exporter res/eos_exporter.unit
 SPECFILE = $(shell find . -type f -name *.spec)
 BUILD_DATE = $(shell date +%FT%T%z)
 GO_VERSION = $(shell go version | awk '{print $$3}')
@@ -36,6 +36,7 @@ rpmdefines=--define='_topdir ${rpmbuild}' \
 dist: clean
 	go generate
 	go build .
+	
 	@mkdir -p $(PACKAGE)-$(VERSION)
 	@cp -r $(FILES_TO_RPM) $(PACKAGE)-$(VERSION)
 	tar cpfz ./$(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)-$(VERSION)

@@ -1,0 +1,16 @@
+[Unit]
+Description=Prometheus eos_exporter
+After=network-online.target
+
+[Service]
+EnvironmentFile=/etc/sysconfig/eos_env
+User=root
+
+ExecStart=/opt/eos_exporter/bin/eos_exporter -eos-instance ${EOS_INSTANCE_NAME}
+
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
