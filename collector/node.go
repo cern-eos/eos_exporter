@@ -16,7 +16,8 @@ const (
 type NodeCollector struct {
 
 	// UsedBytes displays the total used bytes in the Node
-	Hostport              *prometheus.GaugeVec
+	Host                  *prometheus.GaugeVec
+	Port                  *prometheus.GaugeVec
 	Status                *prometheus.GaugeVec
 	Nofs                  *prometheus.GaugeVec
 	SumStatStatfsFree     *prometheus.GaugeVec
@@ -46,7 +47,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Number of filesystems",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 		SumStatStatfsFree: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -55,7 +56,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Free Bytes",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 		SumStatStatfsUsed: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -64,7 +65,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Used Bytes",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 		SumStatStatfsTotal: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -73,7 +74,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Total Bytes",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 		SumStatStatFilesFree: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -82,7 +83,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Free Files",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 		SumStatStatFilesUsed: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -91,7 +92,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Used Files",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 		SumStatStatFilesTotal: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -100,7 +101,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Total Files",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 		SumStatRopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -109,7 +110,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Open reads",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 		SumStatWopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -118,7 +119,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Open writes",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 		CfgStatSysThreads: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -127,7 +128,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Number of threads",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 		SumStatNetInratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -136,7 +137,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Net in Rate in Mib",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 		SumStatNetOutratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -145,7 +146,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				Help:        "Node Net out Rate in Mib",
 				ConstLabels: labels,
 			},
-			[]string{"node"},
+			[]string{"node", "port"},
 		),
 	}
 }
@@ -185,62 +186,62 @@ func (o *NodeCollector) collectNodeDF() error {
 
 		nofs, err := strconv.ParseFloat(m.Nofs, 64)
 		if err == nil {
-			o.Nofs.WithLabelValues(m.Hostport).Set(nofs)
+			o.Nofs.WithLabelValues(m.Host, m.Port).Set(nofs)
 		}
 
 		fbytes, err := strconv.ParseFloat(m.SumStatStatfsFree, 64)
 		if err == nil {
-			o.SumStatStatfsFree.WithLabelValues(m.Hostport).Set(fbytes)
+			o.SumStatStatfsFree.WithLabelValues(m.Host, m.Port).Set(fbytes)
 		}
 
 		ubytes, err := strconv.ParseFloat(m.SumStatStatfsUsed, 64)
 		if err == nil {
-			o.SumStatStatfsUsed.WithLabelValues(m.Hostport).Set(ubytes)
+			o.SumStatStatfsUsed.WithLabelValues(m.Host, m.Port).Set(ubytes)
 		}
 
 		tbytes, err := strconv.ParseFloat(m.SumStatStatfsTotal, 64)
 		if err == nil {
-			o.SumStatStatfsTotal.WithLabelValues(m.Hostport).Set(tbytes)
+			o.SumStatStatfsTotal.WithLabelValues(m.Host, m.Port).Set(tbytes)
 		}
 
 		ffiles, err := strconv.ParseFloat(m.SumStatStatFilesFree, 64)
 		if err == nil {
-			o.SumStatStatFilesFree.WithLabelValues(m.Hostport).Set(ffiles)
+			o.SumStatStatFilesFree.WithLabelValues(m.Host, m.Port).Set(ffiles)
 		}
 
 		ufiles, err := strconv.ParseFloat(m.SumStatStatFilesUsed, 64)
 		if err == nil {
-			o.SumStatStatFilesUsed.WithLabelValues(m.Hostport).Set(ufiles)
+			o.SumStatStatFilesUsed.WithLabelValues(m.Host, m.Port).Set(ufiles)
 		}
 
 		tfiles, err := strconv.ParseFloat(m.SumStatStatFilesTotal, 64)
 		if err == nil {
-			o.SumStatStatFilesTotal.WithLabelValues(m.Hostport).Set(tfiles)
+			o.SumStatStatFilesTotal.WithLabelValues(m.Host, m.Port).Set(tfiles)
 		}
 
 		ropen, err := strconv.ParseFloat(m.SumStatRopen, 64)
 		if err == nil {
-			o.SumStatRopen.WithLabelValues(m.Hostport).Set(ropen)
+			o.SumStatRopen.WithLabelValues(m.Host, m.Port).Set(ropen)
 		}
 
 		wopen, err := strconv.ParseFloat(m.SumStatWopen, 64)
 		if err == nil {
-			o.SumStatWopen.WithLabelValues(m.Hostport).Set(wopen)
+			o.SumStatWopen.WithLabelValues(m.Host, m.Port).Set(wopen)
 		}
 
 		netin, err := strconv.ParseFloat(m.SumStatNetInratemib, 64)
 		if err == nil {
-			o.SumStatNetInratemib.WithLabelValues(m.Hostport).Set(netin)
+			o.SumStatNetInratemib.WithLabelValues(m.Host, m.Port).Set(netin)
 		}
 
 		netout, err := strconv.ParseFloat(m.SumStatNetOutratemib, 64)
 		if err == nil {
-			o.SumStatNetOutratemib.WithLabelValues(m.Hostport).Set(netout)
+			o.SumStatNetOutratemib.WithLabelValues(m.Host, m.Port).Set(netout)
 		}
 
 		threads, err := strconv.ParseFloat(m.CfgStatSysThreads, 64)
 		if err == nil {
-			o.CfgStatSysThreads.WithLabelValues(m.Hostport).Set(threads)
+			o.CfgStatSysThreads.WithLabelValues(m.Host, m.Port).Set(threads)
 		}
 	}
 

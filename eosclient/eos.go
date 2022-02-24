@@ -75,7 +75,8 @@ type Client struct {
 }
 
 type NodeInfo struct {
-	Hostport              string
+	Host                  string
+	Port                  string
 	Status                string
 	Nofs                  string
 	SumStatStatfsFree     string
@@ -546,8 +547,12 @@ func (c *Client) parseNodesInfo(raw string) ([]*NodeInfo, error) {
 func (c *Client) parseNodeInfo(line string) (*NodeInfo, error) {
 	//kv := make(map[string]string)
 	kv := getMap(line)
+	hp := strings.Split(kv["hostport"], ":")
+	host := hp[0]
+	port := hp[1]
 	fst := &NodeInfo{
-		Hostport:              kv["hostport"],
+		Host:                  host,
+		Port:                  port,
 		Status:                kv["status"],
 		Nofs:                  kv["nofs"],
 		SumStatStatfsFree:     kv["sum.stat.statfs.freebytes"],
