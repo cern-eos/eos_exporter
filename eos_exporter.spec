@@ -1,10 +1,11 @@
 #
 # eos_exporter spec file
 #
+%define version _VERSION_
 
 Name: eos_exporter
 Summary: The Prometheus EOS exporter exposes EOS metrics.
-Version: 0.0.4
+Version: %{version}
 Release: 1
 License: AGPLv3
 BuildRoot: %{_tmppath}/%{name}-buildroot
