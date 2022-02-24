@@ -6,7 +6,9 @@ After=network-online.target
 EnvironmentFile=/etc/sysconfig/eos_env
 User=root
 
-ExecStart=/opt/eos_exporter/bin/eos_exporter -eos-instance ${EOS_INSTANCE_NAME} 2&> /var/log/eos_exporter/eos_exporter.log
+ExecStart=/opt/eos_exporter/bin/eos_exporter -eos-instance ${EOS_INSTANCE_NAME}
+StandardOutput=/var/log/eos_exporter/eos_exporter.out
+StandardErr=/var/log/eos_exporter/eos_exporter.log
 
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=process
