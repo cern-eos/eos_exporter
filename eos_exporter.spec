@@ -58,6 +58,8 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Thu Mar 09 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.7-1
+- Improve the release title for GitHub tagged-releases, and improve systemd unit logs.
 * Thu Feb 22 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.5-1
 - First version that is not a pre-release with proper systemd unit.
 * Thu Feb 17 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.4-1
