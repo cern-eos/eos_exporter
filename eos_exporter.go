@@ -62,6 +62,7 @@ func NewEOSExporter(instance string) *EOSExporter {
 			collector.NewVSCollector(instance),         // eos FST versions information
 			collector.NewNSCollector(instance),         // eos namespace information
 			collector.NewNSActivityCollector(instance), // eos namespace activity information
+			collector.NewNSBatchCollector(instance),    // eos namespace potential batch overload information
 		},
 	}
 }

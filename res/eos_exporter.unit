@@ -7,8 +7,9 @@ EnvironmentFile=/etc/sysconfig/eos_env
 User=root
 
 ExecStart=/opt/eos_exporter/bin/eos_exporter -eos-instance ${EOS_INSTANCE_NAME}
-StandardOutput=/var/log/eos_exporter/eos_exporter.out
-StandardError=/var/log/eos_exporter/eos_exporter.log
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=eos_exporter
 #StandardError=append:/var/log/eos_exporter/eos_exporter.out
 
 ExecReload=/bin/kill -HUP $MAINPID
