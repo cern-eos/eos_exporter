@@ -58,6 +58,8 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Thu Apr 26 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.8-1
+- Introduce batch overload metrics.
 * Thu Mar 09 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.7-1
 - Improve the release title for GitHub tagged-releases, and improve systemd unit logs.
 * Thu Feb 22 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.5-1
