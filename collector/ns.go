@@ -56,12 +56,21 @@ type NSActivityCollector struct {
 	Last_3600s *prometheus.GaugeVec
 }
 
+type NSBatchCollector struct {
+	Sum        *prometheus.GaugeVec
+	Last_5s    *prometheus.GaugeVec
+	Last_60s   *prometheus.GaugeVec
+	Last_300s  *prometheus.GaugeVec
+	Last_3600s *prometheus.GaugeVec
+}
+
 var Mds []*eosclient.NSInfo
 var Mdsact []*eosclient.NSActivityInfo
+var Mdsbatch []*eosclient.NSBatchInfo
 var err error
 
 func init() {
-	Mds, Mdsact, err = getNSData()
+	Mds, Mdsact, Mdsbatch, err = getNSData()
 	fmt.Println("Data initialized")
 }
 
@@ -409,6 +418,61 @@ func NewNSActivityCollector(cluster string) *NSActivityCollector {
 	}
 }
 
+//NewNSBatchCollector creates an instance of the NSBatchCollector and instantiates
+// the individual metrics that show information about the NS activity.
+func NewNSBatchCollector(cluster string) *NSBatchCollector {
+	labels := make(prometheus.Labels)
+	labels["cluster"] = cluster
+	namespace := "eos"
+	return &NSBatchCollector{
+		Sum: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_batch_sum_total",
+				Help:        "Sum: Cummulated ocurrences of the overloading operation.",
+				ConstLabels: labels,
+			},
+			[]string{"user", "operation", "impact_level"},
+		),
+		Last_5s: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_batch_last5s",
+				Help:        "Last_5s: Cummulated ocurrences of the overloading operation in the last 5s.",
+				ConstLabels: labels,
+			},
+			[]string{"user", "operation", "impact_level"},
+		),
+		Last_60s: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_batch_last1min",
+				Help:        "Last_60s: Cummulated ocurrences of the overloading operation in the last minute.",
+				ConstLabels: labels,
+			},
+			[]string{"user", "operation", "impact_level"},
+		),
+		Last_300s: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_batch_last5min",
+				Help:        "Last_300s: Cummulated ocurrences of the overloading operation in the last 5 min.",
+				ConstLabels: labels,
+			},
+			[]string{"user", "operation", "impact_level"},
+		),
+		Last_3600s: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_batch_last1h",
+				Help:        "Last_3600s: Cummulated ocurrences of the overloading operation in the last hour.",
+				ConstLabels: labels,
+			},
+			[]string{"user", "operation", "impact_level"},
+		),
+	}
+}
+
 func (o *NSCollector) collectorList() []prometheus.Collector {
 	return []prometheus.Collector{
 		o.Boot_file_time,
@@ -455,7 +519,17 @@ func (o *NSActivityCollector) collectorList() []prometheus.Collector {
 	}
 }
 
-func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, error) {
+func (o *NSBatchCollector) collectorList() []prometheus.Collector {
+	return []prometheus.Collector{
+		o.Sum,
+		o.Last_5s,
+		o.Last_60s,
+		o.Last_300s,
+		o.Last_3600s,
+	}
+}
+
+func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient.NSBatchInfo, error) {
 	ins := getEOSInstance()
 	url := "root://" + ins + ".cern.ch"
 	opt := &eosclient.Options{URL: url}
@@ -464,12 +538,12 @@ func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, error) {
 		panic(err)
 	}
 
-	mds, mdsact, err := client.ListNS(context.Background())
+	mds, mdsact, mdsbatch, err := client.ListNS(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
-	return mds, mdsact, nil
+	return mds, mdsact, mdsbatch, nil
 
 }
 
@@ -747,6 +821,50 @@ func (o *NSActivityCollector) collectNSActivityDF() error {
 
 } // collectNSActivityDF()
 
+func (o *NSBatchCollector) collectNSBatchDF() error {
+
+	for _, n := range Mdsbatch {
+		// Sum
+
+		sum, err := strconv.ParseFloat(n.Sum, 64)
+		if err == nil {
+			o.Sum.WithLabelValues(n.User, n.Operation, n.Level).Set(sum)
+		}
+
+		// Last_5s
+
+		last_5s, err := strconv.ParseFloat(n.Last_5s, 64)
+		if err == nil {
+			o.Last_5s.WithLabelValues(n.User, n.Operation, n.Level).Set(last_5s)
+		}
+
+		// Last_60s
+
+		last_1min, err := strconv.ParseFloat(n.Last_60s, 64)
+		if err == nil {
+			o.Last_60s.WithLabelValues(n.User, n.Operation, n.Level).Set(last_1min)
+		}
+
+		// Last_300s
+
+		last_5min, err := strconv.ParseFloat(n.Last_300s, 64)
+		if err == nil {
+			o.Last_300s.WithLabelValues(n.User, n.Operation, n.Level).Set(last_5min)
+		}
+
+		// Last_3600s
+
+		last_1h, err := strconv.ParseFloat(n.Last_3600s, 64)
+		if err == nil {
+			o.Last_3600s.WithLabelValues(n.User, n.Operation, n.Level).Set(last_1h)
+		}
+
+	}
+
+	return nil
+
+} // collectNSBatchDF()
+
 // Describe sends the descriptors of each NSCollector related metrics we have defined
 func (o *NSCollector) Describe(ch chan<- *prometheus.Desc) {
 	for _, metric := range o.collectorList() {
@@ -779,6 +897,26 @@ func (o *NSActivityCollector) Describe(ch chan<- *prometheus.Desc) {
 func (o *NSActivityCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectNSActivityDF(); err != nil {
+		log.Println("failed collecting space metrics:", err)
+	}
+
+	for _, metric := range o.collectorList() {
+		metric.Collect(ch)
+	}
+}
+
+// Describe sends the descriptors of each NSBatchCollector related metrics we have defined
+func (o *NSBatchCollector) Describe(ch chan<- *prometheus.Desc) {
+	for _, metric := range o.collectorList() {
+		metric.Describe(ch)
+	}
+	//ch <- o.ScrubbingStateDesc
+}
+
+// Collect sends all the collected metrics to the provided prometheus channel.
+func (o *NSBatchCollector) Collect(ch chan<- prometheus.Metric) {
+
+	if err := o.collectNSBatchDF(); err != nil {
 		log.Println("failed collecting space metrics:", err)
 	}
 

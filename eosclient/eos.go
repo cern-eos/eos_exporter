@@ -264,6 +264,16 @@ type NSActivityInfo struct {
 	Exec99     string
 	Max        string
 }
+type NSBatchInfo struct {
+	User       string
+	Operation  string
+	Sum        string
+	Last_5s    string
+	Last_60s   string
+	Last_300s  string
+	Last_3600s string
+	Level      string
+}
 
 type Sys struct {
 	Eos struct {
@@ -475,17 +485,22 @@ func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
 }
 
 // List the activity of different users in the instance
-func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, error) {
+func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
 
 	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
 	defer cancel()
 
 	stdout, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "ns", "stat", "-a", "-m"))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return c.parseNSsInfo(stdout)
+	stdo, _, err2 := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "who", "-a", "-m"))
+	if err2 != nil {
+		return nil, nil, nil, err2
+	}
+
+	return c.parseNSsInfo(stdout, stdo, ctx)
 }
 
 func getHostname(hostport string) (string, string) {
@@ -799,14 +814,100 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 	return vsinfos, nil
 }
 
+// Checks if uid is made only of letters.
+func UidLetter(s string) bool {
+	for _, r := range s {
+		if !unicode.IsLetter(r) {
+			return false
+		}
+	}
+	return true
+}
+
+func onlyUsers(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return false
+		}
+	}
+	return true
+}
+
+func isInMap(a string, m map[string]int) bool {
+	for k, _ := range m {
+		if k == a {
+			return true
+		}
+	}
+	return false
+}
+
 // Gathers information of the namespace
-func (c *Client) parseNSsInfo(raw string) ([]*NSInfo, []*NSActivityInfo, error) {
+func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
 	var kv map[string]string
+	var kvb map[string]string
 	var nsinfo *NSInfo
 	var nsactinfo *NSActivityInfo
+	var nsbatchinfo *NSBatchInfo
 	nsinfos := []*NSInfo{}
 	nsactinfos := []*NSActivityInfo{}
+	nsbatchinfos := []*NSBatchInfo{}
 	rawLines := strings.Split(raw, "\n")
+	rawBatchLines := strings.Split(raw_batch, "\n")
+	batchUsers := make(map[string]int)
+	batchMetrics := make(map[string]bool)
+	excl_uids := []string{"root", "nobody", "daemon", "wwweos", "all"}
+	for _, rlb := range rawBatchLines {
+		if rlb == "" {
+			continue
+		}
+		kvb = getMap(rlb)
+		if strings.Contains(kvb["client"], "@b7") {
+			// create a uid unique list of batch users
+			if isInMap(kvb["uid"], batchUsers) {
+				batchUsers[kvb["uid"]] += 1
+			} else {
+				batchUsers[kvb["uid"]] = 1
+			}
+		}
+	}
+	// First iteration to find out Stalled operations
+	for _, rl := range rawLines {
+		if strings.Contains(rl, "Stall::") {
+			kv = getMap(rl)
+		}
+		// Get all letter uids, and exclude (root|daemon|nobody|wwweos)
+		// TO-DO: Expose only the uid not the username
+		if UidLetter(kv["uid"]) {
+			has, excl := false, false
+			periods := []string{ /*"5s", */ "60s", "300s", "3600s"}
+			// Check that user is not in the excluded list but is in the batch users' list
+			if onlyUsers(kv["uid"], excl_uids) && isInMap(kv["uid"], batchUsers) {
+				/*// Values for testing
+				if batchUsers[kv["uid"]] >= 2 {*/
+				if batchUsers[kv["uid"]] >= 500 {
+					// If more than one value in periods is zero, not trigger metric.
+					for _, k := range periods {
+						flVar, err := strconv.ParseFloat(kv[k], 32)
+						if int(flVar) == 0 && err == nil {
+							if has {
+								excl = true
+							} else {
+								has = true
+							}
+						}
+						if err != nil {
+							fmt.Printf("%s -> in period %s of op: %s of user %s\n", err, k, kv["cmd"], kv["uid"])
+						}
+					}
+					//if excl { // For testing purposes
+					if !excl {
+						batchMetrics[kv["uid"]+"-"+strings.Replace(kv["cmd"], "Stall::", "", -1)] = true
+					}
+				}
+			}
+		}
+	}
 	for _, rl := range rawLines {
 		if rl == "" {
 			continue
@@ -877,7 +978,68 @@ func (c *Client) parseNSsInfo(raw string) ([]*NSInfo, []*NSActivityInfo, error) 
 					}
 				}
 			}
+		}
+		// Check that user has stall operation and is actually that operation to be exposed, plus is legitimate user
+		if UidLetter(kv["uid"]) && onlyUsers(kv["uid"], excl_uids) && batchMetrics[kv["uid"]+"-"+kv["cmd"]] {
+			var eos_instance string = "homecanary"
+			var level int = 0
+			ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
+			defer cancel()
 
+			stdo, _, err := c.execute(exec.CommandContext(ctx, "eos", "version"))
+			if err != nil {
+				fmt.Println("Couldn't get the EOS instance")
+			}
+			eos_ins_out := strings.Split(string(stdo), "\n")
+			for _, line := range eos_ins_out {
+				// Get eos instance name to be used for getting the latency values.
+				if strings.HasPrefix(line, "EOS_INSTANCE") {
+					eos_instance = strings.Split(line, "=eos")[1]
+				}
+			}
+			cmd := exec.Command("python2", "-c", "import sys;sys.path.append('/usr/local/sbin/');import eos_graphite as eg;print(eg.get_ns_latency('"+eos_instance+"',eg.PREFIX))")
+			stdo2, err := cmd.CombinedOutput()
+			if err != nil {
+				fmt.Println("Not able to get ns latency.")
+			}
+			parse_latency := strings.Split(string(stdo2), ", (")
+			whoami_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[1], ", ")[1], "))"), 32)
+			touch_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[3], ", ")[1], "))"), 32)
+			//rm_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[5], ", ")[1], "))"), 32)
+			//mkdir_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[7], ", ")[1], "))"), 32)
+			ls_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[9], ", ")[1], "))"), 32)
+			//rmdir_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[11], ", ")[1], ")]"), 32)
+
+			stdout, _, err := c.execute(exec.CommandContext(ctx, "id", kv["uid"]))
+			if err != nil {
+				fmt.Printf("Couldn't get the uid of %s\n", kv["uid"])
+			} else {
+				kv["uid"] = strings.Split(strings.TrimLeft(stdout, "uid="), "(")[0]
+			}
+			/*// For testing
+			fmt.Printf("Uid: %s: cmd: %s, total: %s\n", kv["uid"], kv["cmd"], kv["total"])
+			fmt.Printf("Whoami Latency: %f\nTouch Latency: %f\nRm Latency: %f\nMkdir Latency: %f\nLs Latency: %f\nRmdir Latency: %f\n", whoami_lat, touch_lat, rm_lat, mkdir_lat, ls_lat, rmdir_lat)*/
+			// Define threshold for defining impact levels
+			thresholds := []float64{0.05, 0.5, 2} // 50 ms , 500ms and 2 sec
+			if whoami_lat >= thresholds[2] && ls_lat >= thresholds[2] && touch_lat >= thresholds[2] {
+				level = 3
+			} else if whoami_lat >= thresholds[1] && ls_lat >= thresholds[1] && touch_lat >= thresholds[1] {
+				level = 2
+			} else if whoami_lat >= thresholds[0] && ls_lat >= thresholds[0] && touch_lat >= thresholds[0] {
+				level = 3
+			} else {
+				level = 0
+			}
+			nsbatchinfo = &NSBatchInfo{
+				kv["uid"],
+				kv["cmd"],
+				kv["total"],
+				kv["5s"],
+				kv["60s"],
+				kv["300s"],
+				kv["3600s"],
+				strconv.Itoa(level),
+			}
 		}
 		if nsinfo != nil {
 			nsinfos = append(nsinfos, nsinfo)
@@ -885,6 +1047,9 @@ func (c *Client) parseNSsInfo(raw string) ([]*NSInfo, []*NSActivityInfo, error) 
 		if nsactinfo != nil {
 			nsactinfos = append(nsactinfos, nsactinfo)
 		}
+		if nsbatchinfo != nil {
+			nsbatchinfos = append(nsbatchinfos, nsbatchinfo)
+		}
 	}
-	return nsinfos, nsactinfos, nil
+	return nsinfos, nsactinfos, nsbatchinfos, nil
 }
