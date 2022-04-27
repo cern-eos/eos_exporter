@@ -115,12 +115,12 @@ func (o *VSCollector) collectVSDF() error {
 	opt := &eosclient.Options{URL: url}
 	client, err := eosclient.New(opt)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	mds, err := client.ListVS(context.Background())
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	for _, m := range mds {
