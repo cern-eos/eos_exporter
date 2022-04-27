@@ -773,24 +773,13 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 		return nil, errors.New(nodeLSResponse.ErrorMsg)
 	}
 
-	//set := make(map[string]struct{})
 	for _, node := range nodeLSResponse.Result {
 		hostname, port := getHostname(node.HostPort)
-		/* // Make sure each FST is only registered once.
-		if _, ok := set[hostname]; ok {
-			continue
-		}
-		set[hostname] = struct{}{}
-		*/
+
 		// Parse uptime to days
-		s := strings.Split(node.Cfg.Stat.Sys.Uptime, "%20days,")[0]
-		upt := strings.Split(s, "up%20")
-		var uptime string
-		if len(upt) < 2 {
-			fmt.Println("Wrong uptime: ", upt)
+		uptime := node.Cfg.Stat.Sys.Uptime
+		if len(node.Cfg.Stat.Sys.Uptime) == 0 {
 			uptime = "0"
-		} else {
-			uptime = upt[1]
 		}
 
 		info := &VSInfo{
