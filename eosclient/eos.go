@@ -478,7 +478,7 @@ func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
 	nodeLSResponse := &NodeLSResponse{}
 	err = json.Unmarshal([]byte(stdout), nodeLSResponse)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w -> value: %s", err, stdout)
 	}
 
 	return c.parseVSsInfo(mgmVersion, nodeLSResponse)
@@ -1015,7 +1015,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 			} else if whoami_lat >= thresholds[1] && ls_lat >= thresholds[1] && touch_lat >= thresholds[1] {
 				level = 2
 			} else if whoami_lat >= thresholds[0] && ls_lat >= thresholds[0] && touch_lat >= thresholds[0] {
-				level = 3
+				level = 1
 			} else {
 				level = 0
 			}
