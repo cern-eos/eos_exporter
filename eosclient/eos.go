@@ -777,9 +777,13 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 		hostname, port := getHostname(node.HostPort)
 
 		// Parse uptime to days
-		uptime := node.Cfg.Stat.Sys.Uptime
-		if len(node.Cfg.Stat.Sys.Uptime) == 0 {
-			uptime = "0"
+		s := strings.Split(node.Cfg.Stat.Sys.Uptime, "%20days,")[0]
+		upt := strings.Split(s, "up%20")
+		var uptime string
+		if len(upt) < 2 {
+			fmt.Println("Wrong uptime: ", node.Cfg.Stat.Sys.Uptime)
+		} else {
+			uptime = upt[1]
 		}
 
 		info := &VSInfo{
