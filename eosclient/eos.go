@@ -478,7 +478,7 @@ func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
 	nodeLSResponse := &NodeLSResponse{}
 	err = json.Unmarshal([]byte(stdout), nodeLSResponse)
 	if err != nil {
-		return nil, fmt.Errorf("%w -> value: %s", err, stdout)
+		return nil, err // fmt.Errorf("%w -> value: %s", err, stdout) // for testing unmarshal issues
 	}
 
 	return c.parseVSsInfo(mgmVersion, nodeLSResponse)
