@@ -275,6 +275,16 @@ type NSBatchInfo struct {
 	Level      string
 }
 
+type IOInfo struct {
+	Measurement string
+	Application string
+	Total       string
+	Last_60s    string
+	Last_300s   string
+	Last_3600s  string
+	Last_86400s string
+}
+
 type Sys struct {
 	Eos struct {
 		Start   string `json:"start"`
@@ -501,6 +511,25 @@ func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*N
 	}
 
 	return c.parseNSsInfo(stdout, stdo, ctx)
+}
+
+// List the IO info in the instance
+func (c *Client) ListIOInfo(ctx context.Context) ([]*IOInfo, error) {
+
+	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	stdout1, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "io", "stat", "-m"))
+	if err != nil {
+		return nil, err
+	}
+
+	stdout2, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "io", "stat", "-m", "-x"))
+	if err != nil {
+		return nil, err
+	}
+
+	return c.parseIOInfosInfo(stdout1, stdout2, ctx)
 }
 
 func getHostname(hostport string) (string, string) {
@@ -1045,4 +1074,66 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 		}
 	}
 	return nsinfos, nsactinfos, nsbatchinfos, nil
+}
+
+// Gathers information of IO stats
+func (c *Client) parseIOInfosInfo(raw1 string, raw2 string, ctx context.Context) ([]*IOInfo, error) {
+	ioinfos := []*IOInfo{}
+	rawLines := strings.Split(raw1, "\n")
+	for _, rl := range rawLines {
+		if rl == "" {
+			continue
+		}
+		ioinfo, err := c.parseIOInfo(rl)
+
+		if err != nil {
+			return nil, err
+		}
+		ioinfos = append(ioinfos, ioinfo)
+	}
+
+	rawLines = strings.Split(raw2, "\n")
+	for _, rlx := range rawLines {
+		if rlx == "" {
+			continue
+		}
+		ioinfo, err := c.parseAppIOInfo(rlx)
+
+		if err != nil {
+			return nil, err
+		}
+		ioinfos = append(ioinfos, ioinfo)
+	}
+
+	return ioinfos, nil
+}
+
+// Gathers information of one single IO stat
+func (c *Client) parseIOInfo(line string) (*IOInfo, error) {
+	kv := getMap(line)
+	ioinfo := &IOInfo{
+		Measurement: kv["measurement"],
+		Application: "NA",
+		Total:       kv["total"],
+		Last_60s:    kv["60s"],
+		Last_300s:   kv["300s"],
+		Last_3600s:  kv["3600s"],
+		Last_86400s: kv["86400s"],
+	}
+	return ioinfo, nil
+}
+
+// Gathers information of one IO stat classified by app
+func (c *Client) parseAppIOInfo(line string) (*IOInfo, error) {
+	kv := getMap(line)
+	ioinfo := &IOInfo{
+		Measurement: kv["measurement"],
+		Application: kv["application"],
+		Total:       kv["total"],
+		Last_60s:    kv["60s"],
+		Last_300s:   kv["300s"],
+		Last_3600s:  kv["3600s"],
+		Last_86400s: kv["86400s"],
+	}
+	return ioinfo, nil
 }
