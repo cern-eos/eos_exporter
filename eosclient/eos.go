@@ -524,12 +524,21 @@ func (c *Client) ListIOInfo(ctx context.Context) ([]*IOInfo, error) {
 		return nil, err
 	}
 
+	return c.parseIOInfosInfo(stdout1, ctx)
+}
+
+// List the IO info in the instance
+func (c *Client) ListIOAppInfo(ctx context.Context) ([]*IOInfo, error) {
+
+	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
 	stdout2, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "io", "stat", "-m", "-x"))
 	if err != nil {
 		return nil, err
 	}
 
-	return c.parseIOInfosInfo(stdout1, stdout2, ctx)
+	return c.parseIOAppInfosInfo(stdout2, ctx)
 }
 
 func getHostname(hostport string) (string, string) {
@@ -1077,7 +1086,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 }
 
 // Gathers information of IO stats
-func (c *Client) parseIOInfosInfo(raw1 string, raw2 string, ctx context.Context) ([]*IOInfo, error) {
+func (c *Client) parseIOInfosInfo(raw1 string, ctx context.Context) ([]*IOInfo, error) {
 	ioinfos := []*IOInfo{}
 	rawLines := strings.Split(raw1, "\n")
 	for _, rl := range rawLines {
@@ -1092,7 +1101,14 @@ func (c *Client) parseIOInfosInfo(raw1 string, raw2 string, ctx context.Context)
 		ioinfos = append(ioinfos, ioinfo)
 	}
 
-	rawLines = strings.Split(raw2, "\n")
+	return ioinfos, nil
+}
+
+// Gathers information of IO stats
+func (c *Client) parseIOAppInfosInfo(raw2 string, ctx context.Context) ([]*IOInfo, error) {
+	ioinfos := []*IOInfo{}
+
+	rawLines := strings.Split(raw2, "\n")
 	for _, rlx := range rawLines {
 		if rlx == "" {
 			continue
