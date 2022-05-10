@@ -58,6 +58,8 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Thu May 10 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.9-1
+- Add IO stat collector, with its metrics.
 * Thu Apr 26 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.8-1
 - Introduce batch overload metrics.
 * Thu Mar 09 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.7-1
