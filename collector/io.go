@@ -216,7 +216,7 @@ func NewIOAppInfoCollector(cluster string) *IOAppInfoCollector {
 		Total_in: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "io_app_in",
+				Name:        "io_app_in_bytes",
 				Help:        "In IO by app",
 				ConstLabels: labels,
 			},
@@ -225,7 +225,7 @@ func NewIOAppInfoCollector(cluster string) *IOAppInfoCollector {
 		Total_out: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "io_app_out",
+				Name:        "io_app_out_bytes",
 				Help:        "Out IO by app",
 				ConstLabels: labels,
 			},
