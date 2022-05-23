@@ -269,11 +269,13 @@ func (o *IOInfoCollector) collectIOInfoDF() error {
 	opt := &eosclient.Options{URL: url}
 	client, err := eosclient.New(opt)
 	if err != nil {
+		fmt.Println("Panic error while getting new eosclient: ", err)
 		panic(err)
 	}
 
 	mds, err := client.ListIOInfo(context.Background())
 	if err != nil {
+		fmt.Println("Panic error while ListIOInfo: ", err)
 		panic(err)
 	}
 
