@@ -2,11 +2,11 @@ package collector
 
 import (
 	"context"
-	"log"
-	"strconv"
-
+	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
+	"log"
+	"strconv"
 )
 
 type IOInfoCollector struct {
