@@ -18,13 +18,17 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
+
+	// "github.com/prometheus/common/log"
+
+	// "github.com/prometheus/common/log"
 	"gitlab.cern.ch/rvalverd/eos_exporter/collector"
 
 	_ "embed"
@@ -167,7 +171,7 @@ func main() {
 			</html>`))
 	})
 
-	log.Infoln("Listening on", cmdOptions.ListenAddress)
+	log.Println("Listening on", cmdOptions.ListenAddress)
 	err := http.ListenAndServe(cmdOptions.ListenAddress, nil)
 	if err != nil {
 		log.Fatal(err)
