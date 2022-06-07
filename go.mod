@@ -27,4 +27,5 @@ require (
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
+	gopkg.in/yaml.v2 v2.4.0
 )
