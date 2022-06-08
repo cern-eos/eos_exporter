@@ -48,7 +48,7 @@ var (
 
 // EOSExporter wraps all the EOS collectors and provides a single global exporter to extracts metrics out of.
 type EOSExporter struct {
-	mu         sync.Mutex
+	mu         sync.RWMutex
 	collectors []prometheus.Collector
 }
 
@@ -82,8 +82,8 @@ func (c *EOSExporter) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect sends the collected metrics from each of the collectors to prometheus.
 func (c *EOSExporter) Collect(ch chan<- prometheus.Metric) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	for _, cc := range c.collectors {
 		cc.Collect(ch)
