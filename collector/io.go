@@ -276,6 +276,9 @@ func (o *IOInfoCollector) collectIOInfoDF() error {
 	mds, err := client.ListIOInfo(context.Background())
 	if err != nil {
 		fmt.Println("Panic error while ListIOInfo: ", err)
+		for _, m := range mds {
+			fmt.Println("Measurement: ", m.Measurement)
+		}
 		panic(err)
 	}
 
