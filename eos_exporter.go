@@ -29,6 +29,7 @@ import (
 	// "github.com/prometheus/common/log"
 
 	// "github.com/prometheus/common/log"
+	"github.com/pkg/profile"
 	"gitlab.cern.ch/rvalverd/eos_exporter/collector"
 
 	_ "embed"
@@ -159,6 +160,7 @@ func main() {
 
 	fmt.Printf("Starting eos exporter for instance: %s", cmdOptions.EOSInstance)
 	prometheus.Register(NewEOSExporter(cmdOptions.EOSInstance))
+	defer profile.Start(profile.GoroutineProfile).Stop()
 
 	http.Handle(cmdOptions.MetricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
