@@ -516,8 +516,8 @@ func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*N
 // List the IO info in the instance
 func (c *Client) ListIOInfo(ctx context.Context) ([]*IOInfo, error) {
 
-	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
+	// defer cancel()
 
 	stdout1, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "io", "stat", "-m"))
 	if err != nil {
