@@ -29,7 +29,8 @@ import (
 	// "github.com/prometheus/common/log"
 
 	// "github.com/prometheus/common/log"
-	"github.com/pkg/profile"
+	/* // For enabling profile mode in Go
+	"github.com/pkg/profile"*/
 	"gitlab.cern.ch/rvalverd/eos_exporter/collector"
 
 	_ "embed"
@@ -83,8 +84,8 @@ func (c *EOSExporter) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect sends the collected metrics from each of the collectors to prometheus.
 func (c *EOSExporter) Collect(ch chan<- prometheus.Metric) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	/*c.mu.Lock()
+	defer c.mu.Unlock()*/
 
 	for _, cc := range c.collectors {
 		cc.Collect(ch)
@@ -160,7 +161,8 @@ func main() {
 
 	fmt.Printf("Starting eos exporter for instance: %s", cmdOptions.EOSInstance)
 	prometheus.Register(NewEOSExporter(cmdOptions.EOSInstance))
-	defer profile.Start(profile.GoroutineProfile).Stop()
+	/* Enable Goroutine profiling
+	//defer profile.Start(profile.GoroutineProfile).Stop()*/
 
 	http.Handle(cmdOptions.MetricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
