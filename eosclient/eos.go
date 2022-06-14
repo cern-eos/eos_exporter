@@ -290,15 +290,45 @@ type Sys struct {
 		Start   string `json:"start"`
 		Version string `json:"version"`
 	} `json:"eos"`
-	Kernel  string `json:"kernel"`
-	Rss     int    `json:"rss"`
-	Sockets int    `json:"sockets"`
-	Threads int    `json:"threads"`
-	Uptime  string `json:"uptime"`
-	Vsize   int    `json:"vsize"`
+	Kernel  string    `json:"kernel"`
+	Rss     StringInt `json:"rss"`
+	Sockets StringInt `json:"sockets"`
+	Threads int       `json:"threads"`
+	Uptime  StringInt `json:"uptime"`
+	Vsize   int       `json:"vsize"`
 	Xrootd  struct {
 		Version string `json:"version"`
 	} `json:"xrootd"`
+}
+
+type StringInt struct {
+	value string
+}
+
+func (s *StringInt) UnmarshalJSON(data []byte) error {
+	var v interface{}
+	err := json.Unmarshal(data, &v)
+	if err != nil {
+		return err
+	}
+
+	switch t := v.(type) {
+	case int:
+		s.value = strconv.Itoa(t)
+	case int32:
+		s.value = strconv.Itoa(int(t))
+	case int64:
+		s.value = strconv.Itoa(int(t))
+	case string:
+		s.value = t
+	default:
+		return errors.New("type not supported")
+	}
+	return nil
+}
+
+func (s *StringInt) MarshalJSON() ([]byte, error) {
+	return []byte(s.value), nil
 }
 
 type Stat struct {
