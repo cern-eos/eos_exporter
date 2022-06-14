@@ -853,7 +853,7 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 		upt := strings.Split(s, "up%20")
 		var uptime string
 		if len(upt) < 2 {
-			fmt.Println("Wrong uptime: ", node.Cfg.Stat.Sys.Uptime)
+			fmt.Println("Wrong uptime: ", node.Cfg.Stat.Sys.Uptime.value)
 		} else {
 			uptime = upt[1]
 		}
