@@ -845,7 +845,7 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 		hostname, port := getHostname(node.HostPort)
 
 		// Parse uptime to days
-		s := strings.Split(node.Cfg.Stat.Sys.Uptime, "%20days,")[0]
+		s := strings.Split(node.Cfg.Stat.Sys.Uptime.value, "%20days,")[0]
 		upt := strings.Split(s, "up%20")
 		var uptime string
 		if len(upt) < 2 {
@@ -860,9 +860,9 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 			Port:      port,
 			Geotag:    node.Cfg.Stat.Geotag,
 			Vsize:     strconv.Itoa(node.Cfg.Stat.Sys.Vsize),
-			Rss:       strconv.Itoa(node.Cfg.Stat.Sys.Rss),
+			Rss:       node.Cfg.Stat.Sys.Rss.value,
 			Threads:   strconv.Itoa(node.Cfg.Stat.Sys.Threads),
-			Sockets:   strconv.Itoa(node.Cfg.Stat.Sys.Sockets),
+			Sockets:   node.Cfg.Stat.Sys.Sockets.value,
 			EOSfst:    node.Cfg.Stat.Sys.Eos.Version,
 			Xrootdfst: node.Cfg.Stat.Sys.Xrootd.Version,
 			KernelV:   node.Cfg.Stat.Sys.Kernel,
