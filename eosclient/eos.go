@@ -305,7 +305,7 @@ type StringInt struct {
 	value string
 }
 
-func (s *StringInt) UnmarshalJSON(data []byte) error {
+func (s StringInt) UnmarshalJSON(data []byte) error {
 	var v interface{}
 	err := json.Unmarshal(data, &v)
 	if err != nil {
@@ -327,7 +327,7 @@ func (s *StringInt) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (s *StringInt) MarshalJSON() ([]byte, error) {
+func (s StringInt) MarshalJSON() ([]byte, error) {
 	return []byte(s.value), nil
 }
 
