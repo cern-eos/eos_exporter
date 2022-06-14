@@ -290,12 +290,12 @@ type Sys struct {
 		Start   string `json:"start"`
 		Version string `json:"version"`
 	} `json:"eos"`
-	Kernel  string    `json:"kernel"`
-	Rss     StringInt `json:"rss"`
-	Sockets StringInt `json:"sockets"`
-	Threads int       `json:"threads"`
-	Uptime  StringInt `json:"uptime"`
-	Vsize   int       `json:"vsize"`
+	Kernel  string     `json:"kernel"`
+	Rss     *StringInt `json:"rss"`
+	Sockets *StringInt `json:"sockets"`
+	Threads int        `json:"threads"`
+	Uptime  *StringInt `json:"uptime"`
+	Vsize   int        `json:"vsize"`
 	Xrootd  struct {
 		Version string `json:"version"`
 	} `json:"xrootd"`
@@ -305,7 +305,7 @@ type StringInt struct {
 	value string
 }
 
-func (s StringInt) UnmarshalJSON(data []byte) error {
+func (s *StringInt) UnmarshalJSON(data []byte) error {
 	var v interface{}
 	err := json.Unmarshal(data, &v)
 	if err != nil {
@@ -319,6 +319,10 @@ func (s StringInt) UnmarshalJSON(data []byte) error {
 		s.value = strconv.Itoa(int(t))
 	case int64:
 		s.value = strconv.Itoa(int(t))
+	case float32:
+		s.value = strconv.FormatFloat(float64(t), 'g', 0, 64)
+	case float64:
+		s.value = strconv.FormatFloat(t, 'g', 0, 64)
 	case string:
 		s.value = t
 	default:
@@ -327,7 +331,7 @@ func (s StringInt) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (s StringInt) MarshalJSON() ([]byte, error) {
+func (s *StringInt) MarshalJSON() ([]byte, error) {
 	return []byte(s.value), nil
 }
 
