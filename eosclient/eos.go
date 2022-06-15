@@ -531,9 +531,6 @@ func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
 // List the activity of different users in the instance
 func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
 
-	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
-	defer cancel()
-
 	stdout, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "ns", "stat", "-a", "-m"))
 	if err != nil {
 		return nil, nil, nil, err
