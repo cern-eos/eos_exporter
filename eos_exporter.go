@@ -66,11 +66,11 @@ func NewEOSExporter(instance string) *EOSExporter {
 			collector.NewNodeCollector(instance),       // eos node stats
 			collector.NewFSCollector(instance),         // eos filesystem stats
 			collector.NewVSCollector(instance),         // eos FST versions information
+			collector.NewIOInfoCollector(instance),     // eos io stat information
+			collector.NewIOAppInfoCollector(instance),  // eos io stat information per App
 			collector.NewNSCollector(instance),         // eos namespace information
 			collector.NewNSActivityCollector(instance), // eos namespace activity information
 			collector.NewNSBatchCollector(instance),    // eos namespace potential batch overload information
-			collector.NewIOInfoCollector(instance),     // eos io stat information
-			collector.NewIOAppInfoCollector(instance),  // eos io stat information per App
 		},
 	}
 }
