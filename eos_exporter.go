@@ -61,15 +61,15 @@ var _ prometheus.Collector = &EOSExporter{}
 func NewEOSExporter(instance string) *EOSExporter {
 	return &EOSExporter{
 		collectors: []prometheus.Collector{
-			collector.NewSpaceCollector(instance),      // eos space stats
-			collector.NewGroupCollector(instance),      // eos scheduling group stats
-			collector.NewNodeCollector(instance),       // eos node stats
-			collector.NewFSCollector(instance),         // eos filesystem stats
-			collector.NewVSCollector(instance),         // eos FST versions information
-			collector.NewNSCollector(instance),         // eos namespace information
-			collector.NewNSActivityCollector(instance), // eos namespace activity information
-			collector.NewNSBatchCollector(instance),    // eos namespace potential batch overload information
-			//collector.NewIOInfoCollector(instance),     // eos io stat information
+			collector.NewSpaceCollector(instance), // eos space stats
+			collector.NewGroupCollector(instance), // eos scheduling group stats
+			collector.NewNodeCollector(instance),  // eos node stats
+			collector.NewFSCollector(instance),    // eos filesystem stats
+			collector.NewVSCollector(instance),    // eos FST versions information
+			//collector.NewNSCollector(instance),         // eos namespace information
+			//collector.NewNSActivityCollector(instance), // eos namespace activity information
+			//collector.NewNSBatchCollector(instance),    // eos namespace potential batch overload information
+			collector.NewIOInfoCollector(instance),    // eos io stat information
 			collector.NewIOAppInfoCollector(instance), // eos io stat information per App
 		},
 	}
