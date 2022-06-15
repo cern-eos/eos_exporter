@@ -85,7 +85,7 @@ func (c *EOSExporter) Describe(ch chan<- *prometheus.Desc) {
 // Collect sends the collected metrics from each of the collectors to prometheus.
 func (c *EOSExporter) Collect(ch chan<- prometheus.Metric) {
 	c.mu.RLock()
-	defer c.mu.RUnlock()*/
+	defer c.mu.RUnlock()
 
 	for _, cc := range c.collectors {
 		cc.Collect(ch)
