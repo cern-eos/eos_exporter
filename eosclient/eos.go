@@ -530,16 +530,18 @@ func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
 
 // List the activity of different users in the instance
 func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
-
+	fmt.Println("Running eos ns stat -a", time.Now())
 	stdout, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "ns", "stat", "-a", "-m"))
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	fmt.Println("Running eos who: ", time.Now())
 
 	stdo, _, err2 := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "who", "-a", "-m"))
 	if err2 != nil {
 		return nil, nil, nil, err2
 	}
+	fmt.Println("Finish eos who: ", time.Now())
 
 	return c.parseNSsInfo(stdout, stdo, ctx)
 }
