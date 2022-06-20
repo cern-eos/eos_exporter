@@ -71,7 +71,11 @@ var err error
 
 func init() {
 	Mds, Mdsact, Mdsbatch, err = getNSData()
-	fmt.Println("Data initialized")
+	if err == nil {
+		fmt.Println("NS Data initialized")
+	} else {
+		panic(err)
+	}
 }
 
 //NewNSCollector creates an instance of the NSCollector and instantiates

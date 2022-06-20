@@ -394,14 +394,11 @@ func (o *IOAppInfoCollector) collectIOAppInfoDF() error {
 		panic(err)
 	}
 
-	fmt.Println("ListIOApp running...")
-
 	mds, err := client.ListIOAppInfo(context.Background())
+
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println("ListIOApp finished")
 
 	for _, m := range mds {
 
