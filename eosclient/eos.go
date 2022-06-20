@@ -929,6 +929,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 			continue
 		}
 		kvb = getMap(rlb)
+		// Detect batch users 'eos who showing @b7 string'
 		if strings.Contains(kvb["client"], "@b7") {
 			// create a uid unique list of batch users
 			if isInMap(kvb["uid"], batchUsers) {
@@ -1072,10 +1073,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 			parse_latency := strings.Split(string(stdo2), ", (")
 			whoami_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[1], ", ")[1], "))"), 32)
 			touch_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[3], ", ")[1], "))"), 32)
-			//rm_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[5], ", ")[1], "))"), 32)
-			//mkdir_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[7], ", ")[1], "))"), 32)
 			ls_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[9], ", ")[1], "))"), 32)
-			//rmdir_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[11], ", ")[1], ")]"), 32)
 
 			stdout, _, err := c.execute(exec.CommandContext(ctx, "id", kv["uid"]))
 			if err != nil {

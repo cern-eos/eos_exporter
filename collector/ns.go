@@ -69,14 +69,14 @@ var Mdsact []*eosclient.NSActivityInfo
 var Mdsbatch []*eosclient.NSBatchInfo
 var err error
 
-func init() {
+/*func init() {
 	Mds, Mdsact, Mdsbatch, err = getNSData()
 	if err == nil {
 		fmt.Println("NS Data initialized")
 	} else {
 		panic(err)
 	}
-}
+}*/
 
 //NewNSCollector creates an instance of the NSCollector and instantiates
 // the individual metrics that show information about the NS.
@@ -553,6 +553,13 @@ func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient
 }
 
 func (o *NSCollector) collectNSDF() error {
+
+	Mds, Mdsact, Mdsbatch, err = getNSData()
+	if err == nil {
+		fmt.Println("NS Data initialized")
+	} else {
+		panic(err)
+	}
 
 	//var boot_status float64
 	for _, m := range Mds {
