@@ -273,11 +273,14 @@ func (o *IOInfoCollector) collectIOInfoDF() error {
 		panic(err)
 	}
 
+	fmt.Println("ListIO running...")
+
 	mds, err := client.ListIOInfo(context.Background())
 	if err != nil {
 		fmt.Println("Panic error while ListIOInfo: ", err)
 		panic(err)
 	}
+	fmt.Println("ListIO finished")
 
 	for _, m := range mds {
 		if m.Measurement == "bwd_seeks" {
@@ -391,10 +394,14 @@ func (o *IOAppInfoCollector) collectIOAppInfoDF() error {
 		panic(err)
 	}
 
+	fmt.Println("ListIOApp running...")
+
 	mds, err := client.ListIOAppInfo(context.Background())
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("ListIOApp finished")
 
 	for _, m := range mds {
 

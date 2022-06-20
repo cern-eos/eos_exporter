@@ -537,11 +537,12 @@ func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient
 	if err != nil {
 		panic(err)
 	}
-
+	fmt.Println("ListNS running...")
 	mds, mdsact, mdsbatch, err := client.ListNS(context.Background())
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("ListNS finished")
 
 	return mds, mdsact, mdsbatch, nil
 
