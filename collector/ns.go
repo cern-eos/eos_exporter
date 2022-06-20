@@ -7,7 +7,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
-
 	//"os"
 	//"bufio"
 	"fmt"
@@ -539,14 +538,15 @@ func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient
 	opt := &eosclient.Options{URL: url}
 	client, err := eosclient.New(opt)
 	if err != nil {
+		fmt.Println("Panic error when creating eosclient in getNSData")
 		panic(err)
 	}
-	fmt.Println("ListNS running...")
+
 	mds, mdsact, mdsbatch, err := client.ListNS(context.Background())
 	if err != nil {
+		fmt.Println("Panic error in ListNS")
 		panic(err)
 	}
-	fmt.Println("ListNS finished")
 
 	return mds, mdsact, mdsbatch, nil
 
@@ -555,9 +555,7 @@ func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient
 func (o *NSCollector) collectNSDF() error {
 
 	Mds, Mdsact, Mdsbatch, err = getNSData()
-	if err == nil {
-		fmt.Println("NS Data initialized")
-	} else {
+	if err != nil {
 		panic(err)
 	}
 

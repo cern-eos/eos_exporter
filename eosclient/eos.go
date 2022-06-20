@@ -530,18 +530,16 @@ func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
 
 // List the activity of different users in the instance
 func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
-	fmt.Println("Running eos ns stat -a")
+
 	stdout, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "ns", "stat", "-a", "-m"))
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	fmt.Println("Running eos who: ")
 
 	stdo, _, err2 := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "who", "-a", "-m"))
 	if err2 != nil {
 		return nil, nil, nil, err2
 	}
-	fmt.Println("Finish eos who: ")
 
 	return c.parseNSsInfo(stdout, stdo, ctx)
 }
@@ -552,12 +550,10 @@ func (c *Client) ListIOInfo(ctx context.Context) ([]*IOInfo, error) {
 	// ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
 	// defer cancel()
 
-	fmt.Println("Running eos io stat")
 	stdout1, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "io", "stat", "-m"))
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Finished eos io stat")
 
 	return c.parseIOInfosInfo(stdout1, ctx)
 }
@@ -854,7 +850,6 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 		upt := strings.Split(s, "up%20")
 		var uptime string
 		if len(upt) < 2 {
-			//fmt.Println("Wrong uptime: ", node.Cfg.Stat.Sys.Uptime.value, "; Parsed value: ", upt[0])
 			uptime = "0"
 		} else {
 			uptime = upt[1]
