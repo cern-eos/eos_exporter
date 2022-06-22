@@ -58,6 +58,8 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Thu Jun 22 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.10-1
+- Fix NS collector, fix unmarshalling issues.
 * Thu May 10 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.9-1
 - Add IO stat collector, with its metrics.
 * Thu Apr 26 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.8-1
