@@ -7,7 +7,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
-
 	//"os"
 	//"bufio"
 	"fmt"
@@ -69,10 +68,14 @@ var Mdsact []*eosclient.NSActivityInfo
 var Mdsbatch []*eosclient.NSBatchInfo
 var err error
 
-func init() {
+/*func init() {
 	Mds, Mdsact, Mdsbatch, err = getNSData()
-	fmt.Println("Data initialized")
-}
+	if err == nil {
+		fmt.Println("NS Data initialized")
+	} else {
+		panic(err)
+	}
+}*/
 
 //NewNSCollector creates an instance of the NSCollector and instantiates
 // the individual metrics that show information about the NS.
@@ -535,11 +538,13 @@ func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient
 	opt := &eosclient.Options{URL: url}
 	client, err := eosclient.New(opt)
 	if err != nil {
+		fmt.Println("Panic error when creating eosclient in getNSData")
 		panic(err)
 	}
 
 	mds, mdsact, mdsbatch, err := client.ListNS(context.Background())
 	if err != nil {
+		fmt.Println("Panic error in ListNS")
 		panic(err)
 	}
 
@@ -548,6 +553,11 @@ func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient
 }
 
 func (o *NSCollector) collectNSDF() error {
+
+	Mds, Mdsact, Mdsbatch, err = getNSData()
+	if err != nil {
+		panic(err)
+	}
 
 	//var boot_status float64
 	for _, m := range Mds {

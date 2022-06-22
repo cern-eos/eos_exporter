@@ -29,6 +29,8 @@ import (
 	// "github.com/prometheus/common/log"
 
 	// "github.com/prometheus/common/log"
+	/* // For enabling profile mode in Go
+	"github.com/pkg/profile"*/
 	"gitlab.cern.ch/rvalverd/eos_exporter/collector"
 
 	_ "embed"
@@ -48,7 +50,7 @@ var (
 
 // EOSExporter wraps all the EOS collectors and provides a single global exporter to extracts metrics out of.
 type EOSExporter struct {
-	mu         sync.Mutex
+	mu         sync.RWMutex
 	collectors []prometheus.Collector
 }
 
@@ -64,11 +66,11 @@ func NewEOSExporter(instance string) *EOSExporter {
 			collector.NewNodeCollector(instance),       // eos node stats
 			collector.NewFSCollector(instance),         // eos filesystem stats
 			collector.NewVSCollector(instance),         // eos FST versions information
+			collector.NewIOInfoCollector(instance),     // eos io stat information
+			collector.NewIOAppInfoCollector(instance),  // eos io stat information per App
 			collector.NewNSCollector(instance),         // eos namespace information
 			collector.NewNSActivityCollector(instance), // eos namespace activity information
 			collector.NewNSBatchCollector(instance),    // eos namespace potential batch overload information
-			collector.NewIOInfoCollector(instance),     // eos io stat information
-			collector.NewIOAppInfoCollector(instance),  // eos io stat information per App
 		},
 	}
 }
@@ -82,8 +84,8 @@ func (c *EOSExporter) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect sends the collected metrics from each of the collectors to prometheus.
 func (c *EOSExporter) Collect(ch chan<- prometheus.Metric) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	for _, cc := range c.collectors {
 		cc.Collect(ch)
@@ -157,8 +159,10 @@ func main() {
 		printVersion()
 	}
 
-	fmt.Printf("Starting eos exporter for instance: %s", cmdOptions.EOSInstance)
+	fmt.Printf("Starting eos exporter for instance: %s at ", cmdOptions.EOSInstance)
 	prometheus.Register(NewEOSExporter(cmdOptions.EOSInstance))
+	/* Enable Goroutine profiling
+	//defer profile.Start(profile.GoroutineProfile).Stop()*/
 
 	http.Handle(cmdOptions.MetricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

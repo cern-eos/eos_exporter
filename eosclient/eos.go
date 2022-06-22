@@ -290,15 +290,49 @@ type Sys struct {
 		Start   string `json:"start"`
 		Version string `json:"version"`
 	} `json:"eos"`
-	Kernel  string `json:"kernel"`
-	Rss     int    `json:"rss"`
-	Sockets int    `json:"sockets"`
-	Threads int    `json:"threads"`
-	Uptime  string `json:"uptime"`
-	Vsize   int    `json:"vsize"`
+	Kernel  string     `json:"kernel"`
+	Rss     *StringInt `json:"rss"`
+	Sockets *StringInt `json:"sockets"`
+	Threads int        `json:"threads"`
+	Uptime  *StringInt `json:"uptime"`
+	Vsize   int        `json:"vsize"`
 	Xrootd  struct {
 		Version string `json:"version"`
 	} `json:"xrootd"`
+}
+
+type StringInt struct {
+	value string
+}
+
+func (s *StringInt) UnmarshalJSON(data []byte) error {
+	var v interface{}
+	err := json.Unmarshal(data, &v)
+	if err != nil {
+		return err
+	}
+
+	switch t := v.(type) {
+	case int:
+		s.value = strconv.Itoa(t)
+	case int32:
+		s.value = strconv.Itoa(int(t))
+	case int64:
+		s.value = strconv.Itoa(int(t))
+	case float32:
+		s.value = strconv.FormatFloat(float64(t), 'g', 0, 64)
+	case float64:
+		s.value = strconv.FormatFloat(t, 'g', 0, 64)
+	case string:
+		s.value = t
+	default:
+		return errors.New("type not supported")
+	}
+	return nil
+}
+
+func (s *StringInt) MarshalJSON() ([]byte, error) {
+	return []byte(s.value), nil
 }
 
 type Stat struct {
@@ -497,9 +531,6 @@ func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
 // List the activity of different users in the instance
 func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
 
-	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
-	defer cancel()
-
 	stdout, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "ns", "stat", "-a", "-m"))
 	if err != nil {
 		return nil, nil, nil, err
@@ -516,8 +547,8 @@ func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*N
 // List the IO info in the instance
 func (c *Client) ListIOInfo(ctx context.Context) ([]*IOInfo, error) {
 
-	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
+	// defer cancel()
 
 	stdout1, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "io", "stat", "-m"))
 	if err != nil {
@@ -815,11 +846,11 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 		hostname, port := getHostname(node.HostPort)
 
 		// Parse uptime to days
-		s := strings.Split(node.Cfg.Stat.Sys.Uptime, "%20days,")[0]
+		s := strings.Split(node.Cfg.Stat.Sys.Uptime.value, "%20days,")[0]
 		upt := strings.Split(s, "up%20")
 		var uptime string
 		if len(upt) < 2 {
-			fmt.Println("Wrong uptime: ", node.Cfg.Stat.Sys.Uptime)
+			uptime = "0"
 		} else {
 			uptime = upt[1]
 		}
@@ -830,9 +861,9 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 			Port:      port,
 			Geotag:    node.Cfg.Stat.Geotag,
 			Vsize:     strconv.Itoa(node.Cfg.Stat.Sys.Vsize),
-			Rss:       strconv.Itoa(node.Cfg.Stat.Sys.Rss),
+			Rss:       node.Cfg.Stat.Sys.Rss.value,
 			Threads:   strconv.Itoa(node.Cfg.Stat.Sys.Threads),
-			Sockets:   strconv.Itoa(node.Cfg.Stat.Sys.Sockets),
+			Sockets:   node.Cfg.Stat.Sys.Sockets.value,
 			EOSfst:    node.Cfg.Stat.Sys.Eos.Version,
 			Xrootdfst: node.Cfg.Stat.Sys.Xrootd.Version,
 			KernelV:   node.Cfg.Stat.Sys.Kernel,
@@ -893,6 +924,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 			continue
 		}
 		kvb = getMap(rlb)
+		// Detect batch users 'eos who showing @b7 string'
 		if strings.Contains(kvb["client"], "@b7") {
 			// create a uid unique list of batch users
 			if isInMap(kvb["uid"], batchUsers) {
@@ -1036,10 +1068,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 			parse_latency := strings.Split(string(stdo2), ", (")
 			whoami_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[1], ", ")[1], "))"), 32)
 			touch_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[3], ", ")[1], "))"), 32)
-			//rm_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[5], ", ")[1], "))"), 32)
-			//mkdir_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[7], ", ")[1], "))"), 32)
 			ls_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[9], ", ")[1], "))"), 32)
-			//rmdir_lat, err := strconv.ParseFloat(strings.TrimRight(strings.Split(parse_latency[11], ", ")[1], ")]"), 32)
 
 			stdout, _, err := c.execute(exec.CommandContext(ctx, "id", kv["uid"]))
 			if err != nil {

@@ -392,6 +392,7 @@ func (o *IOAppInfoCollector) collectIOAppInfoDF() error {
 	}
 
 	mds, err := client.ListIOAppInfo(context.Background())
+
 	if err != nil {
 		panic(err)
 	}
