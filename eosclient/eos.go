@@ -530,7 +530,7 @@ func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
 
 // List the activity of different users in the instance
 func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
-
+	// eos ns stat, without -a will exclude batch users info (this adds to much latency in the instance where the exporter is deployed)
 	stdout, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "ns", "stat", "-m"))
 	if err != nil {
 		return nil, nil, nil, err
@@ -940,7 +940,6 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 			kv = getMap(rl)
 		}
 		// Get all letter uids, and exclude (root|daemon|nobody|wwweos)
-		// TO-DO: Expose only the uid not the username
 		if UidLetter(kv["uid"]) {
 			has, excl := false, false
 			periods := []string{ /*"5s", */ "60s", "300s", "3600s"}
