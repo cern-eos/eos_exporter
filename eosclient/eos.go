@@ -305,6 +305,16 @@ type StringInt struct {
 	value string
 }
 
+type RecycleInfo struct {
+	UsedBytes          string
+	MaxBytes           string
+	VolumeUsagePercent string
+	InodeUsagePercent  string
+	Lifetime           string
+	Ratio              string
+	RecycleBin         string
+}
+
 func (s *StringInt) UnmarshalJSON(data []byte) error {
 	var v interface{}
 	err := json.Unmarshal(data, &v)
@@ -394,6 +404,28 @@ func (c *Client) execute(cmd *exec.Cmd) (string, string, error) {
 		}
 	}
 	return outBuf.String(), errBuf.String(), err
+}
+
+// Launch recycle command
+func (c *Client) Recycle(ctx context.Context, username string) (*RecycleInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		ctxWt  context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "recycle", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseRecycleInfo(stdout)
 }
 
 // List the nodes on the instance
@@ -607,6 +639,26 @@ func getMap(line string) map[string]string {
 	}
 	return m
 
+}
+
+// Gathers information from recycle bin
+
+func (c *Client) parseRecycleInfo(raw string) (*RecycleInfo, error) {
+	//kv := make(map[string]string)
+	kv := getMap(raw)
+	// recycleBinPath := kv["recycle-bin"]
+	// host := hp[0]
+	// port := hp[1]
+	recycle := &RecycleInfo{
+		RecycleBin:         kv["recycle-bin"],
+		UsedBytes:          kv["usedbytes"],
+		MaxBytes:           kv["maxbytes"],
+		VolumeUsagePercent: kv["volumeusage"],
+		InodeUsagePercent:  kv["inodeusage"],
+		Lifetime:           kv["lifetime"],
+		Ratio:              kv["ratio"],
+	}
+	return recycle, nil
 }
 
 // Gathers information of all nodes
@@ -896,7 +948,7 @@ func onlyUsers(a string, list []string) bool {
 }
 
 func isInMap(a string, m map[string]int) bool {
-	for k, _ := range m {
+	for k := range m {
 		if k == a {
 			return true
 		}
