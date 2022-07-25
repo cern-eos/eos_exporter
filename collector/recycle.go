@@ -113,24 +113,26 @@ func (o *RecycleCollector) collectRecycleDF() error {
 		panic(err)
 	}
 
-	usedbytes, err := strconv.ParseFloat(mds.UsedBytes, 64)
-	if err == nil {
-		o.UsedBytes.WithLabelValues(mds.RecycleBin).Set(usedbytes)
-	}
+	for _, m := range mds {
+		usedbytes, err := strconv.ParseFloat(m.UsedBytes, 64)
+		if err == nil {
+			o.UsedBytes.WithLabelValues(m.RecycleBin).Set(usedbytes)
+		}
 
-	maxbytes, err := strconv.ParseFloat(mds.MaxBytes, 64)
-	if err == nil {
-		o.MaxBytes.WithLabelValues(mds.RecycleBin).Set(maxbytes)
-	}
+		maxbytes, err := strconv.ParseFloat(m.MaxBytes, 64)
+		if err == nil {
+			o.MaxBytes.WithLabelValues(m.RecycleBin).Set(maxbytes)
+		}
 
-	lifetime, err := strconv.ParseFloat(mds.Lifetime, 64)
-	if err == nil {
-		o.Lifetime.WithLabelValues(mds.RecycleBin).Set(lifetime)
-	}
+		lifetime, err := strconv.ParseFloat(m.Lifetime, 64)
+		if err == nil {
+			o.Lifetime.WithLabelValues(m.RecycleBin).Set(lifetime)
+		}
 
-	ratio, err := strconv.ParseFloat(mds.Ratio, 64)
-	if err == nil {
-		o.Ratio.WithLabelValues(mds.RecycleBin).Set(ratio)
+		ratio, err := strconv.ParseFloat(m.Ratio, 64)
+		if err == nil {
+			o.Ratio.WithLabelValues(m.RecycleBin).Set(ratio)
+		}
 	}
 
 	return nil
