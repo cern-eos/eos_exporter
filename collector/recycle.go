@@ -49,24 +49,24 @@ func NewRecycleCollector(cluster string) *RecycleCollector {
 			},
 			[]string{"recycle-bin"},
 		),
-		VolumeUsagePercent: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Namespace:   namespace,
-				Name:        "recycle_volumeusagepercent",
-				Help:        "Volume usage (percent)",
-				ConstLabels: labels,
-			},
-			[]string{"recycle-bin"},
-		),
-		InodeUsagePercent: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Namespace:   "eos",
-				Name:        "recycle_inodeusagepercent",
-				Help:        "Inode usage (percent)",
-				ConstLabels: labels,
-			},
-			[]string{"recycle-bin"},
-		),
+		// VolumeUsagePercent: prometheus.NewGaugeVec(
+		// 	prometheus.GaugeOpts{
+		// 		Namespace:   namespace,
+		// 		Name:        "recycle_volumeusagepercent",
+		// 		Help:        "Volume usage (percent)",
+		// 		ConstLabels: labels,
+		// 	},
+		// 	[]string{"recycle-bin"},
+		// ),
+		// InodeUsagePercent: prometheus.NewGaugeVec(
+		// 	prometheus.GaugeOpts{
+		// 		Namespace:   "eos",
+		// 		Name:        "recycle_inodeusagepercent",
+		// 		Help:        "Inode usage (percent)",
+		// 		ConstLabels: labels,
+		// 	},
+		// 	[]string{"recycle-bin"},
+		// ),
 		Lifetime: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
@@ -92,8 +92,8 @@ func (o *RecycleCollector) collectorList() []prometheus.Collector {
 	return []prometheus.Collector{
 		o.UsedBytes,
 		o.MaxBytes,
-		o.VolumeUsagePercent,
-		o.InodeUsagePercent,
+		// o.VolumeUsagePercent,
+		// o.InodeUsagePercent,
 		o.Lifetime,
 		o.Ratio,
 	}
