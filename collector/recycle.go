@@ -2,6 +2,7 @@ package collector
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -16,12 +17,10 @@ import (
 // recycle-bin=/eos/homecanary/proc/recycle/ usedbytes=365327522885 maxbytes=100000000000000 volumeusage=0.37% inodeusage=1.19% lifetime=15552000 ratio=0.800000
 
 type RecycleCollector struct {
-	UsedBytes          *prometheus.GaugeVec
-	MaxBytes           *prometheus.GaugeVec
-	VolumeUsagePercent *prometheus.GaugeVec
-	InodeUsagePercent  *prometheus.GaugeVec
-	Lifetime           *prometheus.GaugeVec
-	Ratio              *prometheus.GaugeVec
+	UsedBytes *prometheus.GaugeVec
+	MaxBytes  *prometheus.GaugeVec
+	Lifetime  *prometheus.GaugeVec
+	Ratio     *prometheus.GaugeVec
 }
 
 //NewRecycleCollector creates an cluster of the RecycleCollector
@@ -30,60 +29,41 @@ func NewRecycleCollector(cluster string) *RecycleCollector {
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &RecycleCollector{
-
 		UsedBytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "recyle_usedbytes",
+				Name:        "recyle_used_bytes",
 				Help:        "Recycle Used Bytes",
 				ConstLabels: labels,
 			},
-			[]string{"recycle-bin"},
+			[]string{},
 		),
 		MaxBytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "recycle_maxbytes",
+				Name:        "recycle_max_bytes",
 				Help:        "Recycle Max Bytes",
 				ConstLabels: labels,
 			},
-			[]string{"recycle-bin"},
+			[]string{},
 		),
-		// VolumeUsagePercent: prometheus.NewGaugeVec(
-		// 	prometheus.GaugeOpts{
-		// 		Namespace:   namespace,
-		// 		Name:        "recycle_volumeusagepercent",
-		// 		Help:        "Volume usage (percent)",
-		// 		ConstLabels: labels,
-		// 	},
-		// 	[]string{"recycle-bin"},
-		// ),
-		// InodeUsagePercent: prometheus.NewGaugeVec(
-		// 	prometheus.GaugeOpts{
-		// 		Namespace:   "eos",
-		// 		Name:        "recycle_inodeusagepercent",
-		// 		Help:        "Inode usage (percent)",
-		// 		ConstLabels: labels,
-		// 	},
-		// 	[]string{"recycle-bin"},
-		// ),
 		Lifetime: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "recycle_lifetime",
-				Help:        "Recycle lifetime",
+				Name:        "recycle_lifetime_seconds",
+				Help:        "Recycle purges files older than this",
 				ConstLabels: labels,
 			},
-			[]string{"recycle-bin"},
+			[]string{},
 		),
 		Ratio: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
 				Name:        "recycle_ratio",
-				Help:        "Space Disk Read Rate in MB/s",
+				Help:        "Recycle purge kicks in above the fill rate",
 				ConstLabels: labels,
 			},
-			[]string{"recycle-bin"},
+			[]string{},
 		),
 	}
 }
@@ -92,8 +72,6 @@ func (o *RecycleCollector) collectorList() []prometheus.Collector {
 	return []prometheus.Collector{
 		o.UsedBytes,
 		o.MaxBytes,
-		// o.VolumeUsagePercent,
-		// o.InodeUsagePercent,
 		o.Lifetime,
 		o.Ratio,
 	}
@@ -116,22 +94,22 @@ func (o *RecycleCollector) collectRecycleDF() error {
 	for _, m := range mds {
 		usedbytes, err := strconv.ParseFloat(m.UsedBytes, 64)
 		if err == nil {
-			o.UsedBytes.WithLabelValues(m.RecycleBin).Set(usedbytes)
+			o.UsedBytes.WithLabelValues().Set(usedbytes)
 		}
 
 		maxbytes, err := strconv.ParseFloat(m.MaxBytes, 64)
 		if err == nil {
-			o.MaxBytes.WithLabelValues(m.RecycleBin).Set(maxbytes)
+			o.MaxBytes.WithLabelValues().Set(maxbytes)
 		}
 
 		lifetime, err := strconv.ParseFloat(m.Lifetime, 64)
 		if err == nil {
-			o.Lifetime.WithLabelValues(m.RecycleBin).Set(lifetime)
+			o.Lifetime.WithLabelValues().Set(lifetime)
 		}
 
 		ratio, err := strconv.ParseFloat(m.Ratio, 64)
 		if err == nil {
-			o.Ratio.WithLabelValues(m.RecycleBin).Set(ratio)
+			o.Ratio.WithLabelValues().Set(ratio)
 		}
 	}
 
@@ -142,6 +120,7 @@ func (o *RecycleCollector) collectRecycleDF() error {
 // Describe sends the descriptors of each SpaceCollector related metrics we have defined
 func (o *RecycleCollector) Describe(ch chan<- *prometheus.Desc) {
 	for _, metric := range o.collectorList() {
+		fmt.Print(metric)
 		metric.Describe(ch)
 	}
 }

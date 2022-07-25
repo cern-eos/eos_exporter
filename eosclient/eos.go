@@ -1188,13 +1188,10 @@ func (c *Client) parseAppIOInfo(line string) (*IOInfo, error) {
 
 // Data struct //
 type RecycleInfo struct {
-	UsedBytes          string
-	MaxBytes           string
-	VolumeUsagePercent string
-	InodeUsagePercent  string
-	Lifetime           string
-	Ratio              string
-	RecycleBin         string
+	UsedBytes string
+	MaxBytes  string
+	Lifetime  string
+	Ratio     string
 }
 
 // Launch recycle command //
@@ -1239,11 +1236,8 @@ func (c *Client) parseRecycleInfo(raw string) ([]*RecycleInfo, error) {
 func (c *Client) parseRecycleLineInfo(line string) (*RecycleInfo, error) {
 	kv := getMap(line)
 	rb := &RecycleInfo{
-		kv["recycle-bin"],
 		kv["usedbytes"],
 		kv["maxbytes"],
-		kv["volumeusage"],
-		kv["inodeusage"],
 		kv["lifetime"],
 		kv["ratio"],
 	}
