@@ -32,7 +32,7 @@ func NewRecycleCollector(cluster string) *RecycleCollector {
 		UsedBytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "recyle_used_bytes",
+				Name:        "recycle_used_bytes",
 				Help:        "Recycle Used Bytes",
 				ConstLabels: labels,
 			},
