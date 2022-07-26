@@ -896,7 +896,7 @@ func onlyUsers(a string, list []string) bool {
 }
 
 func isInMap(a string, m map[string]int) bool {
-	for k, _ := range m {
+	for k := range m {
 		if k == a {
 			return true
 		}
@@ -1180,4 +1180,66 @@ func (c *Client) parseAppIOInfo(line string) (*IOInfo, error) {
 		Last_86400s: kv["86400s"],
 	}
 	return ioinfo, nil
+}
+
+// ----------------------------------------//
+// RECYCLE BIN INFORMATION 			       //
+// ----------------------------------------//
+
+// Data struct //
+type RecycleInfo struct {
+	UsedBytes string
+	MaxBytes  string
+	Lifetime  string
+	Ratio     string
+}
+
+// Launch recycle command //
+func (c *Client) Recycle(ctx context.Context, username string) ([]*RecycleInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		ctxWt  context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "recycle", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseRecycleInfo(stdout)
+}
+
+// Parse information from recycle bin //
+func (c *Client) parseRecycleInfo(raw string) ([]*RecycleInfo, error) {
+	recycleInfo := []*RecycleInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" {
+			continue
+		}
+		recycle, err := c.parseRecycleLineInfo(rl)
+		if err != nil {
+			return nil, err
+		}
+		recycleInfo = append(recycleInfo, recycle)
+	}
+	return recycleInfo, nil
+}
+
+func (c *Client) parseRecycleLineInfo(line string) (*RecycleInfo, error) {
+	kv := getMap(line)
+	rb := &RecycleInfo{
+		kv["usedbytes"],
+		kv["maxbytes"],
+		kv["lifetime"],
+		kv["ratio"],
+	}
+	return rb, nil
 }
