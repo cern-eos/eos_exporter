@@ -1243,3 +1243,61 @@ func (c *Client) parseRecycleLineInfo(line string) (*RecycleInfo, error) {
 	}
 	return rb, nil
 }
+
+// ----------------------------------------//
+// EOS WHO    INFORMATION 			       //
+// ----------------------------------------//
+
+// Data struct //
+type WhoInfo struct {
+	Uid           string
+	SessionNumber string
+}
+
+// Launch who command //
+func (c *Client) Who(ctx context.Context, username string) ([]*WhoInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		ctxWt  context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "who", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseWhoInfo(stdout)
+}
+
+// Parse information from recycle bin //
+func (c *Client) parseWhoInfo(raw string) ([]*WhoInfo, error) {
+	whoInfo := []*WhoInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" {
+			continue
+		}
+		who, err := c.parseWhoLineInfo(rl)
+		if err != nil {
+			return nil, err
+		}
+		whoInfo = append(whoInfo, who)
+	}
+	return whoInfo, nil
+}
+
+func (c *Client) parseWhoLineInfo(line string) (*WhoInfo, error) {
+	kv := getMap(line)
+	rb := &WhoInfo{
+		kv["uid"],
+		kv["nsessions"],
+	}
+	return rb, nil
+}
