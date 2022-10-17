@@ -58,6 +58,8 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Mon Oct 17 2022 Roberto Valverde <rvalverd@cern.ch> 0.0.12-1
+- Added eos recycle and eos who collectors. 
 * Thu Jun 24 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.11-1
 - Remove -a flag from eos ns stat (NS collector ~7s scrape time), excludes batch user info.
 * Thu Jun 22 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.10-1
