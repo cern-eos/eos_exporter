@@ -104,7 +104,7 @@ func NewNodeCollector(cluster string) *NodeCollector {
 		HeartBeatDelta: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
-				Name:        "node_heartbeatdelta",
+				Name:        "node_heartbeatdelta_seconds",
 				Help:        "Node heart beat delta",
 				ConstLabels: labels,
 			},
