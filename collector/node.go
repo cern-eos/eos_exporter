@@ -285,7 +285,7 @@ func (o *NodeCollector) collectNodeDF() error {
 
 		heartbeatdelta, err := strconv.ParseFloat(m.HeartBeatDelta, 64)
 		if err == nil {
-			o.Nofs.WithLabelValues(m.Host, m.Port).Set(heartbeatdelta)
+			o.HeartBeatDelta.WithLabelValues(m.Host, m.Port).Set(heartbeatdelta)
 		}
 
 		nofs, err := strconv.ParseFloat(m.Nofs, 64)
