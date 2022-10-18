@@ -83,6 +83,24 @@ func NewNodeCollector(cluster string) *NodeCollector {
 	labels["cluster"] = cluster
 
 	return &NodeCollector{
+		Status: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_status",
+				Help:        "Node status: 1: online, 0: offline",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port"},
+		),
+		CfgStatus: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_cfgstatus",
+				Help:        "Node config status: 1: on, 0: off",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port"},
+		),
 		HeartBeatDelta: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
