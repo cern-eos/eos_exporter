@@ -19,7 +19,9 @@ type NodeCollector struct {
 	Host                  *prometheus.GaugeVec
 	Port                  *prometheus.GaugeVec
 	Status                *prometheus.GaugeVec
+	CfgStatus             *prometheus.GaugeVec
 	Nofs                  *prometheus.GaugeVec
+	HeartBeatDelta        *prometheus.GaugeVec
 	SumStatStatfsFree     *prometheus.GaugeVec
 	SumStatStatfsUsed     *prometheus.GaugeVec
 	SumStatStatfsTotal    *prometheus.GaugeVec
@@ -33,13 +35,81 @@ type NodeCollector struct {
 	SumStatNetOutratemib  *prometheus.GaugeVec
 }
 
+/*
+sample line
+=========
+type=nodesview
+hostport=st-home-84364169.cern.ch:1150
+status=online
+cfg.status=on
+cfg.txgw=off
+heartbeatdelta=2
+nofs=1
+avg.stat.disk.load=0.00
+sig.stat.disk.load=0.00
+sum.stat.disk.readratemb=0
+sum.stat.disk.writeratemb=0
+cfg.stat.net.ethratemib=1192
+cfg.stat.net.inratemib=3.94087
+cfg.stat.net.outratemib=0.0853667
+sum.stat.ropen=0 sum.stat.wopen=0
+sum.stat.statfs.freebytes=799474651136
+sum.stat.statfs.usedbytes=298795008
+sum.stat.statfs.capacity=799773446144
+sum.stat.usedfiles=4531 sum.stat.statfs.ffree=195338475
+sum.stat.statfs.fused=14101
+sum.stat.statfs.files=195352576
+sum.stat.balancer.running=0
+stat.gw.queued=
+cfg.stat.sys.vsize=1289302016
+cfg.stat.sys.rss=58286080
+cfg.stat.sys.threads=123
+cfg.stat.sys.sockets=57
+cfg.stat.sys.eos.version=4.8.91-1
+cfg.stat.sys.xrootd.version=v4.12.8
+cfg.stat.sys.kernel=3.10.0-1160.66.1.el7.x86_64
+cfg.stat.sys.eos.start=Wed%20Sep%2028%2020:04:54%202022
+cfg.stat.sys.uptime=%2017:15:28%20up%20124%20days,%2010:47,%20%200%20users,%20%20load%20average:%2025.36,%2024.83,%2024.21
+sum.stat.disk.iops?configstatus@rw=990
+sum.stat.disk.bw?configstatus@rw=387
+cfg.stat.geotag=0513::R::0050::CB11
+cfg.gw.rate=120
+cfg.gw.ntx=10
+*/
+
 //NewNodeCollector creates an cluster of the NodeCollector
 func NewNodeCollector(cluster string) *NodeCollector {
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 
 	return &NodeCollector{
-
+		Status: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_status",
+				Help:        "Node status: 1: online, 0: offline",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port"},
+		),
+		CfgStatus: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_cfgstatus",
+				Help:        "Node config status: 1: on, 0: off",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port"},
+		),
+		HeartBeatDelta: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_heartbeatdelta_seconds",
+				Help:        "Node heart beat delta",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port"},
+		),
 		Nofs: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
@@ -153,7 +223,10 @@ func NewNodeCollector(cluster string) *NodeCollector {
 
 func (o *NodeCollector) collectorList() []prometheus.Collector {
 	return []prometheus.Collector{
+		o.Status,
+		o.CfgStatus,
 		o.Nofs,
+		o.HeartBeatDelta,
 		o.SumStatStatfsFree,
 		o.SumStatStatfsUsed,
 		o.SumStatStatfsTotal,
@@ -183,6 +256,37 @@ func (o *NodeCollector) collectNodeDF() error {
 	}
 
 	for _, m := range mds {
+
+		// Status: 1: online, 0: offline
+
+		var status int
+
+		switch stat := m.Status; stat {
+		case "online":
+			status = 1
+		case "offline":
+			status = 0
+		}
+
+		o.Status.WithLabelValues(m.Host, m.Port).Set(float64(status))
+
+		// Config status: 1: on, 0: off
+
+		var cfg_status int
+
+		switch stat := m.CfgStatus; stat {
+		case "on":
+			cfg_status = 1
+		case "off":
+			cfg_status = 0
+		}
+
+		o.CfgStatus.WithLabelValues(m.Host, m.Port).Set(float64(cfg_status))
+
+		heartbeatdelta, err := strconv.ParseFloat(m.HeartBeatDelta, 64)
+		if err == nil {
+			o.HeartBeatDelta.WithLabelValues(m.Host, m.Port).Set(heartbeatdelta)
+		}
 
 		nofs, err := strconv.ParseFloat(m.Nofs, 64)
 		if err == nil {

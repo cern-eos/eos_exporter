@@ -78,7 +78,9 @@ type NodeInfo struct {
 	Host                  string
 	Port                  string
 	Status                string
+	CfgStatus             string
 	Nofs                  string
+	HeartBeatDelta        string
 	SumStatStatfsFree     string
 	SumStatStatfsUsed     string
 	SumStatStatfsTotal    string
@@ -638,7 +640,9 @@ func (c *Client) parseNodeInfo(line string) (*NodeInfo, error) {
 		Host:                  host,
 		Port:                  port,
 		Status:                kv["status"],
+		CfgStatus:             kv["cfg.status"],
 		Nofs:                  kv["nofs"],
+		HeartBeatDelta:        kv["heartbeatdelta"],
 		SumStatStatfsFree:     kv["sum.stat.statfs.freebytes"],
 		SumStatStatfsUsed:     kv["sum.stat.statfs.usedbytes"],
 		SumStatStatfsTotal:    kv["sum.stat.statfs.capacity"],
