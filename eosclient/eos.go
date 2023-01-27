@@ -15,10 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"unicode"
-
-	// "github.com/cernbox/reva/api"
 	"time"
+	"unicode"
 
 	"go.uber.org/zap"
 )
@@ -1252,10 +1250,30 @@ func (c *Client) parseRecycleLineInfo(line string) (*RecycleInfo, error) {
 // EOS WHO    INFORMATION 			       //
 // ----------------------------------------//
 
+// eos who -a -m provides 3 clusters of information
+// a) Aggregation of number of sessions by protocol, examples:
+// auth=gsi nsessions=2
+// auth=https nsessions=3093
+// b) Aggregation by uid
+// uid=982 nsessions=2
+// uid=983 nsessions=2
+// c) Client info
+// client=akehrli@cbox-lbeosgw-10.cern.ch uid=akehrli auth=https idle=66 gateway="cbox-lbproxy-05.cern.ch" app=http
+// Because a) and b) can be derived from c), we only report c) in the metric
+// Aggregation on fields from c) can be done in the monitoring system
+
 // Data struct //
 type WhoInfo struct {
-	Uid           string
-	SessionNumber string
+	Uid        string
+	Auth       string
+	Gateway    string
+	App        string
+	Serialized string // used for uniqueness
+
+}
+
+func (w *WhoInfo) serialize() {
+	w.Serialized = fmt.Sprint("%s:%s:%s:%s", w.Uid, w.Auth, w.Gateway, w.App)
 }
 
 // Launch who command //
@@ -1272,7 +1290,7 @@ func (c *Client) Who(ctx context.Context, username string) ([]*WhoInfo, error) {
 	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "who", "-m")
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "who", "-a", "-m")
 	stdout, _, err := c.execute(cmd)
 	if err != nil {
 		return nil, err
@@ -1288,20 +1306,21 @@ func (c *Client) parseWhoInfo(raw string) ([]*WhoInfo, error) {
 		if rl == "" {
 			continue
 		}
-		who, err := c.parseWhoLineInfo(rl)
-		if err != nil {
-			return nil, err
+
+		kv := getMap(rl)
+		if _, ok := kv["client"]; !ok {
+			continue
 		}
+
+		who := &WhoInfo{
+			Uid:     kv["uid"],
+			Gateway: strings.Trim(kv["gateway"], "\""), // clean double quotes
+			Auth:    kv["auth"],
+			App:     kv["app"],
+		}
+		who.serialize()
+
 		whoInfo = append(whoInfo, who)
 	}
 	return whoInfo, nil
-}
-
-func (c *Client) parseWhoLineInfo(line string) (*WhoInfo, error) {
-	kv := getMap(line)
-	rb := &WhoInfo{
-		kv["uid"],
-		kv["nsessions"],
-	}
-	return rb, nil
 }
