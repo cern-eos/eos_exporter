@@ -4,17 +4,23 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
-	//"os"
-	//"bufio"
-	//"strings"
 )
 
-// eos who -m
-// uid=fdfdfdf nsessions=1
+// eos who -a -m provides 3 clusters of information
+// a) Aggregation of number of sessions by protocol, examples:
+// auth=gsi nsessions=2
+// auth=https nsessions=3093
+// b) Aggregation by uid
+// uid=982 nsessions=2
+// uid=983 nsessions=2
+// c) Client info
+// client=akehrli@cbox-lbeosgw-10.cern.ch uid=akehrli auth=https idle=66 gateway="cbox-lbproxy-05.cern.ch" app=http
+// Because a) and b) can be derived from c), we only report c) in the metric
+// Aggregation on fields from c) can be done in the monitoring system
+// This collector provides metrics based on c)
 
 type WhoCollector struct {
 	SessionNumber *prometheus.GaugeVec
@@ -24,7 +30,9 @@ type WhoCollector struct {
 func NewWhoCollector(cluster string) *WhoCollector {
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
+
 	namespace := "eos"
+
 	return &WhoCollector{
 		SessionNumber: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -33,7 +41,7 @@ func NewWhoCollector(cluster string) *WhoCollector {
 				Help:        "sessions opened",
 				ConstLabels: labels,
 			},
-			[]string{"uid"},
+			[]string{"app", "auth", "gateway", "uid"},
 		),
 	}
 }
@@ -53,16 +61,31 @@ func (o *WhoCollector) collectWhoDF() error {
 		panic(err)
 	}
 
-	mds, err := client.Who(context.Background(), "root")
+	whos, err := client.Who(context.Background(), "root")
 	if err != nil {
 		panic(err)
 	}
 
-	for _, m := range mds {
-		nsessions, err := strconv.ParseFloat(m.SessionNumber, 64)
-		if err == nil {
-			o.SessionNumber.WithLabelValues(m.Uid).Set(nsessions)
+	// we need to aggregate for the value
+	counter := map[string]int{}
+	for _, m := range whos {
+		if _, ok := counter[m.Serialized]; ok {
+			counter[m.Serialized]++
+		} else {
+			counter[m.Serialized] = 1
 		}
+	}
+
+	seen := map[string]bool{}
+	for _, m := range whos {
+		s := m.Serialized
+		if _, ok := seen[s]; ok {
+			continue
+		}
+
+		v := counter[s]
+		o.SessionNumber.WithLabelValues(m.App, m.Auth, m.Gateway, m.Uid).Set(float64(v))
+		seen[s] = true
 	}
 
 	return nil
@@ -81,7 +104,7 @@ func (o *WhoCollector) Describe(ch chan<- *prometheus.Desc) {
 func (o *WhoCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectWhoDF(); err != nil {
-		log.Println("failed collecting recycle metrics:", err)
+		log.Println("failed collecting who  metrics:", err)
 	}
 
 	for _, metric := range o.collectorList() {
