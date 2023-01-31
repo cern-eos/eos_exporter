@@ -58,6 +58,9 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Tue Jan 31 2023 Roberto Valverde <rvalverd@cern.ch> 0.0.13-1
+- Added eos who metrics
+- Added missing eos node metrics 
 * Mon Oct 17 2022 Roberto Valverde <rvalverd@cern.ch> 0.0.12-1
 - Added eos recycle and eos who collectors. 
 * Thu Jun 24 2022 Aritz Brosa Iartza <aritz.brosa.iartza@cern.ch> 0.0.11-1
