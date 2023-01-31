@@ -1258,7 +1258,7 @@ func (c *Client) parseRecycleLineInfo(line string) (*RecycleInfo, error) {
 // uid=982 nsessions=2
 // uid=983 nsessions=2
 // c) Client info
-// client=akehrli@cbox-lbeosgw-10.cern.ch uid=akehrli auth=https idle=66 gateway="cbox-lbproxy-05.cern.ch" app=http
+// client=yyyy@xxxx.cern.ch uid=yyyy auth=https idle=66 gateway="xxxx.cern.ch" app=http
 // Because a) and b) can be derived from c), we only report c) in the metric
 // Aggregation on fields from c) can be done in the monitoring system
 
