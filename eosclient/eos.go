@@ -1273,7 +1273,7 @@ type WhoInfo struct {
 }
 
 func (w *WhoInfo) serialize() {
-	w.Serialized = fmt.Sprint("%s:%s:%s:%s", w.Uid, w.Auth, w.Gateway, w.App)
+	w.Serialized = fmt.Sprintf("%s:%s:%s:%s", w.Uid, w.Auth, w.Gateway, w.App)
 }
 
 // Launch who command //
