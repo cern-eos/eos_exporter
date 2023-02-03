@@ -58,6 +58,8 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Tue Feb 03 2023 Roberto Valverde <rvalverd@cern.ch> 0.0.14-1
+- Fixes problem of acumulation of eos who metrics
 * Tue Jan 31 2023 Roberto Valverde <rvalverd@cern.ch> 0.0.13-1
 - Added eos who metrics
 - Added missing eos node metrics 
