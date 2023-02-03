@@ -3,7 +3,10 @@ package collector
 import (
 	"context"
 	"fmt"
+	"os"
+	// "time"
 	"log"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
@@ -24,6 +27,7 @@ import (
 
 type WhoCollector struct {
 	SessionNumber *prometheus.GaugeVec
+	file          *os.File
 }
 
 //NewWhoCollector creates an cluster of the WhoCollector
@@ -33,7 +37,13 @@ func NewWhoCollector(cluster string) *WhoCollector {
 
 	namespace := "eos"
 
+	//f, err := os.OpenFile("/var/tmp/eos_exporter_debug.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	//if err != nil {
+	//	panic(err)
+	//}
+
 	return &WhoCollector{
+		//file: f,
 		SessionNumber: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -41,7 +51,7 @@ func NewWhoCollector(cluster string) *WhoCollector {
 				Help:        "sessions opened",
 				ConstLabels: labels,
 			},
-			[]string{"app", "auth", "gateway", "uid"},
+			[]string{"uid", "auth", "gateway", "app"},
 		),
 	}
 }
@@ -66,7 +76,10 @@ func (o *WhoCollector) collectWhoDF() error {
 		panic(err)
 	}
 
-	// we need to aggregate for the value
+	//t := time.Now().String()
+	//o.file.WriteString(fmt.Sprintf("TIME (%s)\n", t))
+
+	// aggregate by value
 	counter := map[string]int{}
 	for _, m := range whos {
 		if _, ok := counter[m.Serialized]; ok {
@@ -76,16 +89,17 @@ func (o *WhoCollector) collectWhoDF() error {
 		}
 	}
 
-	seen := map[string]bool{}
-	for _, m := range whos {
-		s := m.Serialized
-		if _, ok := seen[s]; ok {
-			continue
-		}
+	// a GaugeVector keeps its state for any combination of labels until the process is restarted.
+	// For metrics obtained from systems like EOS that do not produce a complete set of metrics (only the active metrics)
+	// then we risk to expose these metrics forever until the next process restart.
+	// To workaround this, we reset the gauge vectors when collecting metrics.
 
-		v := counter[s]
-		o.SessionNumber.WithLabelValues(m.App, m.Auth, m.Gateway, m.Uid).Set(float64(v))
-		seen[s] = true
+	o.SessionNumber.Reset()
+	for i, v := range counter {
+		tokens := strings.Split(i, ":::")
+		uid, auth, gateway, app := tokens[0], tokens[1], tokens[2], tokens[3]
+		o.SessionNumber.WithLabelValues(uid, auth, gateway, app).Set(float64(v))
+		//o.file.WriteString(fmt.Sprintf("%s setting (%s)=%d\n", t, i, v))
 	}
 
 	return nil
@@ -107,7 +121,7 @@ func (o *WhoCollector) Collect(ch chan<- prometheus.Metric) {
 		log.Println("failed collecting who  metrics:", err)
 	}
 
-	for _, metric := range o.collectorList() {
-		metric.Collect(ch)
+	for _, collector := range o.collectorList() {
+		collector.Collect(ch)
 	}
 }
