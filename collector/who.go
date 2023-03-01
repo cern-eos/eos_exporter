@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+
 	// "time"
 	"log"
 	"strings"
@@ -64,7 +65,7 @@ func (o *WhoCollector) collectorList() []prometheus.Collector {
 
 func (o *WhoCollector) collectWhoDF() error {
 	ins := getEOSInstance()
-	url := "root://" + ins + ".cern.ch"
+	url := "root://" + ins
 	opt := &eosclient.Options{URL: url}
 	client, err := eosclient.New(opt)
 	if err != nil {

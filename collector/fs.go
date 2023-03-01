@@ -369,8 +369,8 @@ func getEOSInstance() string {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		l := scanner.Text()
-		if strings.HasPrefix(l, "EOS_INSTANCE_NAME=") {
-			s := strings.Split(l, "EOS_INSTANCE_NAME=")
+		if strings.HasPrefix(l, "EOS_MGM_ALIAS=") {
+			s := strings.Split(l, "EOS_MGM_ALIAS=")
 			str = strings.Replace(s[1], "\"", "", -1)
 		}
 	}
@@ -384,7 +384,7 @@ func getEOSInstance() string {
 
 func (o *FSCollector) collectFSDF() error {
 	ins := getEOSInstance()
-	url := "root://" + ins + ".cern.ch"
+	url := "root://" + ins
 	opt := &eosclient.Options{URL: url}
 	client, err := eosclient.New(opt)
 	if err != nil {

@@ -3,10 +3,11 @@ package collector
 import (
 	"context"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
-	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
 	"log"
 	"strconv"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
 )
 
 type IOInfoCollector struct {
@@ -265,7 +266,7 @@ func (o *IOAppInfoCollector) collectorList() []prometheus.Collector {
 
 func (o *IOInfoCollector) collectIOInfoDF() error {
 	ins := getEOSInstance()
-	url := "root://" + ins + ".cern.ch"
+	url := "root://" + ins
 	opt := &eosclient.Options{URL: url}
 	client, err := eosclient.New(opt)
 	if err != nil {

@@ -283,7 +283,7 @@ func (o *GroupCollector) collectorList() []prometheus.Collector {
 
 func (o *GroupCollector) collectGroupDF() error {
 	ins := getEOSInstance()
-	url := "root://" + ins + ".cern.ch"
+	url := "root://" + ins
 	opt := &eosclient.Options{URL: url}
 	client, err := eosclient.New(opt)
 	if err != nil {

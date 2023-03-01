@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
+
 	//"os"
 	//"bufio"
 	"fmt"
@@ -534,7 +535,7 @@ func (o *NSBatchCollector) collectorList() []prometheus.Collector {
 
 func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient.NSBatchInfo, error) {
 	ins := getEOSInstance()
-	url := "root://" + ins + ".cern.ch"
+	url := "root://" + ins
 	opt := &eosclient.Options{URL: url}
 	client, err := eosclient.New(opt)
 	if err != nil {

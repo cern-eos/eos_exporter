@@ -337,7 +337,7 @@ func (o *SpaceCollector) collectorList() []prometheus.Collector {
 
 func (o *SpaceCollector) collectSpaceDF() error {
 	ins := getEOSInstance()
-	url := "root://" + ins + ".cern.ch"
+	url := "root://" + ins
 	opt := &eosclient.Options{URL: url}
 	client, err := eosclient.New(opt)
 	if err != nil {
