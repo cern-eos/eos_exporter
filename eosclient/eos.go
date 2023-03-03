@@ -1328,3 +1328,65 @@ func (c *Client) parseWhoInfo(raw string) ([]*WhoInfo, error) {
 	}
 	return whoInfo, nil
 }
+
+// ----------------------------------------//
+// EOS FSCK    INFORMATION 			       //
+// ----------------------------------------//
+// Gathers metrics from `eos fsck report -a` command that breaks insconsistencies by filesystem
+
+// Data struct //
+type FsckInfo struct {
+	Fs    string
+	Tag   string
+	Count string
+}
+
+// EOS command call and data extraction
+func (c *Client) FsckReport(ctx context.Context, username string) ([]*FsckInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		ctxWt  context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "fsck", "report", "-a")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseFsckInfo(stdout)
+}
+
+// Parse information from fsck report //
+func (c *Client) parseFsckInfo(raw string) ([]*FsckInfo, error) {
+	fsckInfo := []*FsckInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" {
+			continue
+		}
+		fsck, err := c.parseFsckLineInfo(rl)
+		if err != nil {
+			return nil, err
+		}
+		fsckInfo = append(fsckInfo, fsck)
+	}
+	return fsckInfo, nil
+}
+
+func (c *Client) parseFsckLineInfo(line string) (*FsckInfo, error) {
+	kv := getMap(line)
+	rb := &FsckInfo{
+		kv["fsid"],
+		kv["tag"],
+		kv["count"],
+	}
+	return rb, nil
+}
