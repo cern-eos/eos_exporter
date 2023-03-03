@@ -10,34 +10,35 @@ import (
 )
 
 type SpaceCollector struct {
-	CfgGroupSize                        *prometheus.GaugeVec
-	CfgGroupMod                         *prometheus.GaugeVec
-	Nofs                                *prometheus.GaugeVec
-	AvgStatDiskLoad                     *prometheus.GaugeVec
-	SigStatDiskLoad                     *prometheus.GaugeVec
-	SumStatDiskReadratemb               *prometheus.GaugeVec
-	SumStatDiskWriteratemb              *prometheus.GaugeVec
-	SumStatNetEthratemib                *prometheus.GaugeVec
-	SumStatNetInratemib                 *prometheus.GaugeVec
-	SumStatNetOutratemib                *prometheus.GaugeVec
-	SumStatRopen                        *prometheus.GaugeVec
-	SumStatWopen                        *prometheus.GaugeVec
-	SumStatStatfsUsedbytes              *prometheus.GaugeVec
-	SumStatStatfsFreebytes              *prometheus.GaugeVec
-	SumStatStatfsCapacity               *prometheus.GaugeVec
-	SumStatUsedfiles                    *prometheus.GaugeVec
-	SumStatStatfsFfiles                 *prometheus.GaugeVec
-	SumStatStatfsFiles                  *prometheus.GaugeVec
-	SumStatStatfsCapacityConfigstatusRw *prometheus.GaugeVec
-	SumNofsConfigstatusRw               *prometheus.GaugeVec
-	CfgQuota                            *prometheus.GaugeVec
-	CfgNominalsize                      *prometheus.GaugeVec
-	CfgBalancer                         *prometheus.GaugeVec
-	CfgBalancerThreshold                *prometheus.GaugeVec
-	SumStatBalancerRunning              *prometheus.GaugeVec
-	SumStatDrainerRunning               *prometheus.GaugeVec
-	SumStatDiskIopsConfigstatusRw       *prometheus.GaugeVec
-	SumStatDiskBwConfigstatusRw         *prometheus.GaugeVec
+	CfgGroupSize                         *prometheus.GaugeVec
+	CfgGroupMod                          *prometheus.GaugeVec
+	Nofs                                 *prometheus.GaugeVec
+	AvgStatDiskLoad                      *prometheus.GaugeVec
+	SigStatDiskLoad                      *prometheus.GaugeVec
+	SumStatDiskReadratemb                *prometheus.GaugeVec
+	SumStatDiskWriteratemb               *prometheus.GaugeVec
+	SumStatNetEthratemib                 *prometheus.GaugeVec
+	SumStatNetInratemib                  *prometheus.GaugeVec
+	SumStatNetOutratemib                 *prometheus.GaugeVec
+	SumStatRopen                         *prometheus.GaugeVec
+	SumStatWopen                         *prometheus.GaugeVec
+	SumStatStatfsUsedbytes               *prometheus.GaugeVec
+	SumStatStatfsFreebytes               *prometheus.GaugeVec
+	SumStatStatfsCapacity                *prometheus.GaugeVec
+	SumStatUsedfiles                     *prometheus.GaugeVec
+	SumStatStatfsFfiles                  *prometheus.GaugeVec
+	SumStatStatfsFiles                   *prometheus.GaugeVec
+	SumStatStatfsCapacityConfigstatusRw  *prometheus.GaugeVec
+	SumNofsConfigstatusRw                *prometheus.GaugeVec
+	CfgQuota                             *prometheus.GaugeVec
+	CfgNominalsize                       *prometheus.GaugeVec
+	CfgBalancer                          *prometheus.GaugeVec
+	CfgBalancerThreshold                 *prometheus.GaugeVec
+	SumStatBalancerRunning               *prometheus.GaugeVec
+	SumStatDrainerRunning                *prometheus.GaugeVec
+	SumStatDiskIopsConfigstatusRw        *prometheus.GaugeVec
+	SumStatDiskBwConfigstatusRw          *prometheus.GaugeVec
+	SumStatStatfsFreebytesConfigstatusRw *prometheus.GaugeVec
 }
 
 //NewSpaceCollector creates an cluster of the SpaceCollector
@@ -299,6 +300,17 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 			},
 			[]string{"space"},
 		),
+		SumStatStatfsFreebytesConfigstatusRw: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "space_statfs_freebytes_configrw",
+				Help:        "Space free bytes counting on filesystem in rw mode",
+				ConstLabels: labels,
+			},
+			[]string{"space"},
+		),
+
+		// SumStatStatfsFreebytesConfigstatusRw
 	}
 }
 
@@ -332,6 +344,7 @@ func (o *SpaceCollector) collectorList() []prometheus.Collector {
 		o.SumStatDrainerRunning,
 		o.SumStatDiskIopsConfigstatusRw,
 		o.SumStatDiskBwConfigstatusRw,
+		o.SumStatStatfsFreebytesConfigstatusRw,
 	}
 }
 
@@ -498,6 +511,11 @@ func (o *SpaceCollector) collectSpaceDF() error {
 		nomsize, err := strconv.ParseFloat(m.CfgNominalsize, 64)
 		if err == nil {
 			o.CfgNominalsize.WithLabelValues(m.Name).Set(nomsize)
+		}
+
+		fbytesRW, err := strconv.ParseFloat(m.SumStatStatfsFreebytesConfigstatusRw, 64)
+		if err == nil {
+			o.SumStatStatfsFreebytesConfigstatusRw.WithLabelValues(m.Name).Set(fbytesRW)
 		}
 
 	}
