@@ -13,11 +13,13 @@ go build
 ```
 make build
 ```
-- Run (on EOS headnode or in a pre-configured client with root privilegies on EOS)
+- Run on EOS headnode.
 
 ```
 ./eos_exporter -eos-instance="<eos_instance>"
 ```
+> This variable is used to populate internal `cluster` label. Will be deprecated, global labels can serve the same purpose. 
+> Actual MGM to connect is gathered from EOS_MGM_URL in EOS configuration.
 
 - By default, the exporter exposes the metrics on the port `9986` and url `/metrics`. 
     - Change the port with the argument `-listen-address`
@@ -31,7 +33,9 @@ make build
   scrape_interval: 30s
   static_configs:
   - targets:
-    - eospps.cern.ch:9986
-    labels:
-      instance: eospps
+    - eosheadnode.domain.com:9986
 ```
+
+## Troubleshooting
+
+This tool is provided by CERN EOS Operators. Report issues on Github tracker or contact us through the [EOS community forum](https://eos-community.web.cern.ch/)
