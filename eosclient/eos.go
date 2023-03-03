@@ -92,39 +92,6 @@ type NodeInfo struct {
 	SumStatNetOutratemib  string
 }
 
-type SpaceInfo struct {
-	Type                                string
-	Name                                string
-	CfgGroupSize                        string
-	CfgGroupMod                         string
-	Nofs                                string
-	AvgStatDiskLoad                     string
-	SigStatDiskLoad                     string
-	SumStatDiskReadratemb               string
-	SumStatDiskWriteratemb              string
-	SumStatNetEthratemib                string
-	SumStatNetInratemib                 string
-	SumStatNetOutratemib                string
-	SumStatRopen                        string
-	SumStatWopen                        string
-	SumStatStatfsUsedbytes              string
-	SumStatStatfsFreebytes              string
-	SumStatStatfsCapacity               string
-	SumStatUsedfiles                    string
-	SumStatStatfsFfiles                 string
-	SumStatStatfsFiles                  string
-	SumStatStatfsCapacityConfigstatusRw string
-	SumNofsConfigstatusRw               string
-	CfgQuota                            string
-	CfgNominalsize                      string
-	CfgBalancer                         string
-	CfgBalancerThreshold                string
-	SumStatBalancerRunning              string
-	SumStatDrainerRunning               string
-	SumStatDiskIopsConfigstatusRw       string
-	SumStatDiskBwConfigstatusRw         string
-}
-
 type GroupInfo struct {
 	Name                   string
 	CfgStatus              string
@@ -654,63 +621,6 @@ func (c *Client) parseNodeInfo(line string) (*NodeInfo, error) {
 		SumStatNetOutratemib:  kv["sum.stat.net.outratemib"],
 	}
 	return fst, nil
-}
-
-// Gathers the information of all spaces.
-func (c *Client) parseSpacesInfo(raw string) ([]*SpaceInfo, error) {
-	spaceinfos := []*SpaceInfo{}
-	rawLines := strings.Split(raw, "\n")
-	for _, rl := range rawLines {
-		if rl == "" {
-			continue
-		}
-		space, err := c.parseSpaceInfo(rl)
-
-		if err != nil {
-			return nil, err
-		}
-		spaceinfos = append(spaceinfos, space)
-	}
-	return spaceinfos, nil
-}
-
-// Gathers information of one single space
-func (c *Client) parseSpaceInfo(line string) (*SpaceInfo, error) {
-	//kv := make(map[string]string)
-	kv := getMap(line)
-	space := &SpaceInfo{
-		kv["type"],
-		kv["name"],
-		kv["cfg.groupsize"],
-		kv["cfg.groupmod"],
-		kv["nofs"],
-		kv["avg.stat.disk.load"],
-		kv["sig.stat.disk.load"],
-		kv["sum.stat.disk.readratemb"],
-		kv["sum.stat.disk.writeratemb"],
-		kv["sum.stat.net.ethratemib"],
-		kv["sum.stat.net.inratemib"],
-		kv["sum.stat.net.outratemib"],
-		kv["sum.stat.ropen"],
-		kv["sum.stat.wopen"],
-		kv["sum.stat.statfs.usedbytes"],
-		kv["sum.stat.statfs.freebytes"],
-		kv["sum.stat.statfs.capacity"],
-		kv["sum.stat.usedfiles"],
-		kv["sum.stat.statfs.ffiles"],
-		kv["sum.stat.statfs.files"],
-		kv["sum.stat.statfs.capacity?configstatus@rw"],
-		kv["sum.<n>?configstatus@rw"],
-		kv["cfg.quota"],
-		kv["cfg.nominalsize"],
-		kv["cfg.balancer"],
-		kv["cfg.balancer.threshold"],
-		kv["sum.stat.balancer.running"],
-		kv["sum.stat.drainer.running"],
-		kv["sum.stat.disk.iops?configstatus@rw"],
-		kv["sum.stat.disk.bw?configstatus@rw"],
-	}
-	return space, nil
 }
 
 // Gathers information of all groups
@@ -1327,6 +1237,103 @@ func (c *Client) parseWhoInfo(raw string) ([]*WhoInfo, error) {
 		whoInfo = append(whoInfo, who)
 	}
 	return whoInfo, nil
+}
+
+// ----------------------------------------//
+// EOS SPACE    INFORMATION 			    //
+// ----------------------------------------//
+
+// struct definition
+type SpaceInfo struct {
+	Type                                 string
+	Name                                 string
+	CfgGroupSize                         string
+	CfgGroupMod                          string
+	Nofs                                 string
+	AvgStatDiskLoad                      string
+	SigStatDiskLoad                      string
+	SumStatDiskReadratemb                string
+	SumStatDiskWriteratemb               string
+	SumStatNetEthratemib                 string
+	SumStatNetInratemib                  string
+	SumStatNetOutratemib                 string
+	SumStatRopen                         string
+	SumStatWopen                         string
+	SumStatStatfsUsedbytes               string
+	SumStatStatfsFreebytes               string
+	SumStatStatfsCapacity                string
+	SumStatUsedfiles                     string
+	SumStatStatfsFfiles                  string
+	SumStatStatfsFiles                   string
+	SumStatStatfsCapacityConfigstatusRw  string
+	SumNofsConfigstatusRw                string
+	CfgQuota                             string
+	CfgNominalsize                       string
+	CfgBalancer                          string
+	CfgBalancerThreshold                 string
+	SumStatBalancerRunning               string
+	SumStatDrainerRunning                string
+	SumStatDiskIopsConfigstatusRw        string
+	SumStatDiskBwConfigstatusRw          string
+	SumStatStatfsFreebytesConfigstatusRw string
+}
+
+// Gathers the information of all spaces.
+func (c *Client) parseSpacesInfo(raw string) ([]*SpaceInfo, error) {
+	spaceinfos := []*SpaceInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" {
+			continue
+		}
+		space, err := c.parseSpaceInfo(rl)
+
+		if err != nil {
+			return nil, err
+		}
+		spaceinfos = append(spaceinfos, space)
+	}
+	return spaceinfos, nil
+}
+
+// Gathers information of one single space
+func (c *Client) parseSpaceInfo(line string) (*SpaceInfo, error) {
+	//kv := make(map[string]string)
+	kv := getMap(line)
+	space := &SpaceInfo{
+		kv["type"],
+		kv["name"],
+		kv["cfg.groupsize"],
+		kv["cfg.groupmod"],
+		kv["nofs"],
+		kv["avg.stat.disk.load"],
+		kv["sig.stat.disk.load"],
+		kv["sum.stat.disk.readratemb"],
+		kv["sum.stat.disk.writeratemb"],
+		kv["sum.stat.net.ethratemib"],
+		kv["sum.stat.net.inratemib"],
+		kv["sum.stat.net.outratemib"],
+		kv["sum.stat.ropen"],
+		kv["sum.stat.wopen"],
+		kv["sum.stat.statfs.usedbytes"],
+		kv["sum.stat.statfs.freebytes"],
+		kv["sum.stat.statfs.capacity"],
+		kv["sum.stat.usedfiles"],
+		kv["sum.stat.statfs.ffiles"],
+		kv["sum.stat.statfs.files"],
+		kv["sum.stat.statfs.capacity?configstatus@rw"],
+		kv["sum.<n>?configstatus@rw"],
+		kv["cfg.quota"],
+		kv["cfg.nominalsize"],
+		kv["cfg.balancer"],
+		kv["cfg.balancer.threshold"],
+		kv["sum.stat.balancer.running"],
+		kv["sum.stat.drainer.running"],
+		kv["sum.stat.disk.iops?configstatus@rw"],
+		kv["sum.stat.disk.bw?configstatus@rw"],
+		kv["sum.stat.statfs.freebytes?configstatus@rw"],
+	}
+	return space, nil
 }
 
 // ----------------------------------------//
