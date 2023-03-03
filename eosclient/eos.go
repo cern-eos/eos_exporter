@@ -1384,9 +1384,9 @@ func (c *Client) parseFsckInfo(raw string) ([]*FsckInfo, error) {
 func (c *Client) parseFsckLineInfo(line string) (*FsckInfo, error) {
 	kv := getMap(line)
 	rb := &FsckInfo{
-		kv["fsid"],
-		kv["tag"],
-		kv["count"],
+		Fs:    kv["fsid"],
+		Tag:   strings.Trim(kv["tag"], "\""), // clean double quotes
+		Count: kv["count"],
 	}
 	return rb, nil
 }
