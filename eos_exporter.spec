@@ -58,7 +58,7 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
-* Fri Mar 03 2023 Roberto Valverde <rvalverd@cern.ch> 0.0.15-1
+* Fri Mar 03 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.0-1
 - Mgm url gathered from EOS_MGM_ALIAS, removes dependency of CERN domain
 - Added eos fsck collector for exposing fsck metrics 
 - Added missing metric freebytes@configRW on the space collector
