@@ -58,6 +58,9 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Mon Mar 06 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.1-1
+- Fsck collector uses now eos fsck stat instead of fsck report for performance reasons.
+- Fsck does not report by filesystem anymore, for performance reasons.
 * Fri Mar 03 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.0-1
 - Mgm url gathered from EOS_MGM_ALIAS, removes dependency of CERN domain
 - Added eos fsck collector for exposing fsck metrics 
