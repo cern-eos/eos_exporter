@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	osuser "os/user"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -1339,11 +1340,12 @@ func (c *Client) parseSpaceInfo(line string) (*SpaceInfo, error) {
 // ----------------------------------------//
 // EOS FSCK    INFORMATION 			       //
 // ----------------------------------------//
-// Gathers metrics from `eos fsck report -a` command that breaks insconsistencies by filesystem
+// Gathers metrics from `eos fsck stat`
+// Currently not in monitoring format
+// `eos fsck report` is more detailed, but can be expensive.
 
 // Data struct //
 type FsckInfo struct {
-	Fs    string
 	Tag   string
 	Count string
 }
@@ -1363,7 +1365,8 @@ func (c *Client) FsckReport(ctx context.Context, username string) ([]*FsckInfo, 
 	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "fsck", "report", "-a")
+	//cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "fsck", "report", "-a")
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "fsck", "stat")
 	stdout, _, err := c.execute(cmd)
 	if err != nil {
 		return nil, err
@@ -1375,8 +1378,9 @@ func (c *Client) FsckReport(ctx context.Context, username string) ([]*FsckInfo, 
 func (c *Client) parseFsckInfo(raw string) ([]*FsckInfo, error) {
 	fsckInfo := []*FsckInfo{}
 	rawLines := strings.Split(raw, "\n")
+	var re = regexp.MustCompile(`d_cx_diff|d_mem_sz_diff|m_cx_diff|m_mem_sz_diff|orphans_n|rep_diff_n|rep_missing_n|unreg_n`)
 	for _, rl := range rawLines {
-		if rl == "" {
+		if !re.MatchString(rl) {
 			continue
 		}
 		fsck, err := c.parseFsckLineInfo(rl)
@@ -1389,11 +1393,10 @@ func (c *Client) parseFsckInfo(raw string) ([]*FsckInfo, error) {
 }
 
 func (c *Client) parseFsckLineInfo(line string) (*FsckInfo, error) {
-	kv := getMap(line)
+	splitedLine := strings.Split(line, " ")
 	rb := &FsckInfo{
-		Fs:    kv["fsid"],
-		Tag:   strings.Trim(kv["tag"], "\""), // clean double quotes
-		Count: kv["count"],
+		Tag:   splitedLine[3],
+		Count: splitedLine[5],
 	}
 	return rb, nil
 }
