@@ -23,11 +23,11 @@ func NewFsckCollector(cluster string) *FsckCollector {
 		Count: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
-				Name:        "fsck_report",
-				Help:        "fsck inconsistency report: eos fsck report -a",
+				Name:        "fsck_stat",
+				Help:        "fsck inconsistency report: eos fsck stat",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "tag"},
+			[]string{"tag"},
 		),
 	}
 }
@@ -82,7 +82,7 @@ func (o *FsckCollector) collectFsckDF() error {
 
 		count, err := strconv.ParseFloat(m.Count, 64)
 		if err == nil {
-			o.Count.WithLabelValues(m.Fs, m.Tag).Set(count)
+			o.Count.WithLabelValues(m.Tag).Set(count)
 		}
 	}
 
