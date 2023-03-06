@@ -1380,7 +1380,7 @@ func (c *Client) parseFsckInfo(raw string) ([]*FsckInfo, error) {
 	rawLines := strings.Split(raw, "\n")
 	var re = regexp.MustCompile(`d_cx_diff|d_mem_sz_diff|m_cx_diff|m_mem_sz_diff|orphans_n|rep_diff_n|rep_missing_n|unreg_n`)
 	for _, rl := range rawLines {
-		if !strings.Contains(rl, "Info") && re.MatchString(rl) {
+		if re.MatchString(rl) {
 			fsck, err := c.parseFsckLineInfo(rl)
 			if err != nil {
 				return nil, err
@@ -1395,10 +1395,10 @@ func (c *Client) parseFsckInfo(raw string) ([]*FsckInfo, error) {
 }
 
 func (c *Client) parseFsckLineInfo(line string) (*FsckInfo, error) {
-	splitedLine := strings.Split(line, " ")
+	fields := strings.Fields(line)
 	rb := &FsckInfo{
-		Tag:   splitedLine[3],
-		Count: splitedLine[5],
+		Tag:   fields[3],
+		Count: fields[5],
 	}
 	return rb, nil
 }
