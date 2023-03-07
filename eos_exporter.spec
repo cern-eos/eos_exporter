@@ -58,6 +58,8 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Tue Mar 07 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.2-1
+- Bugfix: crash when category error is specified in fsck repair
 * Mon Mar 06 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.1-1
 - Fsck collector uses now eos fsck stat instead of fsck report for performance reasons.
 - Fsck does not report by filesystem anymore, for performance reasons.
