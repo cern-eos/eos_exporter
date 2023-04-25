@@ -6,6 +6,8 @@
 - Compile ([Go](https://golang.org/doc/install) environment needed)
 
 ```
+cd eos_exporter
+./get_build_info.sh
 go build
 ```
 
