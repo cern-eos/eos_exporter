@@ -58,6 +58,8 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Mon Jul 10 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.3-1
+- Bugfix: Fixes unmarshal errors when space nominal quota is not defined.
 * Tue Mar 07 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.2-1
 - Bugfix: crash when category error is specified in fsck repair
 * Mon Mar 06 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.1-1
