@@ -543,7 +543,7 @@ func (o *SpaceCollector) collectSpaceDF() error {
 		o.CfgQuota.WithLabelValues(m.Name).Set(float64(quota_status))
 
 		// convert nominal size 0 if not defined. 
-		nomsize := 0
+
 		if m.CfgNominalsize != "???" {
 			nomsize, err := strconv.ParseFloat(m.CfgNominalsize, 64)
 			if err == nil {
