@@ -9,6 +9,40 @@ import (
 	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
 )
 
+/*
+type=spaceview 
+name=default 
+cfg.groupsize=11 
+cfg.groupmod=50 
+nofs=337 
+avg.stat.disk.load=0.27 
+sig.stat.disk.load=0.38 
+sum.stat.disk.readratemb=4481 
+sum.stat.disk.writeratemb=39 
+sum.stat.net.ethratemib=13708 
+sum.stat.net.inratemib=32 
+sum.stat.net.outratemib=32 
+sum.stat.ropen=72 
+sum.stat.wopen=77 
+sum.stat.statfs.usedbytes=1442925699514368 
+sum.stat.statfs.freebytes=1630645688213504 
+sum.stat.statfs.freebytes?configstatus@rw=1624647716261888 
+sum.stat.statfs.capacity=3073571387727872 
+sum.stat.usedfiles=386144110 
+sum.stat.statfs.ffiles=0 
+sum.stat.statfs.files=150111401344 
+sched.capacity=1617927719616512 
+sum.stat.statfs.capacity?configstatus@rw=3060852351262720 
+sum.<n>?configstatus@rw=336 
+cfg.quota=on 
+cfg.nominalsize=??? 
+cfg.balancer=on
+cfg.balancer.threshold=20 
+sum.stat.balancer.running=19 
+sum.stat.disk.iops?configstatus@rw=22960 
+sum.stat.disk.bw?configstatus@rw=63069
+*/
+
 type SpaceCollector struct {
 	CfgGroupSize                         *prometheus.GaugeVec
 	CfgGroupMod                          *prometheus.GaugeVec
@@ -241,7 +275,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
 				Name:        "space_cfg_nominalsize",
-				Help:        "Space Nominal Size",
+				Help:        "Space Nominal Size: 0=not defined",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
@@ -508,11 +542,17 @@ func (o *SpaceCollector) collectSpaceDF() error {
 
 		o.CfgQuota.WithLabelValues(m.Name).Set(float64(quota_status))
 
-		nomsize, err := strconv.ParseFloat(m.CfgNominalsize, 64)
-		if err == nil {
-			o.CfgNominalsize.WithLabelValues(m.Name).Set(nomsize)
-		}
+		// convert nominal size 0 if not defined. 
 
+		if m.CfgNominalsize != "???" {
+			nomsize, err := strconv.ParseFloat(m.CfgNominalsize, 64)
+			if err == nil {
+				o.CfgNominalsize.WithLabelValues(m.Name).Set(nomsize)
+			}
+		} else {
+			o.CfgNominalsize.WithLabelValues(m.Name).Set(0)
+		} 
+		
 		fbytesRW, err := strconv.ParseFloat(m.SumStatStatfsFreebytesConfigstatusRw, 64)
 		if err == nil {
 			o.SumStatStatfsFreebytesConfigstatusRw.WithLabelValues(m.Name).Set(fbytesRW)
