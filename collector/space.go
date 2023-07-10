@@ -275,7 +275,7 @@ func NewSpaceCollector(cluster string) *SpaceCollector {
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
 				Name:        "space_cfg_nominalsize",
-				Help:        "Space Nominal Size",
+				Help:        "Space Nominal Size: 0=not defined",
 				ConstLabels: labels,
 			},
 			[]string{"space"},
