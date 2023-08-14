@@ -888,7 +888,7 @@ func (o *NSCollector) Describe(ch chan<- *prometheus.Desc) {
 func (o *NSCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectNSDF(); err != nil {
-		log.Println("failed collecting space metrics:", err)
+		log.Println("failed collecting ns metrics:", err)
 	}
 
 	for _, metric := range o.collectorList() {
@@ -908,7 +908,7 @@ func (o *NSActivityCollector) Describe(ch chan<- *prometheus.Desc) {
 func (o *NSActivityCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectNSActivityDF(); err != nil {
-		log.Println("failed collecting space metrics:", err)
+		log.Println("failed collecting ns_activity metrics:", err)
 	}
 
 	for _, metric := range o.collectorList() {

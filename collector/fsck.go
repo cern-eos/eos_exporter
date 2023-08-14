@@ -102,7 +102,7 @@ func (o *FsckCollector) Describe(ch chan<- *prometheus.Desc) {
 func (o *FsckCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectFsckDF(); err != nil {
-		log.Println("failed collecting space metrics:", err)
+		log.Println("failed collecting fsck metrics:", err)
 	}
 
 	for _, metric := range o.collectorList() {
