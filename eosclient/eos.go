@@ -571,7 +571,10 @@ func (c *Client) getMap(line string) map[string]string {
 	for _, item := range items {
 		k, v, found := strings.Cut(item, "=")
 		if found {
-			m[k] = v
+			// simply drop the '???' values, rely on defaults instead
+			if v != "???" {
+				m[k] = v
+			}
 		} else {
 			c.opt.Logger.Info("wrong format, expect key=value", zap.String("item", item))
 		}
