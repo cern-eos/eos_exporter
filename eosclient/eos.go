@@ -546,7 +546,7 @@ func getHostname(hostport string) (string, string) {
 }
 
 // Convert a monitoring format line into a map
-func getMap(line string) map[string]string {
+func (c *Client) getMap(line string) map[string]string {
 	lastQuote := rune(0)
 	f := func(c rune) bool {
 		switch {
@@ -570,8 +570,12 @@ func getMap(line string) map[string]string {
 	// create and fill the map
 	m := make(map[string]string)
 	for _, item := range items {
-		x := strings.Split(item, "=")
-		m[x[0]] = x[1]
+		k, v, found := strings.Cut(item, "=")
+		if found {
+			m[k] = v
+		} else {
+			c.opt.Logger.Info("wrong format, expect key=value", zap.String("item", item))
+		}
 	}
 	return m
 
@@ -598,7 +602,7 @@ func (c *Client) parseNodesInfo(raw string) ([]*NodeInfo, error) {
 // Gathers information of one single node
 func (c *Client) parseNodeInfo(line string) (*NodeInfo, error) {
 	//kv := make(map[string]string)
-	kv := getMap(line)
+	kv := c.getMap(line)
 	hp := strings.Split(kv["hostport"], ":")
 	host := hp[0]
 	port := hp[1]
@@ -645,7 +649,7 @@ func (c *Client) parseGroupsInfo(raw string) ([]*GroupInfo, error) {
 // Gathers information of one single group
 func (c *Client) parseGroupInfo(line string) (*GroupInfo, error) {
 	//kv := make(map[string]string)
-	kv := getMap(line)
+	kv := c.getMap(line)
 	group := &GroupInfo{
 		kv["name"],
 		kv["cfg.status"],
@@ -696,7 +700,7 @@ func (c *Client) parseFSsInfo(raw string) ([]*FSInfo, error) {
 // Gathers information of one single filesystem
 func (c *Client) parseFSInfo(line string) (*FSInfo, error) {
 	//kv := make(map[string]string)
-	kv := getMap(line)
+	kv := c.getMap(line)
 	fs := &FSInfo{
 		kv["host"],
 		kv["port"],
@@ -836,7 +840,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 		if rlb == "" {
 			continue
 		}
-		kvb = getMap(rlb)
+		kvb = c.getMap(rlb)
 		// Detect batch users 'eos who showing @b7 string'
 		if strings.Contains(kvb["client"], "@b7") {
 			// create a uid unique list of batch users
@@ -850,7 +854,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 	// First iteration to find out Stalled operations
 	for _, rl := range rawLines {
 		if strings.Contains(rl, "Stall::") {
-			kv = getMap(rl)
+			kv = c.getMap(rl)
 		}
 		// Get all letter uids, and exclude (root|daemon|nobody|wwweos)
 		if UidLetter(kv["uid"]) {
@@ -887,7 +891,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 		if rl == "" {
 			continue
 		}
-		kv = getMap(rl)
+		kv = c.getMap(rl)
 		// Only expose global data, without breakdown of users
 		if kv["uid"] == "all" && kv["gid"] == "all" {
 			// Separate activity info from namespace statistics info
@@ -1067,7 +1071,7 @@ func (c *Client) parseIOAppInfosInfo(raw2 string, ctx context.Context) ([]*IOInf
 
 // Gathers information of one single IO stat
 func (c *Client) parseIOInfo(line string) (*IOInfo, error) {
-	kv := getMap(line)
+	kv := c.getMap(line)
 	ioinfo := &IOInfo{
 		Measurement: kv["measurement"],
 		Application: "NA",
@@ -1082,7 +1086,7 @@ func (c *Client) parseIOInfo(line string) (*IOInfo, error) {
 
 // Gathers information of one IO stat classified by app
 func (c *Client) parseAppIOInfo(line string) (*IOInfo, error) {
-	kv := getMap(line)
+	kv := c.getMap(line)
 	ioinfo := &IOInfo{
 		Measurement: kv["measurement"],
 		Application: kv["application"],
@@ -1147,7 +1151,7 @@ func (c *Client) parseRecycleInfo(raw string) ([]*RecycleInfo, error) {
 }
 
 func (c *Client) parseRecycleLineInfo(line string) (*RecycleInfo, error) {
-	kv := getMap(line)
+	kv := c.getMap(line)
 	rb := &RecycleInfo{
 		kv["usedbytes"],
 		kv["maxbytes"],
@@ -1222,7 +1226,7 @@ func (c *Client) parseWhoInfo(raw string) ([]*WhoInfo, error) {
 			continue
 		}
 
-		kv := getMap(rl)
+		kv := c.getMap(rl)
 		if _, ok := kv["client"]; !ok {
 			continue
 		}
@@ -1300,7 +1304,7 @@ func (c *Client) parseSpacesInfo(raw string) ([]*SpaceInfo, error) {
 // Gathers information of one single space
 func (c *Client) parseSpaceInfo(line string) (*SpaceInfo, error) {
 	//kv := make(map[string]string)
-	kv := getMap(line)
+	kv := c.getMap(line)
 	space := &SpaceInfo{
 		kv["type"],
 		kv["name"],
