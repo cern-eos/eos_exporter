@@ -540,9 +540,8 @@ func (c *Client) ListIOAppInfo(ctx context.Context) ([]*IOInfo, error) {
 	return c.parseIOAppInfosInfo(stdout2, ctx)
 }
 
-func getHostname(hostport string) (string, string) {
-	split := strings.Split(hostport, ":")
-	return split[0], split[1]
+func getHostname(hostport string) (string, string, bool) {
+	return strings.Cut(hostport, ":")
 }
 
 // Convert a monitoring format line into a map
@@ -603,9 +602,10 @@ func (c *Client) parseNodesInfo(raw string) ([]*NodeInfo, error) {
 func (c *Client) parseNodeInfo(line string) (*NodeInfo, error) {
 	//kv := make(map[string]string)
 	kv := c.getMap(line)
-	hp := strings.Split(kv["hostport"], ":")
-	host := hp[0]
-	port := hp[1]
+	host, port, foundcolon := getHostname(kv["hostport"])
+	if !foundcolon {
+		return nil, errors.New("bad hostport")
+	}
 	fst := &NodeInfo{
 		Host:                  host,
 		Port:                  port,
@@ -760,7 +760,10 @@ func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse)
 	}
 
 	for _, node := range nodeLSResponse.Result {
-		hostname, port := getHostname(node.HostPort)
+		hostname, port, foundcolon := getHostname(node.HostPort)
+		if !foundcolon {
+			continue
+		}
 
 		// Parse uptime to days
 		s := strings.Split(node.Cfg.Stat.Sys.Uptime.value, "%20days,")[0]
