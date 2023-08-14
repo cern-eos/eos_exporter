@@ -161,9 +161,10 @@ func main() {
 	if cmdOptions.Version {
 		printVersion()
 	}
-
-	log.Println("Starting eos exporter for instance ", cmdOptions.EOSInstance)
-	prometheus.Register(NewEOSExporter(cmdOptions.EOSInstance))
+	log.Println("Starting eos exporter for instance", cmdOptions.EOSInstance)
+	if err := prometheus.Register(NewEOSExporter(cmdOptions.EOSInstance)); err != nil {
+		log.Fatal(err)
+	}
 	/* Enable Goroutine profiling
 	//defer profile.Start(profile.GoroutineProfile).Stop()*/
 
