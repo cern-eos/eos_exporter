@@ -594,7 +594,8 @@ func (c *Client) parseNodesInfo(raw string) ([]*NodeInfo, error) {
 		node, err := c.parseNodeInfo(rl)
 
 		if err != nil {
-			return nil, err
+			c.opt.Logger.Info("bad nodeinfo", zap.Error(err))
+			continue
 		}
 		fstinfos = append(fstinfos, node)
 	}
@@ -607,7 +608,7 @@ func (c *Client) parseNodeInfo(line string) (*NodeInfo, error) {
 	kv := c.getMap(line)
 	host, port, foundcolon := getHostname(kv["hostport"])
 	if !foundcolon {
-		return nil, errors.New("bad hostport")
+		return nil, fmt.Errorf("bad hostport: %s", kv["hostport"])
 	}
 	fst := &NodeInfo{
 		Host:                  host,
