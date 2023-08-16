@@ -31,8 +31,12 @@ type NodeCollector struct {
 	SumStatRopen          *prometheus.GaugeVec
 	SumStatWopen          *prometheus.GaugeVec
 	CfgStatSysThreads     *prometheus.GaugeVec
+	CfgStatSysVsize       *prometheus.GaugeVec
+	CfgStatSysRss         *prometheus.GaugeVec
+	CfgStatSysSockets     *prometheus.GaugeVec
 	SumStatNetInratemib   *prometheus.GaugeVec
 	SumStatNetOutratemib  *prometheus.GaugeVec
+	Info                  *prometheus.GaugeVec
 }
 
 /*
@@ -77,7 +81,7 @@ cfg.gw.rate=120
 cfg.gw.ntx=10
 */
 
-//NewNodeCollector creates an cluster of the NodeCollector
+// NewNodeCollector creates an cluster of the NodeCollector
 func NewNodeCollector(cluster string) *NodeCollector {
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
@@ -200,6 +204,33 @@ func NewNodeCollector(cluster string) *NodeCollector {
 			},
 			[]string{"node", "port"},
 		),
+		CfgStatSysVsize: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_vsize",
+				Help:        "Node virtual memory size",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port"},
+		),
+		CfgStatSysRss: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_rss",
+				Help:        "Node resident memory set size",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port"},
+		),
+		CfgStatSysSockets: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_sockets",
+				Help:        "Node Number of sockets",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port"},
+		),
 		SumStatNetInratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
@@ -217,6 +248,15 @@ func NewNodeCollector(cluster string) *NodeCollector {
 				ConstLabels: labels,
 			},
 			[]string{"node", "port"},
+		),
+		Info: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_info",
+				Help:        "Node metadata",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port", "eos_version", "xrootd_version", "kernel", "geotag"},
 		),
 	}
 }
@@ -236,8 +276,12 @@ func (o *NodeCollector) collectorList() []prometheus.Collector {
 		o.SumStatRopen,
 		o.SumStatWopen,
 		o.CfgStatSysThreads,
+		o.CfgStatSysVsize,
+		o.CfgStatSysRss,
+		o.CfgStatSysSockets,
 		o.SumStatNetInratemib,
 		o.SumStatNetOutratemib,
+		o.Info,
 	}
 }
 
@@ -347,6 +391,24 @@ func (o *NodeCollector) collectNodeDF() error {
 		if err == nil {
 			o.CfgStatSysThreads.WithLabelValues(m.Host, m.Port).Set(threads)
 		}
+
+		vsize, err := strconv.ParseFloat(m.CfgStatSysVsize, 64)
+		if err == nil {
+			o.CfgStatSysVsize.WithLabelValues(m.Host, m.Port).Set(vsize)
+		}
+
+		rss, err := strconv.ParseFloat(m.CfgStatSysRss, 64)
+		if err == nil {
+			o.CfgStatSysRss.WithLabelValues(m.Host, m.Port).Set(rss)
+		}
+
+		sockets, err := strconv.ParseFloat(m.CfgStatSysSockets, 64)
+		if err == nil {
+			o.CfgStatSysSockets.WithLabelValues(m.Host, m.Port).Set(sockets)
+		}
+
+		// We send just a dummy 1 as value for the eos_node_info metric, and metadata on labels
+		o.Info.WithLabelValues(m.Host, m.Port, m.EOSVersion, m.XRootDVersion, m.Kernel, m.Geotag).Set(1)
 	}
 
 	return nil

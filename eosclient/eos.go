@@ -89,8 +89,15 @@ type NodeInfo struct {
 	SumStatRopen          string
 	SumStatWopen          string
 	CfgStatSysThreads     string
+	CfgStatSysVsize       string
+	CfgStatSysRss         string
+	CfgStatSysSockets     string
 	SumStatNetInratemib   string
 	SumStatNetOutratemib  string
+	EOSVersion            string
+	XRootDVersion         string
+	Kernel                string
+	Geotag                string
 }
 
 type GroupInfo struct {
@@ -166,22 +173,6 @@ type FSInfo struct {
 	StatHealthDrivesFailed     string
 	StatHealthDrivesTotal      string
 	StatHealthIndicator        string
-}
-
-type VSInfo struct {
-	EOSmgm    string
-	Hostname  string
-	Port      string
-	Geotag    string
-	Vsize     string
-	Rss       string
-	Threads   string
-	Sockets   string
-	EOSfst    string
-	Xrootdfst string
-	KernelV   string
-	Start     string
-	Uptime    string
 }
 
 type NSInfo struct {
@@ -470,32 +461,6 @@ func (c *Client) getEosMGMVersion(ctx context.Context) (string, error) {
 	return "", errors.New("version not found")
 }
 
-// List the version of different nodes in the instance
-func (c *Client) ListVS(ctx context.Context) ([]*VSInfo, error) {
-
-	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
-	defer cancel()
-
-	mgmVersion, err := c.getEosMGMVersion(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	//cmd = exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "-b", "node", "ls","-m", "--sys", "|", "grep", "cern.ch", "|", "sort", "-t:", "-uk1,1")
-	stdout, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "--json", "node", "ls"))
-	if err != nil {
-		return nil, err
-	}
-
-	nodeLSResponse := &NodeLSResponse{}
-	err = json.Unmarshal([]byte(stdout), nodeLSResponse)
-	if err != nil {
-		return nil, err // fmt.Errorf("%w -> value: %s", err, stdout) // for testing unmarshal issues
-	}
-
-	return c.parseVSsInfo(mgmVersion, nodeLSResponse)
-}
-
 // List the activity of different users in the instance
 func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
 	// eos ns stat, without -a will exclude batch users info (this adds to much latency in the instance where the exporter is deployed)
@@ -626,8 +591,15 @@ func (c *Client) parseNodeInfo(line string) (*NodeInfo, error) {
 		SumStatRopen:          kv["sum.stat.ropen"],
 		SumStatWopen:          kv["sum.stat.wopen"],
 		CfgStatSysThreads:     kv["cfg.stat.sys.threads"],
+		CfgStatSysVsize:       kv["cfg.stat.sys.vsize"],
+		CfgStatSysRss:         kv["cfg.stat.sys.rss"],
+		CfgStatSysSockets:     kv["cfg.stat.sys.sockets"],
 		SumStatNetInratemib:   kv["sum.stat.net.inratemib"],
 		SumStatNetOutratemib:  kv["sum.stat.net.outratemib"],
+		EOSVersion:            kv["cfg.stat.sys.eos.version"],
+		XRootDVersion:         kv["cfg.stat.sys.xrootd.version"],
+		Kernel:                kv["cfg.stat.sys.kernel"],
+		Geotag:                kv["cfg.stat.geotag"],
 	}
 	return fst, nil
 }
@@ -753,51 +725,6 @@ func (c *Client) parseFSInfo(line string) (*FSInfo, error) {
 		kv["stat.health.indicator"],
 	}
 	return fs, nil
-}
-
-// Gathers information of versions of nodes
-func (c *Client) parseVSsInfo(mgmVersion string, nodeLSResponse *NodeLSResponse) ([]*VSInfo, error) {
-	vsinfos := []*VSInfo{}
-
-	if nodeLSResponse.ErrorMsg != "" {
-		return nil, errors.New(nodeLSResponse.ErrorMsg)
-	}
-
-	for _, node := range nodeLSResponse.Result {
-		hostname, port, foundcolon := getHostname(node.HostPort)
-		if !foundcolon {
-			continue
-		}
-
-		// Parse uptime to days
-		s := strings.Split(node.Cfg.Stat.Sys.Uptime.value, "%20days,")[0]
-		upt := strings.Split(s, "up%20")
-		var uptime string
-		if len(upt) < 2 {
-			uptime = "0"
-		} else {
-			uptime = upt[1]
-		}
-
-		info := &VSInfo{
-			EOSmgm:    mgmVersion,
-			Hostname:  hostname,
-			Port:      port,
-			Geotag:    node.Cfg.Stat.Geotag,
-			Vsize:     strconv.Itoa(node.Cfg.Stat.Sys.Vsize),
-			Rss:       node.Cfg.Stat.Sys.Rss.value,
-			Threads:   strconv.Itoa(node.Cfg.Stat.Sys.Threads),
-			Sockets:   node.Cfg.Stat.Sys.Sockets.value,
-			EOSfst:    node.Cfg.Stat.Sys.Eos.Version,
-			Xrootdfst: node.Cfg.Stat.Sys.Xrootd.Version,
-			KernelV:   node.Cfg.Stat.Sys.Kernel,
-			Start:     node.Cfg.Stat.Sys.Eos.Start,
-			Uptime:    uptime,
-		}
-		vsinfos = append(vsinfos, info)
-	}
-
-	return vsinfos, nil
 }
 
 // Checks if uid is made only of letters.
