@@ -156,7 +156,7 @@ func (o *VSCollector) Describe(ch chan<- *prometheus.Desc) {
 func (o *VSCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectVSDF(); err != nil {
-		log.Println("failed collecting space metrics:", err)
+		log.Println("failed collecting vs metrics:", err)
 	}
 
 	for _, metric := range o.collectorList() {

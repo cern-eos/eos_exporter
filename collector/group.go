@@ -442,7 +442,7 @@ func (o *GroupCollector) Describe(ch chan<- *prometheus.Desc) {
 func (o *GroupCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectGroupDF(); err != nil {
-		log.Println("failed collecting space metrics:", err)
+		log.Println("failed collecting group metrics:", err)
 	}
 
 	for _, metric := range o.collectorList() {
