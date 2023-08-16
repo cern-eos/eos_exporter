@@ -58,6 +58,9 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Wed Aug 16 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.4-1
+- Stability improvements 
+- Removal of eos_vs collector 
 * Mon Jul 10 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.3-1
 - Bugfix: Fixes unmarshal errors when space nominal quota is not defined.
 * Tue Mar 07 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.2-1
