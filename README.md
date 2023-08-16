@@ -3,7 +3,7 @@
 
 ## Usage
 
-- Compile ([Go](https://golang.org/doc/install) environment needed)
+- Compile ([Go](https://golang.org/doc/install) >=1.18 environment needed)
 
 ```
 cd eos_exporter

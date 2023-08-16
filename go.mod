@@ -1,6 +1,6 @@
 module gitlab.cern.ch/rvalverd/eos_exporter
 
-go 1.17
+go 1.18
 
 require (
 	github.com/prometheus/client_golang v1.12.2
