@@ -38,6 +38,12 @@ make build
     - eosheadnode.domain.com:9986
 ```
 
+## CERN Grafana Dashboard
+
+We are providing the dashboard that we use in CERN instances. It is provided `as is`, so some modifications would be needed to adapt to external deployments.
+The dashboard expects a variable called `instance` that is used to filter using the `cluster` label. Create the variable in Grafana using the query `label_values(cluster)`.
+It also includes plots for node_exporter metrics, if available. 
+
 ## Troubleshooting
 
 This tool is provided by CERN EOS Operators. Report issues on Github tracker or contact us through the [EOS community forum](https://eos-community.web.cern.ch/)
