@@ -382,10 +382,6 @@ func getEOSInstance() string {
 	return str
 }
 
-func (o *FSCollector) resetMetrics() error {
-
-}
-
 func (o *FSCollector) collectFSDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
