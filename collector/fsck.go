@@ -13,7 +13,7 @@ type FsckCollector struct {
 	Count *prometheus.GaugeVec
 }
 
-//NewFSCollector creates an cluster of the FSCollector and instantiates
+// NewFSCollector creates an cluster of the FSCollector and instantiates
 // the individual metrics that show information about the FS.
 func NewFsckCollector(cluster string) *FsckCollector {
 	labels := make(prometheus.Labels)
@@ -77,6 +77,8 @@ func (o *FsckCollector) collectFsckDF() error {
 	if err != nil {
 		panic(err)
 	}
+
+	o.Count.Reset()
 
 	for _, m := range mds {
 
