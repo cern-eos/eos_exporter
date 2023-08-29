@@ -312,6 +312,7 @@ func (o *NodeCollector) collectNodeDF() error {
 			status = 0
 		}
 
+		o.Status.Reset()
 		o.Status.WithLabelValues(m.Host, m.Port).Set(float64(status))
 
 		// Config status: 1: on, 0: off
@@ -325,85 +326,102 @@ func (o *NodeCollector) collectNodeDF() error {
 			cfg_status = 0
 		}
 
+		o.CfgStatus.Reset()
 		o.CfgStatus.WithLabelValues(m.Host, m.Port).Set(float64(cfg_status))
 
 		heartbeatdelta, err := strconv.ParseFloat(m.HeartBeatDelta, 64)
 		if err == nil {
+			o.HeartBeatDelta.Reset()
 			o.HeartBeatDelta.WithLabelValues(m.Host, m.Port).Set(heartbeatdelta)
 		}
 
 		nofs, err := strconv.ParseFloat(m.Nofs, 64)
 		if err == nil {
+			o.Nofs.Reset()
 			o.Nofs.WithLabelValues(m.Host, m.Port).Set(nofs)
 		}
 
 		fbytes, err := strconv.ParseFloat(m.SumStatStatfsFree, 64)
 		if err == nil {
+			o.SumStatStatfsFree.Reset()
 			o.SumStatStatfsFree.WithLabelValues(m.Host, m.Port).Set(fbytes)
 		}
 
 		ubytes, err := strconv.ParseFloat(m.SumStatStatfsUsed, 64)
 		if err == nil {
+			o.SumStatStatfsUsed.Reset()
 			o.SumStatStatfsUsed.WithLabelValues(m.Host, m.Port).Set(ubytes)
 		}
 
 		tbytes, err := strconv.ParseFloat(m.SumStatStatfsTotal, 64)
 		if err == nil {
+			o.SumStatStatfsTotal.Reset()
 			o.SumStatStatfsTotal.WithLabelValues(m.Host, m.Port).Set(tbytes)
 		}
 
 		ffiles, err := strconv.ParseFloat(m.SumStatStatFilesFree, 64)
 		if err == nil {
+			o.SumStatStatFilesFree.Reset()
 			o.SumStatStatFilesFree.WithLabelValues(m.Host, m.Port).Set(ffiles)
 		}
 
 		ufiles, err := strconv.ParseFloat(m.SumStatStatFilesUsed, 64)
 		if err == nil {
+			o.SumStatStatFilesUsed.Reset()
 			o.SumStatStatFilesUsed.WithLabelValues(m.Host, m.Port).Set(ufiles)
 		}
 
 		tfiles, err := strconv.ParseFloat(m.SumStatStatFilesTotal, 64)
 		if err == nil {
+			o.SumStatStatFilesTotal.Reset()
 			o.SumStatStatFilesTotal.WithLabelValues(m.Host, m.Port).Set(tfiles)
 		}
 
 		ropen, err := strconv.ParseFloat(m.SumStatRopen, 64)
 		if err == nil {
+			o.SumStatRopen.Reset()
 			o.SumStatRopen.WithLabelValues(m.Host, m.Port).Set(ropen)
 		}
 
 		wopen, err := strconv.ParseFloat(m.SumStatWopen, 64)
 		if err == nil {
+			o.SumStatWopen.Reset()
 			o.SumStatWopen.WithLabelValues(m.Host, m.Port).Set(wopen)
 		}
 
 		netin, err := strconv.ParseFloat(m.SumStatNetInratemib, 64)
 		if err == nil {
+			o.SumStatNetInratemib.Reset()
 			o.SumStatNetInratemib.WithLabelValues(m.Host, m.Port).Set(netin)
 		}
 
 		netout, err := strconv.ParseFloat(m.SumStatNetOutratemib, 64)
 		if err == nil {
+			o.SumStatNetOutratemib.Reset()
 			o.SumStatNetOutratemib.WithLabelValues(m.Host, m.Port).Set(netout)
 		}
 
 		threads, err := strconv.ParseFloat(m.CfgStatSysThreads, 64)
 		if err == nil {
+			o.CfgStatSysThreads.Reset()
 			o.CfgStatSysThreads.WithLabelValues(m.Host, m.Port).Set(threads)
 		}
 
 		vsize, err := strconv.ParseFloat(m.CfgStatSysVsize, 64)
 		if err == nil {
+			o.CfgStatSysVsize.Reset()
 			o.CfgStatSysVsize.WithLabelValues(m.Host, m.Port).Set(vsize)
 		}
 
 		rss, err := strconv.ParseFloat(m.CfgStatSysRss, 64)
 		if err == nil {
+			o.CfgStatSysRss.Reset()
 			o.CfgStatSysRss.WithLabelValues(m.Host, m.Port).Set(rss)
 		}
 
 		sockets, err := strconv.ParseFloat(m.CfgStatSysSockets, 64)
 		if err == nil {
+			o.CfgStatSysSockets.Reset()
 			o.CfgStatSysSockets.WithLabelValues(m.Host, m.Port).Set(sockets)
 		}
 
