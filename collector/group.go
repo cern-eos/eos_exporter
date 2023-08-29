@@ -295,6 +295,32 @@ func (o *GroupCollector) collectGroupDF() error {
 		panic(err)
 	}
 
+	// Reset gauge metrics to remove metrics of deleted groups
+
+	o.CfgStatus.Reset()
+	o.Nofs.Reset()
+	o.AvgStatDiskLoad.Reset()
+	o.SigStatDiskLoad.Reset()
+	o.SumStatDiskReadratemb.Reset()
+	o.SumStatDiskWriteratemb.Reset()
+	o.SumStatNetEthratemib.Reset()
+	o.SumStatNetInratemib.Reset()
+	o.SumStatNetOutratemib.Reset()
+	o.SumStatRopen.Reset()
+	o.SumStatWopen.Reset()
+	o.SumStatStatfsUsedbytes.Reset()
+	o.SumStatStatfsFreebytes.Reset()
+	o.SumStatStatfsCapacity.Reset()
+	o.SumStatUsedfiles.Reset()
+	o.SumStatStatfsFfree.Reset()
+	o.SumStatStatfsFiles.Reset()
+	o.DevStatStatfsFilled.Reset()
+	o.AvgStatStatfsFilled.Reset()
+	o.SigStatStatfsFilled.Reset()
+	o.CfgStatBalancing.Reset()
+	o.SumStatBalancerRunning.Reset()
+	o.SumStatDrainerRunning.Reset()
+
 	for _, m := range mds {
 
 		cfgstatus := 0
@@ -303,120 +329,100 @@ func (o *GroupCollector) collectGroupDF() error {
 		}
 
 		status := float64(cfgstatus)
-		o.CfgStatus.Reset()
 		o.CfgStatus.WithLabelValues(m.Name).Set(status)
 
 		nofs, err := strconv.ParseFloat(m.Nofs, 64)
 		if err == nil {
-			o.Nofs.Reset()
 			o.Nofs.WithLabelValues(m.Name).Set(nofs)
 		}
 
 		avgdl, err := strconv.ParseFloat(m.AvgStatDiskLoad, 64)
 		if err == nil {
-			o.AvgStatDiskLoad.Reset()
 			o.AvgStatDiskLoad.WithLabelValues(m.Name).Set(avgdl)
 		}
 
 		sigdl, err := strconv.ParseFloat(m.SigStatDiskLoad, 64)
 		if err == nil {
-			o.SigStatDiskLoad.Reset()
 			o.SigStatDiskLoad.WithLabelValues(m.Name).Set(sigdl)
 		}
 
 		sumdiskr, err := strconv.ParseFloat(m.SumStatDiskReadratemb, 64)
 		if err == nil {
-			o.SumStatDiskReadratemb.Reset()
 			o.SumStatDiskReadratemb.WithLabelValues(m.Name).Set(sumdiskr)
 		}
 
 		sumdiskw, err := strconv.ParseFloat(m.SumStatDiskWriteratemb, 64)
 		if err == nil {
-			o.SumStatDiskWriteratemb.Reset()
 			o.SumStatDiskWriteratemb.WithLabelValues(m.Name).Set(sumdiskw)
 		}
 
 		sumethrate, err := strconv.ParseFloat(m.SumStatNetEthratemib, 64)
 		if err == nil {
-			o.SumStatNetEthratemib.Reset()
 			o.SumStatNetEthratemib.WithLabelValues(m.Name).Set(sumethrate)
 		}
 
 		suminrate, err := strconv.ParseFloat(m.SumStatNetInratemib, 64)
 		if err == nil {
-			o.SumStatNetInratemib.Reset()
 			o.SumStatNetInratemib.WithLabelValues(m.Name).Set(suminrate)
 		}
 
 		sumoutrate, err := strconv.ParseFloat(m.SumStatNetOutratemib, 64)
 		if err == nil {
-			o.SumStatNetOutratemib.Reset()
 			o.SumStatNetOutratemib.WithLabelValues(m.Name).Set(sumoutrate)
 		}
 
 		ropen, err := strconv.ParseFloat(m.SumStatRopen, 64)
 		if err == nil {
-			o.SumStatRopen.Reset()
 			o.SumStatRopen.WithLabelValues(m.Name).Set(ropen)
 		}
 
 		wopen, err := strconv.ParseFloat(m.SumStatWopen, 64)
 		if err == nil {
-			o.SumStatWopen.Reset()
 			o.SumStatWopen.WithLabelValues(m.Name).Set(wopen)
 		}
 
 		usedb, err := strconv.ParseFloat(m.SumStatStatfsUsedbytes, 64)
 		if err == nil {
-			o.SumStatStatfsUsedbytes.Reset()
 			o.SumStatStatfsUsedbytes.WithLabelValues(m.Name).Set(usedb)
 		}
 
 		fbytes, err := strconv.ParseFloat(m.SumStatStatfsFreebytes, 64)
 		if err == nil {
-			o.SumStatStatfsFreebytes.Reset()
 			o.SumStatStatfsFreebytes.WithLabelValues(m.Name).Set(fbytes)
 		}
 
 		fscap, err := strconv.ParseFloat(m.SumStatStatfsCapacity, 64)
 		if err == nil {
-			o.SumStatStatfsCapacity.Reset()
 			o.SumStatStatfsCapacity.WithLabelValues(m.Name).Set(fscap)
 		}
 
 		ufiles, err := strconv.ParseFloat(m.SumStatUsedfiles, 64)
 		if err == nil {
-			o.SumStatUsedfiles.Reset()
 			o.SumStatUsedfiles.WithLabelValues(m.Name).Set(ufiles)
 		}
 
 		ffree, err := strconv.ParseFloat(m.SumStatStatfsFfree, 64)
 		if err == nil {
-			o.SumStatStatfsFfree.Reset()
 			o.SumStatStatfsFfree.WithLabelValues(m.Name).Set(ffree)
 		}
 
 		files, err := strconv.ParseFloat(m.SumStatStatfsFiles, 64)
 		if err == nil {
-			o.SumStatStatfsFiles.Reset()
 			o.SumStatStatfsFiles.WithLabelValues(m.Name).Set(files)
 		}
 
 		devfilled, err := strconv.ParseFloat(m.DevStatStatfsFilled, 64)
 		if err == nil {
-			o.DevStatStatfsFilled.Reset()
 			o.DevStatStatfsFilled.WithLabelValues(m.Name).Set(devfilled)
 		}
 
 		avgfilled, err := strconv.ParseFloat(m.AvgStatStatfsFilled, 64)
 		if err == nil {
-			o.AvgStatStatfsFilled.Reset()
 			o.AvgStatStatfsFilled.WithLabelValues(m.Name).Set(avgfilled)
 		}
 
 		sigfilled, err := strconv.ParseFloat(m.SigStatStatfsFilled, 64)
 		if err == nil {
-			o.SigStatStatfsFilled.Reset()
 			o.SigStatStatfsFilled.WithLabelValues(m.Name).Set(sigfilled)
 		}
 
@@ -434,18 +440,15 @@ func (o *GroupCollector) collectGroupDF() error {
 			balancer_status = 0
 		}
 
-		o.CfgStatBalancing.Reset()
 		o.CfgStatBalancing.WithLabelValues(m.Name).Set(float64(balancer_status))
 
 		balr, err := strconv.ParseFloat(m.SumStatBalancerRunning, 64)
 		if err == nil {
-			o.SumStatBalancerRunning.Reset()
 			o.SumStatBalancerRunning.WithLabelValues(m.Name).Set(balr)
 		}
 
 		drainr, err := strconv.ParseFloat(m.SumStatDrainerRunning, 64)
 		if err == nil {
-			o.SumStatDrainerRunning.Reset()
 			o.SumStatDrainerRunning.WithLabelValues(m.Name).Set(drainr)
 		}
 	}

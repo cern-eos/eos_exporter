@@ -396,6 +396,37 @@ func (o *FSCollector) collectFSDF() error {
 		panic(err)
 	}
 
+	// Reset Gauge metrics to remove metrics of non existing filesystems
+
+	o.StatBoot.Reset()
+	o.Configstatus.Reset()
+	o.StatDiskLoad.Reset()
+	o.StatDiskReadratemb.Reset()
+	o.StatDiskWriteratemb.Reset()
+	o.StatNetEthratemib.Reset()
+	o.StatNetInratemib.Reset()
+	o.StatNetOutratemib.Reset()
+	o.StatRopen.Reset()
+	o.StatWopen.Reset()
+	o.StatStatfsFreebytes.Reset()
+	o.StatStatfsUsedbytes.Reset()
+	o.StatStatfsCapacity.Reset()
+	o.StatStatfsFfree.Reset()
+	o.StatStatfsFused.Reset()
+	o.StatStatfsFiles.Reset()
+	o.Drainstatus.Reset()
+	o.StatDrainprogress.Reset()
+	o.StatDrainfiles.Reset()
+	o.StatDrainbytesleft.Reset()
+	o.StatDrainretry.Reset()
+	o.StatDrainFailed.Reset()
+	o.StatActive.Reset()
+	o.StatBalancerRunning.Reset()
+	o.StatDrainerRunning.Reset()
+	o.StatDiskIops.Reset()
+	o.StatDiskBw.Reset()
+	o.StatHealth.Reset()
+
 	for _, m := range mds {
 
 		// Boot Status
@@ -435,90 +466,75 @@ func (o *FSCollector) collectFSDF() error {
 			config_status = 0
 		}
 
-		o.Configstatus.Reset()
 		o.Configstatus.WithLabelValues(m.Id, m.Host).Set(float64(config_status))
 
 		diskload, err := strconv.ParseFloat(m.StatDiskLoad, 64)
 		if err == nil {
-			o.StatDiskLoad.Reset()
 			o.StatDiskLoad.WithLabelValues(m.Id, m.Host).Set(diskload)
 		}
 
 		diskr, err := strconv.ParseFloat(m.StatDiskReadratemb, 64)
 		if err == nil {
-			o.StatDiskReadratemb.Reset()
 			o.StatDiskReadratemb.WithLabelValues(m.Id, m.Host).Set(diskr)
 		}
 
 		diskw, err := strconv.ParseFloat(m.StatDiskWriteratemb, 64)
 		if err == nil {
-			o.StatDiskWriteratemb.Reset()
 			o.StatDiskWriteratemb.WithLabelValues(m.Id, m.Host).Set(diskw)
 		}
 
 		ethrate, err := strconv.ParseFloat(m.StatNetEthratemib, 64)
 		if err == nil {
-			o.StatNetEthratemib.Reset()
 			o.StatNetEthratemib.WithLabelValues(m.Id, m.Host).Set(ethrate)
 		}
 
 		inrate, err := strconv.ParseFloat(m.StatNetInratemib, 64)
 		if err == nil {
-			o.StatNetInratemib.Reset()
 			o.StatNetInratemib.WithLabelValues(m.Id, m.Host).Set(inrate)
 		}
 
 		outrate, err := strconv.ParseFloat(m.StatNetOutratemib, 64)
 		if err == nil {
-			o.StatNetOutratemib.Reset()
 			o.StatNetOutratemib.WithLabelValues(m.Id, m.Host).Set(outrate)
 		}
 
 		ropen, err := strconv.ParseFloat(m.StatRopen, 64)
 		if err == nil {
-			o.StatRopen.Reset()
 			o.StatRopen.WithLabelValues(m.Id, m.Host).Set(ropen)
 		}
 
 		wopen, err := strconv.ParseFloat(m.StatWopen, 64)
 		if err == nil {
-			o.StatWopen.Reset()
 			o.StatWopen.WithLabelValues(m.Id, m.Host).Set(wopen)
 		}
 
 		usedb, err := strconv.ParseFloat(m.StatStatfsUsedbytes, 64)
 		if err == nil {
-			o.StatStatfsUsedbytes.Reset()
 			o.StatStatfsUsedbytes.WithLabelValues(m.Id, m.Host).Set(usedb)
 		}
 
 		fbytes, err := strconv.ParseFloat(m.StatStatfsFreebytes, 64)
 		if err == nil {
-			o.StatStatfsFreebytes.Reset()
 			o.StatStatfsFreebytes.WithLabelValues(m.Id, m.Host).Set(fbytes)
 		}
 
 		fscap, err := strconv.ParseFloat(m.StatStatfsCapacity, 64)
 		if err == nil {
-			o.StatStatfsCapacity.Reset()
 			o.StatStatfsCapacity.WithLabelValues(m.Id, m.Host).Set(fscap)
 		}
 
 		ufiles, err := strconv.ParseFloat(m.StatStatfsFused, 64)
 		if err == nil {
-			o.StatStatfsFused.Reset()
 			o.StatStatfsFused.WithLabelValues(m.Id, m.Host).Set(ufiles)
 		}
 
 		ffree, err := strconv.ParseFloat(m.StatStatfsFfree, 64)
 		if err == nil {
-			o.StatStatfsFfree.Reset()
 			o.StatStatfsFfree.WithLabelValues(m.Id, m.Host).Set(ffree)
 		}
 
 		files, err := strconv.ParseFloat(m.StatStatfsFiles, 64)
 		if err == nil {
-			o.StatStatfsFiles.Reset()
 			o.StatStatfsFiles.WithLabelValues(m.Id, m.Host).Set(files)
 		}
 
@@ -540,42 +556,35 @@ func (o *FSCollector) collectFSDF() error {
 			drain_status = 0
 		}
 
-		o.Drainstatus.Reset()
 		o.Drainstatus.WithLabelValues(m.Id, m.Host).Set(float64(drain_status))
 
 		balr, err := strconv.ParseFloat(m.StatBalancerRunning, 64)
 		if err == nil {
-			o.StatBalancerRunning.Reset()
 			o.StatBalancerRunning.WithLabelValues(m.Id, m.Host).Set(balr)
 		}
 
 		drainr, err := strconv.ParseFloat(m.StatDrainerRunning, 64)
 		if err == nil {
-			o.StatDrainerRunning.Reset()
 			o.StatDrainerRunning.WithLabelValues(m.Id, m.Host).Set(drainr)
 		}
 
 		drainretry, err := strconv.ParseFloat(m.StatDrainretry, 64)
 		if err == nil {
-			o.StatDrainretry.Reset()
 			o.StatDrainretry.WithLabelValues(m.Id, m.Host).Set(drainretry)
 		}
 
 		drainfailed, err := strconv.ParseFloat(m.StatDrainFailed, 64)
 		if err == nil {
-			o.StatDrainFailed.Reset()
 			o.StatDrainFailed.WithLabelValues(m.Id, m.Host).Set(drainfailed)
 		}
 
 		diskiops, err := strconv.ParseFloat(m.StatDiskIops, 64)
 		if err == nil {
-			o.StatDiskIops.Reset()
 			o.StatDiskIops.WithLabelValues(m.Id, m.Host).Set(diskiops)
 		}
 
 		diskbw, err := strconv.ParseFloat(m.StatDiskBw, 64)
 		if err == nil {
-			o.StatDiskBw.Reset()
 			o.StatDiskBw.WithLabelValues(m.Id, m.Host).Set(diskbw)
 		}
 
@@ -591,7 +600,6 @@ func (o *FSCollector) collectFSDF() error {
 			active_status = 1
 		}
 
-		o.StatActive.Reset()
 		o.StatActive.WithLabelValues(m.Id, m.Host).Set(float64(active_status))
 
 		// Health
@@ -602,7 +610,6 @@ func (o *FSCollector) collectFSDF() error {
 		} else {
 			health = 1
 		}
-		o.StatHealth.Reset()
 		o.StatHealth.WithLabelValues(m.Id, m.Host).Set(float64(health))
 	}
 
