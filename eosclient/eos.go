@@ -377,29 +377,6 @@ func (c *Client) ListNode(ctx context.Context, username string) ([]*NodeInfo, er
 	return c.parseNodesInfo(stdout)
 }
 
-// List the spaces on the instance
-func (c *Client) ListSpace(ctx context.Context, username string) ([]*SpaceInfo, error) {
-	unixUser, err := getUnixUser(username)
-	if err != nil {
-		return nil, err
-	}
-
-	var (
-		ctxWt  context.Context
-		cancel context.CancelFunc
-	)
-
-	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "space", "ls", "-m")
-	stdout, _, err := c.execute(cmd)
-	if err != nil {
-		return nil, err
-	}
-	return c.parseSpacesInfo(stdout)
-}
-
 // List the scheduling groups on the instance
 func (c *Client) ListGroup(ctx context.Context, username string) ([]*GroupInfo, error) {
 	unixUser, err := getUnixUser(username)
@@ -1217,6 +1194,29 @@ type SpaceInfo struct {
 	SumStatStatfsFreebytesConfigstatusRw string
 }
 
+// List the spaces on the instance
+func (c *Client) ListSpace(ctx context.Context, username string) ([]*SpaceInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		ctxWt  context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "space", "ls", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseSpacesInfo(stdout)
+}
+
 // Gathers the information of all spaces.
 func (c *Client) parseSpacesInfo(raw string) ([]*SpaceInfo, error) {
 	spaceinfos := []*SpaceInfo{}
@@ -1339,4 +1339,66 @@ func (c *Client) parseFsckLineInfo(line string) (*FsckInfo, error) {
 		Count: fields[5],
 	}
 	return rb, nil
+}
+
+// ----------------------------------------//
+// EOS FUSEX MOUNTS INFORMATION 		   //
+// ----------------------------------------//
+// eos fusex ls -m
+
+// struct definition
+type FusexInfo struct {
+	Host    string
+	Version string
+}
+
+// List the fusexs on the instance
+func (c *Client) ListFusex(ctx context.Context, username string) ([]*FusexInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		ctxWt  context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "fusex", "ls", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseFusexsInfo(stdout)
+}
+
+// Gathers the information of all fusexs.
+func (c *Client) parseFusexsInfo(raw string) ([]*FusexInfo, error) {
+	fusexinfos := []*FusexInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" {
+			continue
+		}
+		fusex, err := c.parseFusexInfo(rl)
+
+		if err != nil {
+			return nil, err
+		}
+		fusexinfos = append(fusexinfos, fusex)
+	}
+	return fusexinfos, nil
+}
+
+// Gathers information of one single fusex
+func (c *Client) parseFusexInfo(line string) (*FusexInfo, error) {
+	kv := c.getMap(line)
+	fusex := &FusexInfo{
+		kv["host"],
+		kv["version"],
+	}
+	return fusex, nil
 }

@@ -73,6 +73,7 @@ func NewEOSExporter(instance string) *EOSExporter {
 			collector.NewRecycleCollector(instance),    // eos recycle bin information
 			collector.NewWhoCollector(instance),        // eos who information
 			collector.NewFsckCollector(instance),       // eos fsck information
+			collector.NewFusexCollector(instance),      // eos fusex information
 		},
 	}
 }
