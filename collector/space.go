@@ -396,131 +396,142 @@ func (o *SpaceCollector) collectSpaceDF() error {
 		panic(err)
 	}
 
+	// reset gauges (to drop metrics of deleted spaces)
+
+	o.CfgGroupSize.Reset()
+	o.CfgGroupMod.Reset()
+	o.Nofs.Reset()
+	o.AvgStatDiskLoad.Reset()
+	o.SigStatDiskLoad.Reset()
+	o.SumStatDiskReadratemb.Reset()
+	o.SumStatDiskWriteratemb.Reset()
+	o.SumStatNetEthratemib.Reset()
+	o.SumStatNetInratemib.Reset()
+	o.SumStatNetOutratemib.Reset()
+	o.SumStatRopen.Reset()
+	o.SumStatWopen.Reset()
+	o.SumStatStatfsUsedbytes.Reset()
+	o.SumStatStatfsFreebytes.Reset()
+	o.SumStatStatfsCapacity.Reset()
+	o.SumStatUsedfiles.Reset()
+	o.SumStatStatfsFfiles.Reset()
+	o.SumStatStatfsFiles.Reset()
+	o.SumStatStatfsCapacityConfigstatusRw.Reset()
+	o.SumNofsConfigstatusRw.Reset()
+	o.CfgQuota.Reset()
+	o.CfgNominalsize.Reset()
+	o.CfgBalancer.Reset()
+	o.CfgBalancerThreshold.Reset()
+	o.SumStatBalancerRunning.Reset()
+	o.SumStatDrainerRunning.Reset()
+	o.SumStatDiskIopsConfigstatusRw.Reset()
+	o.SumStatDiskBwConfigstatusRw.Reset()
+	o.SumStatStatfsFreebytesConfigstatusRw.Reset()
+
 	for _, m := range mds {
 
 		nofs, err := strconv.ParseFloat(m.Nofs, 64)
 		if err == nil {
-			o.Nofs.Reset()
 			o.Nofs.WithLabelValues(m.Name).Set(nofs)
 		}
 
 		avgdl, err := strconv.ParseFloat(m.AvgStatDiskLoad, 64)
 		if err == nil {
-			o.AvgStatDiskLoad.Reset()
 			o.AvgStatDiskLoad.WithLabelValues(m.Name).Set(avgdl)
 		}
 
 		sigdl, err := strconv.ParseFloat(m.SigStatDiskLoad, 64)
 		if err == nil {
-			o.SigStatDiskLoad.Reset()
 			o.SigStatDiskLoad.WithLabelValues(m.Name).Set(sigdl)
 		}
 
 		sumdiskr, err := strconv.ParseFloat(m.SumStatDiskReadratemb, 64)
 		if err == nil {
-			o.SumStatDiskReadratemb.Reset()
 			o.SumStatDiskReadratemb.WithLabelValues(m.Name).Set(sumdiskr)
 		}
 
 		sumdiskw, err := strconv.ParseFloat(m.SumStatDiskWriteratemb, 64)
 		if err == nil {
-			o.SumStatDiskWriteratemb.Reset()
 			o.SumStatDiskWriteratemb.WithLabelValues(m.Name).Set(sumdiskw)
 		}
 
 		sumethrate, err := strconv.ParseFloat(m.SumStatNetEthratemib, 64)
 		if err == nil {
-			o.SumStatNetEthratemib.Reset()
 			o.SumStatNetEthratemib.WithLabelValues(m.Name).Set(sumethrate)
 		}
 
 		suminrate, err := strconv.ParseFloat(m.SumStatNetInratemib, 64)
 		if err == nil {
-			o.SumStatNetInratemib.Reset()
 			o.SumStatNetInratemib.WithLabelValues(m.Name).Set(suminrate)
 		}
 
 		sumoutrate, err := strconv.ParseFloat(m.SumStatNetOutratemib, 64)
 		if err == nil {
-			o.SumStatNetOutratemib.Reset()
 			o.SumStatNetOutratemib.WithLabelValues(m.Name).Set(sumoutrate)
 		}
 
 		ropen, err := strconv.ParseFloat(m.SumStatRopen, 64)
 		if err == nil {
-			o.SumStatRopen.Reset()
 			o.SumStatRopen.WithLabelValues(m.Name).Set(ropen)
 		}
 
 		wopen, err := strconv.ParseFloat(m.SumStatWopen, 64)
 		if err == nil {
-			o.SumStatWopen.Reset()
 			o.SumStatWopen.WithLabelValues(m.Name).Set(wopen)
 		}
 
 		usedb, err := strconv.ParseFloat(m.SumStatStatfsUsedbytes, 64)
 		if err == nil {
-			o.SumStatStatfsUsedbytes.Reset()
 			o.SumStatStatfsUsedbytes.WithLabelValues(m.Name).Set(usedb)
 		}
 
 		fbytes, err := strconv.ParseFloat(m.SumStatStatfsFreebytes, 64)
 		if err == nil {
-			o.SumStatStatfsFreebytes.Reset()
 			o.SumStatStatfsFreebytes.WithLabelValues(m.Name).Set(fbytes)
 		}
 
 		fscap, err := strconv.ParseFloat(m.SumStatStatfsCapacity, 64)
 		if err == nil {
-			o.SumStatStatfsCapacity.Reset()
 			o.SumStatStatfsCapacity.WithLabelValues(m.Name).Set(fscap)
 		}
 
 		ufiles, err := strconv.ParseFloat(m.SumStatUsedfiles, 64)
 		if err == nil {
-			o.SumStatUsedfiles.Reset()
 			o.SumStatUsedfiles.WithLabelValues(m.Name).Set(ufiles)
 		}
 
 		files, err := strconv.ParseFloat(m.SumStatStatfsFiles, 64)
 		if err == nil {
-			o.SumStatStatfsFiles.Reset()
 			o.SumStatStatfsFiles.WithLabelValues(m.Name).Set(files)
 		}
 
 		caprw, err := strconv.ParseFloat(m.SumStatStatfsCapacityConfigstatusRw, 64)
 		if err == nil {
-			o.SumStatStatfsCapacityConfigstatusRw.Reset()
 			o.SumStatStatfsCapacityConfigstatusRw.WithLabelValues(m.Name).Set(caprw)
 		}
 
 		nofsrw, err := strconv.ParseFloat(m.SumNofsConfigstatusRw, 64)
 		if err == nil {
-			o.SumNofsConfigstatusRw.Reset()
 			o.SumNofsConfigstatusRw.WithLabelValues(m.Name).Set(nofsrw)
 		}
 
 		balr, err := strconv.ParseFloat(m.SumStatBalancerRunning, 64)
 		if err == nil {
-			o.SumStatBalancerRunning.Reset()
 			o.SumStatBalancerRunning.WithLabelValues(m.Name).Set(balr)
 		}
 
 		drainr, err := strconv.ParseFloat(m.SumStatDrainerRunning, 64)
 		if err == nil {
-			o.SumStatDrainerRunning.Reset()
 			o.SumStatDrainerRunning.WithLabelValues(m.Name).Set(drainr)
 		}
 
 		iopsrw, err := strconv.ParseFloat(m.SumStatDiskIopsConfigstatusRw, 64)
 		if err == nil {
-			o.SumStatDiskIopsConfigstatusRw.Reset()
 			o.SumStatDiskIopsConfigstatusRw.WithLabelValues(m.Name).Set(iopsrw)
 		}
 
 		bwrw, err := strconv.ParseFloat(m.SumStatDiskBwConfigstatusRw, 64)
 		if err == nil {
-			o.SumStatDiskBwConfigstatusRw.Reset()
 			o.SumStatDiskBwConfigstatusRw.WithLabelValues(m.Name).Set(bwrw)
 		}
 
@@ -534,24 +545,20 @@ func (o *SpaceCollector) collectSpaceDF() error {
 			balancer_status = 0
 		}
 
-		o.CfgBalancer.Reset()
 		o.CfgBalancer.WithLabelValues(m.Name).Set(float64(balancer_status))
 
 		balt, err := strconv.ParseFloat(m.CfgBalancerThreshold, 64)
 		if err == nil {
-			o.CfgBalancerThreshold.Reset()
 			o.CfgBalancerThreshold.WithLabelValues(m.Name).Set(balt)
 		}
 
 		gsize, err := strconv.ParseFloat(m.CfgGroupSize, 64)
 		if err == nil {
-			o.CfgGroupSize.Reset()
 			o.CfgGroupSize.WithLabelValues(m.Name).Set(gsize)
 		}
 
 		gmod, err := strconv.ParseFloat(m.CfgGroupMod, 64)
 		if err == nil {
-			o.CfgGroupMod.Reset()
 			o.CfgGroupMod.WithLabelValues(m.Name).Set(gmod)
 		}
 
@@ -565,11 +572,9 @@ func (o *SpaceCollector) collectSpaceDF() error {
 			quota_status = 0
 		}
 
-		o.CfgQuota.Reset()
 		o.CfgQuota.WithLabelValues(m.Name).Set(float64(quota_status))
 
 		// convert nominal size 0 if not defined.
-		o.CfgNominalsize.Reset()
 		if m.CfgNominalsize != "???" {
 			nomsize, err := strconv.ParseFloat(m.CfgNominalsize, 64)
 			if err == nil {
@@ -581,7 +586,6 @@ func (o *SpaceCollector) collectSpaceDF() error {
 
 		fbytesRW, err := strconv.ParseFloat(m.SumStatStatfsFreebytesConfigstatusRw, 64)
 		if err == nil {
-			o.SumStatStatfsFreebytesConfigstatusRw.Reset()
 			o.SumStatStatfsFreebytesConfigstatusRw.WithLabelValues(m.Name).Set(fbytesRW)
 		}
 
