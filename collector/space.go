@@ -10,36 +10,36 @@ import (
 )
 
 /*
-type=spaceview 
-name=default 
-cfg.groupsize=11 
-cfg.groupmod=50 
-nofs=337 
-avg.stat.disk.load=0.27 
-sig.stat.disk.load=0.38 
-sum.stat.disk.readratemb=4481 
-sum.stat.disk.writeratemb=39 
-sum.stat.net.ethratemib=13708 
-sum.stat.net.inratemib=32 
-sum.stat.net.outratemib=32 
-sum.stat.ropen=72 
-sum.stat.wopen=77 
-sum.stat.statfs.usedbytes=1442925699514368 
-sum.stat.statfs.freebytes=1630645688213504 
-sum.stat.statfs.freebytes?configstatus@rw=1624647716261888 
-sum.stat.statfs.capacity=3073571387727872 
-sum.stat.usedfiles=386144110 
-sum.stat.statfs.ffiles=0 
-sum.stat.statfs.files=150111401344 
-sched.capacity=1617927719616512 
-sum.stat.statfs.capacity?configstatus@rw=3060852351262720 
-sum.<n>?configstatus@rw=336 
-cfg.quota=on 
-cfg.nominalsize=??? 
+type=spaceview
+name=default
+cfg.groupsize=11
+cfg.groupmod=50
+nofs=337
+avg.stat.disk.load=0.27
+sig.stat.disk.load=0.38
+sum.stat.disk.readratemb=4481
+sum.stat.disk.writeratemb=39
+sum.stat.net.ethratemib=13708
+sum.stat.net.inratemib=32
+sum.stat.net.outratemib=32
+sum.stat.ropen=72
+sum.stat.wopen=77
+sum.stat.statfs.usedbytes=1442925699514368
+sum.stat.statfs.freebytes=1630645688213504
+sum.stat.statfs.freebytes?configstatus@rw=1624647716261888
+sum.stat.statfs.capacity=3073571387727872
+sum.stat.usedfiles=386144110
+sum.stat.statfs.ffiles=0
+sum.stat.statfs.files=150111401344
+sched.capacity=1617927719616512
+sum.stat.statfs.capacity?configstatus@rw=3060852351262720
+sum.<n>?configstatus@rw=336
+cfg.quota=on
+cfg.nominalsize=???
 cfg.balancer=on
-cfg.balancer.threshold=20 
-sum.stat.balancer.running=19 
-sum.stat.disk.iops?configstatus@rw=22960 
+cfg.balancer.threshold=20
+sum.stat.balancer.running=19
+sum.stat.disk.iops?configstatus@rw=22960
 sum.stat.disk.bw?configstatus@rw=63069
 */
 
@@ -75,7 +75,7 @@ type SpaceCollector struct {
 	SumStatStatfsFreebytesConfigstatusRw *prometheus.GaugeVec
 }
 
-//NewSpaceCollector creates an cluster of the SpaceCollector
+// NewSpaceCollector creates an cluster of the SpaceCollector
 func NewSpaceCollector(cluster string) *SpaceCollector {
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
@@ -396,6 +396,38 @@ func (o *SpaceCollector) collectSpaceDF() error {
 		panic(err)
 	}
 
+	// reset gauges (to drop metrics of deleted spaces)
+
+	o.CfgGroupSize.Reset()
+	o.CfgGroupMod.Reset()
+	o.Nofs.Reset()
+	o.AvgStatDiskLoad.Reset()
+	o.SigStatDiskLoad.Reset()
+	o.SumStatDiskReadratemb.Reset()
+	o.SumStatDiskWriteratemb.Reset()
+	o.SumStatNetEthratemib.Reset()
+	o.SumStatNetInratemib.Reset()
+	o.SumStatNetOutratemib.Reset()
+	o.SumStatRopen.Reset()
+	o.SumStatWopen.Reset()
+	o.SumStatStatfsUsedbytes.Reset()
+	o.SumStatStatfsFreebytes.Reset()
+	o.SumStatStatfsCapacity.Reset()
+	o.SumStatUsedfiles.Reset()
+	o.SumStatStatfsFfiles.Reset()
+	o.SumStatStatfsFiles.Reset()
+	o.SumStatStatfsCapacityConfigstatusRw.Reset()
+	o.SumNofsConfigstatusRw.Reset()
+	o.CfgQuota.Reset()
+	o.CfgNominalsize.Reset()
+	o.CfgBalancer.Reset()
+	o.CfgBalancerThreshold.Reset()
+	o.SumStatBalancerRunning.Reset()
+	o.SumStatDrainerRunning.Reset()
+	o.SumStatDiskIopsConfigstatusRw.Reset()
+	o.SumStatDiskBwConfigstatusRw.Reset()
+	o.SumStatStatfsFreebytesConfigstatusRw.Reset()
+
 	for _, m := range mds {
 
 		nofs, err := strconv.ParseFloat(m.Nofs, 64)
@@ -542,8 +574,7 @@ func (o *SpaceCollector) collectSpaceDF() error {
 
 		o.CfgQuota.WithLabelValues(m.Name).Set(float64(quota_status))
 
-		// convert nominal size 0 if not defined. 
-
+		// convert nominal size 0 if not defined.
 		if m.CfgNominalsize != "???" {
 			nomsize, err := strconv.ParseFloat(m.CfgNominalsize, 64)
 			if err == nil {
@@ -551,8 +582,8 @@ func (o *SpaceCollector) collectSpaceDF() error {
 			}
 		} else {
 			o.CfgNominalsize.WithLabelValues(m.Name).Set(0)
-		} 
-		
+		}
+
 		fbytesRW, err := strconv.ParseFloat(m.SumStatStatfsFreebytesConfigstatusRw, 64)
 		if err == nil {
 			o.SumStatStatfsFreebytesConfigstatusRw.WithLabelValues(m.Name).Set(fbytesRW)

@@ -61,7 +61,7 @@ type FSCollector struct {
 	StatHealthIndicator        *prometheus.GaugeVec
 }
 
-//NewFSCollector creates an cluster of the FSCollector and instantiates
+// NewFSCollector creates an cluster of the FSCollector and instantiates
 // the individual metrics that show information about the FS.
 func NewFSCollector(cluster string) *FSCollector {
 	labels := make(prometheus.Labels)
@@ -396,6 +396,37 @@ func (o *FSCollector) collectFSDF() error {
 		panic(err)
 	}
 
+	// Reset Gauge metrics to remove metrics of non existing filesystems
+
+	o.StatBoot.Reset()
+	o.Configstatus.Reset()
+	o.StatDiskLoad.Reset()
+	o.StatDiskReadratemb.Reset()
+	o.StatDiskWriteratemb.Reset()
+	o.StatNetEthratemib.Reset()
+	o.StatNetInratemib.Reset()
+	o.StatNetOutratemib.Reset()
+	o.StatRopen.Reset()
+	o.StatWopen.Reset()
+	o.StatStatfsFreebytes.Reset()
+	o.StatStatfsUsedbytes.Reset()
+	o.StatStatfsCapacity.Reset()
+	o.StatStatfsFfree.Reset()
+	o.StatStatfsFused.Reset()
+	o.StatStatfsFiles.Reset()
+	o.Drainstatus.Reset()
+	o.StatDrainprogress.Reset()
+	o.StatDrainfiles.Reset()
+	o.StatDrainbytesleft.Reset()
+	o.StatDrainretry.Reset()
+	o.StatDrainFailed.Reset()
+	o.StatActive.Reset()
+	o.StatBalancerRunning.Reset()
+	o.StatDrainerRunning.Reset()
+	o.StatDiskIops.Reset()
+	o.StatDiskBw.Reset()
+	o.StatHealth.Reset()
+
 	for _, m := range mds {
 
 		// Boot Status
@@ -416,6 +447,7 @@ func (o *FSCollector) collectFSDF() error {
 			boot_status = 4
 		}
 
+		o.StatBoot.Reset()
 		o.StatBoot.WithLabelValues(m.Id, m.Host).Set(float64(boot_status))
 
 		// Config Status

@@ -36,7 +36,7 @@ type GroupCollector struct {
 	SumStatDrainerRunning  *prometheus.GaugeVec
 }
 
-//NewGroupCollector creates an cluster of the GroupCollector and instantiates
+// NewGroupCollector creates an cluster of the GroupCollector and instantiates
 // the individual metrics that show information about the Group.
 func NewGroupCollector(cluster string) *GroupCollector {
 	labels := make(prometheus.Labels)
@@ -294,6 +294,32 @@ func (o *GroupCollector) collectGroupDF() error {
 	if err != nil {
 		panic(err)
 	}
+
+	// Reset gauge metrics to remove metrics of deleted groups
+
+	o.CfgStatus.Reset()
+	o.Nofs.Reset()
+	o.AvgStatDiskLoad.Reset()
+	o.SigStatDiskLoad.Reset()
+	o.SumStatDiskReadratemb.Reset()
+	o.SumStatDiskWriteratemb.Reset()
+	o.SumStatNetEthratemib.Reset()
+	o.SumStatNetInratemib.Reset()
+	o.SumStatNetOutratemib.Reset()
+	o.SumStatRopen.Reset()
+	o.SumStatWopen.Reset()
+	o.SumStatStatfsUsedbytes.Reset()
+	o.SumStatStatfsFreebytes.Reset()
+	o.SumStatStatfsCapacity.Reset()
+	o.SumStatUsedfiles.Reset()
+	o.SumStatStatfsFfree.Reset()
+	o.SumStatStatfsFiles.Reset()
+	o.DevStatStatfsFilled.Reset()
+	o.AvgStatStatfsFilled.Reset()
+	o.SigStatStatfsFilled.Reset()
+	o.CfgStatBalancing.Reset()
+	o.SumStatBalancerRunning.Reset()
+	o.SumStatDrainerRunning.Reset()
 
 	for _, m := range mds {
 

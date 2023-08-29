@@ -299,6 +299,28 @@ func (o *NodeCollector) collectNodeDF() error {
 		panic(err)
 	}
 
+	// Reset gauge metrics to remove metrics of removed nodes
+
+	o.Status.Reset()
+	o.CfgStatus.Reset()
+	o.Nofs.Reset()
+	o.HeartBeatDelta.Reset()
+	o.SumStatStatfsFree.Reset()
+	o.SumStatStatfsUsed.Reset()
+	o.SumStatStatfsTotal.Reset()
+	o.SumStatStatFilesFree.Reset()
+	o.SumStatStatFilesUsed.Reset()
+	o.SumStatStatFilesTotal.Reset()
+	o.SumStatRopen.Reset()
+	o.SumStatWopen.Reset()
+	o.CfgStatSysThreads.Reset()
+	o.CfgStatSysVsize.Reset()
+	o.CfgStatSysRss.Reset()
+	o.CfgStatSysSockets.Reset()
+	o.SumStatNetInratemib.Reset()
+	o.SumStatNetOutratemib.Reset()
+	o.Info.Reset()
+
 	for _, m := range mds {
 
 		// Status: 1: online, 0: offline
@@ -408,6 +430,7 @@ func (o *NodeCollector) collectNodeDF() error {
 		}
 
 		// We send just a dummy 1 as value for the eos_node_info metric, and metadata on labels
+		o.Info.WithLabelValues(m.Host, m.Port, m.EOSVersion, m.XRootDVersion, m.Kernel, m.Geotag).Set(1)
 		o.Info.WithLabelValues(m.Host, m.Port, m.EOSVersion, m.XRootDVersion, m.Kernel, m.Geotag).Set(1)
 	}
 
