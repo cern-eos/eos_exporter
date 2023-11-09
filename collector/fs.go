@@ -447,7 +447,6 @@ func (o *FSCollector) collectFSDF() error {
 			boot_status = 4
 		}
 
-		o.StatBoot.Reset()
 		o.StatBoot.WithLabelValues(m.Id, m.Host).Set(float64(boot_status))
 
 		// Config Status
