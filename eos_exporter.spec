@@ -58,6 +58,9 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Thu Nov 09 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.5-1
+- Add metric reset to do not report on removed node/fs
+- Add eos fusex collector with mount info 
 * Wed Aug 16 2023 Roberto Valverde <rvalverd@cern.ch> 0.1.4-1
 - Stability improvements 
 - Removal of eos_vs collector 
