@@ -1402,3 +1402,73 @@ func (c *Client) parseFusexInfo(line string) (*FusexInfo, error) {
 	}
 	return fusex, nil
 }
+
+// ----------------------------------------//
+// EOS INSPECTOR INFORMATION 		       //
+// ----------------------------------------//
+// eos inspector -m | grep layout
+// key=last layout=00000000 type=plain nominal_stripes=1 checksum=none blockchecksum=none blocksize=4k locations=0 nolocation=51051 physicalsize=78670882614 repdelta:-1=51051 unlinkedlocations=0 volume=78670882614 zerosize=51016
+// eos_inspector_layout_volume{layout="00000000", type="plain", nominal_stripes="1", blocksize="4k"} 78670882614
+
+// struct definition
+type InspectorLayoutInfo struct {
+	Layout         string
+	Type           string
+	NominalStripes string
+	BlockSize      string
+	Volume         string
+}
+
+// List Inspector Layout
+func (c *Client) ListInspectorLayout(ctx context.Context, username string) ([]*InspectorLayoutInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		ctxWt  context.Context
+		cancel context.CancelFunc
+	)
+
+	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "inspector", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseInsepectorLayoutsInfo(stdout)
+}
+
+// Gathers the information of all lines.
+func (c *Client) parseInsepectorLayoutsInfo(raw string) ([]*InspectorLayoutInfo, error) {
+	inspectorLayoutInfos := []*InspectorLayoutInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" || !strings.Contains(rl, "layout") {
+			continue
+		}
+		inspectorLayout, err := c.parseInspectorLayoutLine(rl)
+
+		if err != nil {
+			return nil, err
+		}
+		inspectorLayoutInfos = append(inspectorLayoutInfos, inspectorLayout)
+	}
+	return inspectorLayoutInfos, nil
+}
+
+// Gathers information of one single line
+func (c *Client) parseInspectorLayoutLine(line string) (*InspectorLayoutInfo, error) {
+	kv := c.getMap(line)
+	layoutInfo := &InspectorLayoutInfo{
+		kv["layout"],
+		kv["type"],
+		kv["nominal_stripes"],
+		kv["blocksize"],
+		kv["volume"],
+	}
+	return layoutInfo, nil
+}
