@@ -188,6 +188,7 @@ type NSInfo struct {
 	Fusex_caps                                 string
 	Fusex_clients                              string
 	Fusex_lockedclients                        string
+	Hanging_since                              string
 	Latency_dirs                               string
 	Latency_files                              string
 	Latency_pending_updates                    string
@@ -844,6 +845,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 								kv["ns.fusex.caps"],
 								kv["ns.fusex.clients"],
 								kv["ns.fusex.lockedclients"],
+								kv["ns.hanging.since"],
 								kv["ns.latency.dirs"],
 								kv["ns.latency.files"],
 								kv["ns.latency.pending.updates"],

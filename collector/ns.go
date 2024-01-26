@@ -27,6 +27,7 @@ type NSCollector struct {
 	Fusex_caps                                 *prometheus.GaugeVec
 	Fusex_clients                              *prometheus.GaugeVec
 	Fusex_lockedclients                        *prometheus.GaugeVec
+	Hanging_since                              *prometheus.GaugeVec
 	Latency_dirs                               *prometheus.GaugeVec
 	Latency_files                              *prometheus.GaugeVec
 	Latency_pending_updates                    *prometheus.GaugeVec
@@ -360,6 +361,15 @@ func NewNSCollector(cluster string) *NSCollector {
 				Namespace:   namespace,
 				Name:        "ns_uptime_seconds",
 				Help:        "Uptime: Time since the namespace was started last time in seconds.",
+				ConstLabels: labels,
+			},
+			[]string{},
+		),
+		Hanging_since: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_hanging_since_seconds",
+				Help:        "Hanging_since: namespace locked (for over 5sec) since this many seconds.",
 				ConstLabels: labels,
 			},
 			[]string{},
@@ -781,6 +791,13 @@ func (o *NSCollector) collectNSDF() error {
 		uptime, err := strconv.ParseFloat(m.Uptime, 64)
 		if err == nil {
 			o.Uptime.WithLabelValues().Set(uptime)
+		}
+
+		// Hanging_since
+
+		hanging_since, err := strconv.ParseFloat(m.Hanging_since, 64)
+		if err == nil {
+			o.Hanging_since.WithLabelValues().Set(hanging_since)
 		}
 	}
 
