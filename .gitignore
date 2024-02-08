@@ -6,3 +6,6 @@ bin/
 .go_version
 .version
 eos_exporter
+
+eos_exporter-0.*
+rpmbuild/
