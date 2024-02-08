@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var cmdTimeout = 10 * time.Second // Time-out for the EOS commands
+var cmdTimeout = 30 * time.Second // Time-out for the EOS commands
 
 type Options struct {
 	// Location of the eos binary. Default is /usr/bin/eos.
