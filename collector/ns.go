@@ -15,6 +15,7 @@ import (
 )
 
 type NSCollector struct {
+	*CollectorOpts
 	Boot_file_time                             *prometheus.GaugeVec
 	Boot_status                                *prometheus.GaugeVec
 	Boot_time                                  *prometheus.GaugeVec
@@ -50,6 +51,7 @@ type NSCollector struct {
 }
 
 type NSActivityCollector struct {
+	*CollectorOpts
 	Sum        *prometheus.GaugeVec
 	Last_5s    *prometheus.GaugeVec
 	Last_60s   *prometheus.GaugeVec
@@ -58,6 +60,7 @@ type NSActivityCollector struct {
 }
 
 type NSBatchCollector struct {
+	*CollectorOpts
 	Sum        *prometheus.GaugeVec
 	Last_5s    *prometheus.GaugeVec
 	Last_60s   *prometheus.GaugeVec
@@ -79,13 +82,15 @@ var err error
 	}
 }*/
 
-//NewNSCollector creates an instance of the NSCollector and instantiates
+// NewNSCollector creates an instance of the NSCollector and instantiates
 // the individual metrics that show information about the NS.
-func NewNSCollector(cluster string) *NSCollector {
+func NewNSCollector(opts *CollectorOpts) *NSCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &NSCollector{
+		CollectorOpts: opts,
 		Boot_file_time: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -377,13 +382,15 @@ func NewNSCollector(cluster string) *NSCollector {
 	}
 }
 
-//NewNSActivityCollector creates an instance of the NSActivityCollector and instantiates
+// NewNSActivityCollector creates an instance of the NSActivityCollector and instantiates
 // the individual metrics that show information about the NS activity.
-func NewNSActivityCollector(cluster string) *NSActivityCollector {
+func NewNSActivityCollector(opts *CollectorOpts) *NSActivityCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &NSActivityCollector{
+		CollectorOpts: opts,
 		Sum: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -432,13 +439,15 @@ func NewNSActivityCollector(cluster string) *NSActivityCollector {
 	}
 }
 
-//NewNSBatchCollector creates an instance of the NSBatchCollector and instantiates
+// NewNSBatchCollector creates an instance of the NSBatchCollector and instantiates
 // the individual metrics that show information about the NS activity.
-func NewNSBatchCollector(cluster string) *NSBatchCollector {
+func NewNSBatchCollector(opts *CollectorOpts) *NSBatchCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &NSBatchCollector{
+		CollectorOpts: opts,
 		Sum: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,

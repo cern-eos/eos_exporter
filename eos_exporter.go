@@ -58,23 +58,23 @@ type EOSExporter struct {
 var _ prometheus.Collector = &EOSExporter{}
 
 // NewEOSExporter creates an instance to EOSExporter
-func NewEOSExporter(instance string) *EOSExporter {
+func NewEOSExporter(opts *collector.CollectorOpts) *EOSExporter {
 	return &EOSExporter{
 		collectors: []prometheus.Collector{
-			collector.NewSpaceCollector(instance),           // eos space stats
-			collector.NewGroupCollector(instance),           // eos scheduling group stats
-			collector.NewNodeCollector(instance),            // eos node stats
-			collector.NewFSCollector(instance),              // eos filesystem stats
-			collector.NewIOInfoCollector(instance),          // eos io stat information
-			collector.NewIOAppInfoCollector(instance),       // eos io stat information per App
-			collector.NewNSCollector(instance),              // eos namespace information
-			collector.NewNSActivityCollector(instance),      // eos namespace activity information
-			collector.NewNSBatchCollector(instance),         // eos namespace potential batch overload information
-			collector.NewRecycleCollector(instance),         // eos recycle bin information
-			collector.NewWhoCollector(instance),             // eos who information
-			collector.NewFsckCollector(instance),            // eos fsck information
-			collector.NewFusexCollector(instance),           // eos fusex information
-			collector.NewInspectorLayoutCollector(instance), // eos inspector layout information
+			collector.NewSpaceCollector(opts),           // eos space stats
+			collector.NewGroupCollector(opts),           // eos scheduling group stats
+			collector.NewNodeCollector(opts),            // eos node stats
+			collector.NewFSCollector(opts),              // eos filesystem stats
+			collector.NewIOInfoCollector(opts),          // eos io stat information
+			collector.NewIOAppInfoCollector(opts),       // eos io stat information per App
+			collector.NewNSCollector(opts),              // eos namespace information
+			collector.NewNSActivityCollector(opts),      // eos namespace activity information
+			collector.NewNSBatchCollector(opts),         // eos namespace potential batch overload information
+			collector.NewRecycleCollector(opts),         // eos recycle bin information
+			collector.NewWhoCollector(opts),             // eos who information
+			collector.NewFsckCollector(opts),            // eos fsck information
+			collector.NewFusexCollector(opts),           // eos fusex information
+			collector.NewInspectorLayoutCollector(opts), // eos inspector layout information
 		},
 	}
 }
@@ -102,6 +102,7 @@ type Options struct {
 	EOSInstance   string
 	Version       bool
 	Help          bool
+	Timeout       int
 }
 
 var cmdOptions *Options = &Options{}
@@ -109,6 +110,7 @@ var cmdOptions *Options = &Options{}
 func init() {
 	flag.StringVar(&cmdOptions.ListenAddress, "listen-address", ":9986", "Address on which to expose metrics and web interface.")
 	flag.StringVar(&cmdOptions.MetricsPath, "telemetry-path", "/metrics", "Path under which to expose metrics.")
+	flag.IntVar(&cmdOptions.Timeout, "timeout", 30, "Number of seconds to timeout when querying EOS.")
 	flag.StringVar(&cmdOptions.EOSInstance, "eos-instance", "", "EOS instance name.")
 	flag.BoolVar(&cmdOptions.Help, "help", false, "Show the help and exit.")
 	flag.BoolVar(&cmdOptions.Version, "version", false, "Show the version and exit.")
@@ -162,8 +164,14 @@ func main() {
 	if cmdOptions.Version {
 		printVersion()
 	}
+
+	collectorOpts := &collector.CollectorOpts{
+		Cluster: cmdOptions.EOSInstance,
+		Timeout: cmdOptions.Timeout,
+	}
+
 	log.Println("Starting eos exporter for instance", cmdOptions.EOSInstance)
-	if err := prometheus.Register(NewEOSExporter(cmdOptions.EOSInstance)); err != nil {
+	if err := prometheus.Register(NewEOSExporter(collectorOpts)); err != nil {
 		log.Fatal(err)
 	}
 	/* Enable Goroutine profiling

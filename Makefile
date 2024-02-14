@@ -15,6 +15,7 @@ descr:
 	@echo "You are building the EOS exporter binary."
 
 build:
+	./get_build_info.sh
 	go generate
 	go build .
 

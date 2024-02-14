@@ -17,18 +17,21 @@ import (
 // recycle-bin=/eos/homecanary/proc/recycle/ usedbytes=365327522885 maxbytes=100000000000000 volumeusage=0.37% inodeusage=1.19% lifetime=15552000 ratio=0.800000
 
 type RecycleCollector struct {
+	*CollectorOpts
 	UsedBytes *prometheus.GaugeVec
 	MaxBytes  *prometheus.GaugeVec
 	Lifetime  *prometheus.GaugeVec
 	Ratio     *prometheus.GaugeVec
 }
 
-//NewRecycleCollector creates an cluster of the RecycleCollector
-func NewRecycleCollector(cluster string) *RecycleCollector {
+// NewRecycleCollector creates an cluster of the RecycleCollector
+func NewRecycleCollector(opts *CollectorOpts) *RecycleCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &RecycleCollector{
+		CollectorOpts: opts,
 		UsedBytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,

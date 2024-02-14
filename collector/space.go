@@ -44,6 +44,7 @@ sum.stat.disk.bw?configstatus@rw=63069
 */
 
 type SpaceCollector struct {
+	*CollectorOpts
 	CfgGroupSize                         *prometheus.GaugeVec
 	CfgGroupMod                          *prometheus.GaugeVec
 	Nofs                                 *prometheus.GaugeVec
@@ -76,12 +77,13 @@ type SpaceCollector struct {
 }
 
 // NewSpaceCollector creates an cluster of the SpaceCollector
-func NewSpaceCollector(cluster string) *SpaceCollector {
+func NewSpaceCollector(opts *CollectorOpts) *SpaceCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &SpaceCollector{
-
+		CollectorOpts: opts,
 		CfgGroupSize: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -385,7 +387,7 @@ func (o *SpaceCollector) collectorList() []prometheus.Collector {
 func (o *SpaceCollector) collectSpaceDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		panic(err)

@@ -11,6 +11,7 @@ import (
 )
 
 type IOInfoCollector struct {
+	*CollectorOpts
 	Total_bwd_seeks          *prometheus.GaugeVec
 	Total_bytes_bwd_wseek    *prometheus.GaugeVec
 	Total_bytes_deleted      *prometheus.GaugeVec
@@ -36,6 +37,7 @@ type IOInfoCollector struct {
 }
 
 type IOAppInfoCollector struct {
+	*CollectorOpts
 	Total_in  *prometheus.GaugeVec
 	Total_out *prometheus.GaugeVec
 	//Last_60s    *prometheus.GaugeVec
@@ -44,13 +46,14 @@ type IOAppInfoCollector struct {
 	//Last_86400s *prometheus.GaugeVec
 }
 
-//NewIOInfoCollector creates an cluster of the IOInfoCollector
-func NewIOInfoCollector(cluster string) *IOInfoCollector {
+// NewIOInfoCollector creates an cluster of the IOInfoCollector
+func NewIOInfoCollector(opts *CollectorOpts) *IOInfoCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &IOInfoCollector{
-
+		CollectorOpts: opts,
 		Total_bwd_seeks: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -207,13 +210,14 @@ func NewIOInfoCollector(cluster string) *IOInfoCollector {
 	}
 }
 
-//NewIOAppInfoCollector creates an cluster of the IOAppInfoCollector
-func NewIOAppInfoCollector(cluster string) *IOAppInfoCollector {
+// NewIOAppInfoCollector creates an cluster of the IOAppInfoCollector
+func NewIOAppInfoCollector(opts *CollectorOpts) *IOAppInfoCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &IOAppInfoCollector{
-
+		CollectorOpts: opts,
 		Total_in: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,

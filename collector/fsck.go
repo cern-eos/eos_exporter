@@ -10,16 +10,19 @@ import (
 )
 
 type FsckCollector struct {
+	*CollectorOpts
 	Count *prometheus.GaugeVec
 }
 
 // NewFSCollector creates an cluster of the FSCollector and instantiates
 // the individual metrics that show information about the FS.
-func NewFsckCollector(cluster string) *FsckCollector {
+func NewFsckCollector(opts *CollectorOpts) *FsckCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &FsckCollector{
+		CollectorOpts: opts,
 		Count: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,

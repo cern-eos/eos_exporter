@@ -14,7 +14,7 @@ const (
 )
 
 type NodeCollector struct {
-
+	*CollectorOpts
 	// UsedBytes displays the total used bytes in the Node
 	Host                  *prometheus.GaugeVec
 	Port                  *prometheus.GaugeVec
@@ -82,11 +82,13 @@ cfg.gw.ntx=10
 */
 
 // NewNodeCollector creates an cluster of the NodeCollector
-func NewNodeCollector(cluster string) *NodeCollector {
+func NewNodeCollector(opts *CollectorOpts) *NodeCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 
 	return &NodeCollector{
+		CollectorOpts: opts,
 		Status: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",

@@ -10,16 +10,19 @@ import (
 )
 
 type InspectorLayoutCollector struct {
+	*CollectorOpts
 	Volume *prometheus.GaugeVec
 }
 
 // NewFSCollector creates an cluster of the FSCollector and instantiates
 // the individual metrics that show information about the FS.
-func NewInspectorLayoutCollector(cluster string) *InspectorLayoutCollector {
+func NewInspectorLayoutCollector(opts *CollectorOpts) *InspectorLayoutCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &InspectorLayoutCollector{
+		CollectorOpts: opts,
 		Volume: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,

@@ -58,16 +58,19 @@ blockedfunc=none
 */
 
 type FusexCollector struct {
+	*CollectorOpts
 	Info *prometheus.GaugeVec
 }
 
 // NewFSCollector creates an cluster of the FSCollector and instantiates
 // the individual metrics that show information about the FS.
-func NewFusexCollector(cluster string) *FusexCollector {
+func NewFusexCollector(opts *CollectorOpts) *FusexCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &FusexCollector{
+		CollectorOpts: opts,
 		Info: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,

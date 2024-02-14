@@ -27,12 +27,14 @@ import (
 // This collector provides metrics based on c)
 
 type WhoCollector struct {
+	*CollectorOpts
 	SessionNumber *prometheus.GaugeVec
 	file          *os.File
 }
 
-//NewWhoCollector creates an cluster of the WhoCollector
-func NewWhoCollector(cluster string) *WhoCollector {
+// NewWhoCollector creates an cluster of the WhoCollector
+func NewWhoCollector(opts *CollectorOpts) *WhoCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 
@@ -45,6 +47,7 @@ func NewWhoCollector(cluster string) *WhoCollector {
 
 	return &WhoCollector{
 		//file: f,
+		CollectorOpts: opts,
 		SessionNumber: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,

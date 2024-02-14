@@ -10,6 +10,7 @@ import (
 )
 
 type GroupCollector struct {
+	*CollectorOpts
 	Name                   *prometheus.GaugeVec
 	CfgStatus              *prometheus.GaugeVec
 	Nofs                   *prometheus.GaugeVec
@@ -38,11 +39,13 @@ type GroupCollector struct {
 
 // NewGroupCollector creates an cluster of the GroupCollector and instantiates
 // the individual metrics that show information about the Group.
-func NewGroupCollector(cluster string) *GroupCollector {
+func NewGroupCollector(opts *CollectorOpts) *GroupCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &GroupCollector{
+		CollectorOpts: opts,
 		CfgStatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
@@ -292,7 +295,8 @@ func (o *GroupCollector) collectGroupDF() error {
 
 	mds, err := client.ListGroup(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return err
 	}
 
 	// Reset gauge metrics to remove metrics of deleted groups
