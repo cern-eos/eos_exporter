@@ -10,16 +10,19 @@ import (
 )
 
 type InspectorLayoutCollector struct {
+	*CollectorOpts
 	Volume *prometheus.GaugeVec
 }
 
 // NewFSCollector creates an cluster of the FSCollector and instantiates
 // the individual metrics that show information about the FS.
-func NewInspectorLayoutCollector(cluster string) *InspectorLayoutCollector {
+func NewInspectorLayoutCollector(opts *CollectorOpts) *InspectorLayoutCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &InspectorLayoutCollector{
+		CollectorOpts: opts,
 		Volume: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -41,7 +44,7 @@ func (o *InspectorLayoutCollector) collectorList() []prometheus.Collector {
 func (o *InspectorLayoutCollector) collectInspectorLayoutDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		panic(err)
@@ -49,7 +52,7 @@ func (o *InspectorLayoutCollector) collectInspectorLayoutDF() error {
 
 	mds, err := client.ListInspectorLayout(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	o.Volume.Reset()
@@ -79,6 +82,7 @@ func (o *InspectorLayoutCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectInspectorLayoutDF(); err != nil {
 		log.Println("failed collecting eos inspector metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

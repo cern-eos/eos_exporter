@@ -17,18 +17,21 @@ import (
 // recycle-bin=/eos/homecanary/proc/recycle/ usedbytes=365327522885 maxbytes=100000000000000 volumeusage=0.37% inodeusage=1.19% lifetime=15552000 ratio=0.800000
 
 type RecycleCollector struct {
+	*CollectorOpts
 	UsedBytes *prometheus.GaugeVec
 	MaxBytes  *prometheus.GaugeVec
 	Lifetime  *prometheus.GaugeVec
 	Ratio     *prometheus.GaugeVec
 }
 
-//NewRecycleCollector creates an cluster of the RecycleCollector
-func NewRecycleCollector(cluster string) *RecycleCollector {
+// NewRecycleCollector creates an cluster of the RecycleCollector
+func NewRecycleCollector(opts *CollectorOpts) *RecycleCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &RecycleCollector{
+		CollectorOpts: opts,
 		UsedBytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -80,7 +83,7 @@ func (o *RecycleCollector) collectorList() []prometheus.Collector {
 func (o *RecycleCollector) collectRecycleDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		panic(err)
@@ -88,7 +91,7 @@ func (o *RecycleCollector) collectRecycleDF() error {
 
 	mds, err := client.Recycle(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	for _, m := range mds {
@@ -130,6 +133,7 @@ func (o *RecycleCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectRecycleDF(); err != nil {
 		log.Println("failed collecting recycle metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

@@ -27,12 +27,14 @@ import (
 // This collector provides metrics based on c)
 
 type WhoCollector struct {
+	*CollectorOpts
 	SessionNumber *prometheus.GaugeVec
 	file          *os.File
 }
 
-//NewWhoCollector creates an cluster of the WhoCollector
-func NewWhoCollector(cluster string) *WhoCollector {
+// NewWhoCollector creates an cluster of the WhoCollector
+func NewWhoCollector(opts *CollectorOpts) *WhoCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 
@@ -45,6 +47,7 @@ func NewWhoCollector(cluster string) *WhoCollector {
 
 	return &WhoCollector{
 		//file: f,
+		CollectorOpts: opts,
 		SessionNumber: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -66,7 +69,7 @@ func (o *WhoCollector) collectorList() []prometheus.Collector {
 func (o *WhoCollector) collectWhoDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		panic(err)
@@ -74,7 +77,7 @@ func (o *WhoCollector) collectWhoDF() error {
 
 	whos, err := client.Who(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	//t := time.Now().String()
@@ -120,6 +123,7 @@ func (o *WhoCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectWhoDF(); err != nil {
 		log.Println("failed collecting who  metrics:", err)
+		return
 	}
 
 	for _, collector := range o.collectorList() {

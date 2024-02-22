@@ -14,7 +14,7 @@ const (
 )
 
 type NodeCollector struct {
-
+	*CollectorOpts
 	// UsedBytes displays the total used bytes in the Node
 	Host                  *prometheus.GaugeVec
 	Port                  *prometheus.GaugeVec
@@ -82,11 +82,13 @@ cfg.gw.ntx=10
 */
 
 // NewNodeCollector creates an cluster of the NodeCollector
-func NewNodeCollector(cluster string) *NodeCollector {
+func NewNodeCollector(opts *CollectorOpts) *NodeCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 
 	return &NodeCollector{
+		CollectorOpts: opts,
 		Status: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
@@ -288,7 +290,7 @@ func (o *NodeCollector) collectorList() []prometheus.Collector {
 func (o *NodeCollector) collectNodeDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		panic(err)
@@ -296,7 +298,7 @@ func (o *NodeCollector) collectNodeDF() error {
 
 	mds, err := client.ListNode(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Reset gauge metrics to remove metrics of removed nodes
@@ -450,6 +452,7 @@ func (o *NodeCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectNodeDF(); err != nil {
 		log.Println("failed collecting node metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

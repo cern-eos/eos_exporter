@@ -11,6 +11,7 @@ import (
 )
 
 type IOInfoCollector struct {
+	*CollectorOpts
 	Total_bwd_seeks          *prometheus.GaugeVec
 	Total_bytes_bwd_wseek    *prometheus.GaugeVec
 	Total_bytes_deleted      *prometheus.GaugeVec
@@ -36,6 +37,7 @@ type IOInfoCollector struct {
 }
 
 type IOAppInfoCollector struct {
+	*CollectorOpts
 	Total_in  *prometheus.GaugeVec
 	Total_out *prometheus.GaugeVec
 	//Last_60s    *prometheus.GaugeVec
@@ -44,13 +46,14 @@ type IOAppInfoCollector struct {
 	//Last_86400s *prometheus.GaugeVec
 }
 
-//NewIOInfoCollector creates an cluster of the IOInfoCollector
-func NewIOInfoCollector(cluster string) *IOInfoCollector {
+// NewIOInfoCollector creates an cluster of the IOInfoCollector
+func NewIOInfoCollector(opts *CollectorOpts) *IOInfoCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &IOInfoCollector{
-
+		CollectorOpts: opts,
 		Total_bwd_seeks: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -207,13 +210,14 @@ func NewIOInfoCollector(cluster string) *IOInfoCollector {
 	}
 }
 
-//NewIOAppInfoCollector creates an cluster of the IOAppInfoCollector
-func NewIOAppInfoCollector(cluster string) *IOAppInfoCollector {
+// NewIOAppInfoCollector creates an cluster of the IOAppInfoCollector
+func NewIOAppInfoCollector(opts *CollectorOpts) *IOAppInfoCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &IOAppInfoCollector{
-
+		CollectorOpts: opts,
 		Total_in: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -267,7 +271,7 @@ func (o *IOAppInfoCollector) collectorList() []prometheus.Collector {
 func (o *IOInfoCollector) collectIOInfoDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		fmt.Println("Panic error while getting new eosclient: ", err)
@@ -276,8 +280,7 @@ func (o *IOInfoCollector) collectIOInfoDF() error {
 
 	mds, err := client.ListIOInfo(context.Background())
 	if err != nil {
-		fmt.Println("Panic error while ListIOInfo: ", err)
-		panic(err)
+		return err
 	}
 
 	for _, m := range mds {
@@ -386,16 +389,15 @@ func (o *IOInfoCollector) collectIOInfoDF() error {
 func (o *IOAppInfoCollector) collectIOAppInfoDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		panic(err)
 	}
 
 	mds, err := client.ListIOAppInfo(context.Background())
-
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	for _, m := range mds {
@@ -430,6 +432,7 @@ func (o *IOInfoCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectIOInfoDF(); err != nil {
 		log.Println("failed collecting IO info metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {
@@ -449,6 +452,7 @@ func (o *IOAppInfoCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectIOAppInfoDF(); err != nil {
 		log.Println("failed collecting IO info metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

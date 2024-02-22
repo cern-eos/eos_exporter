@@ -10,6 +10,7 @@ import (
 )
 
 type GroupCollector struct {
+	*CollectorOpts
 	Name                   *prometheus.GaugeVec
 	CfgStatus              *prometheus.GaugeVec
 	Nofs                   *prometheus.GaugeVec
@@ -38,11 +39,13 @@ type GroupCollector struct {
 
 // NewGroupCollector creates an cluster of the GroupCollector and instantiates
 // the individual metrics that show information about the Group.
-func NewGroupCollector(cluster string) *GroupCollector {
+func NewGroupCollector(opts *CollectorOpts) *GroupCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &GroupCollector{
+		CollectorOpts: opts,
 		CfgStatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   "eos",
@@ -284,7 +287,7 @@ func (o *GroupCollector) collectorList() []prometheus.Collector {
 func (o *GroupCollector) collectGroupDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		panic(err)
@@ -292,7 +295,7 @@ func (o *GroupCollector) collectGroupDF() error {
 
 	mds, err := client.ListGroup(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Reset gauge metrics to remove metrics of deleted groups
@@ -469,6 +472,7 @@ func (o *GroupCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectGroupDF(); err != nil {
 		log.Println("failed collecting group metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

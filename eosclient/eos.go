@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var cmdTimeout = 30 * time.Second // Time-out for the EOS commands
+var DEFAULT_TIMEOUT = 30 // Time-out in seconds for the EOS commands
 
 type Options struct {
 	// Location of the eos binary. Default is /usr/bin/eos.
@@ -42,6 +42,9 @@ type Options struct {
 
 	// Logger to use
 	Logger *zap.Logger
+
+	// Timeout number of seconds before timing out requests to EOS
+	Timeout int
 }
 
 func (opt *Options) init() {
@@ -64,6 +67,10 @@ func (opt *Options) init() {
 	if opt.Logger == nil {
 		l, _ := zap.NewProduction()
 		opt.Logger = l
+	}
+
+	if opt.Timeout == 0 {
+		opt.Timeout = DEFAULT_TIMEOUT
 	}
 }
 
@@ -356,18 +363,19 @@ func (c *Client) execute(cmd *exec.Cmd) (string, string, error) {
 	return outBuf.String(), errBuf.String(), err
 }
 
+func (c *Client) getTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	timeout := time.Duration(c.opt.Timeout) * time.Second
+	return context.WithTimeout(ctx, time.Duration(timeout))
+}
+
 // List the nodes on the instance
 func (c *Client) ListNode(ctx context.Context, username string) ([]*NodeInfo, error) {
 	unixUser, err := getUnixUser(username)
 	if err != nil {
 		return nil, err
 	}
-	var (
-		ctxWt  context.Context
-		cancel context.CancelFunc
-	)
 
-	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	ctxWt, cancel := c.getTimeout(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "node", "ls", "-m")
@@ -385,12 +393,7 @@ func (c *Client) ListGroup(ctx context.Context, username string) ([]*GroupInfo, 
 		return nil, err
 	}
 
-	var (
-		ctxWt  context.Context
-		cancel context.CancelFunc
-	)
-
-	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	ctxWt, cancel := c.getTimeout(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "group", "ls", "-m")
@@ -408,12 +411,7 @@ func (c *Client) ListFS(ctx context.Context, username string) ([]*FSInfo, error)
 		return nil, err
 	}
 
-	var (
-		ctxWt  context.Context
-		cancel context.CancelFunc
-	)
-
-	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	ctxWt, cancel := c.getTimeout(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "fs", "ls", "-m")
@@ -458,8 +456,7 @@ func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*N
 // List the IO info in the instance
 func (c *Client) ListIOInfo(ctx context.Context) ([]*IOInfo, error) {
 
-	// ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
-	// defer cancel()
+	ctx, _ = c.getTimeout(ctx)
 
 	stdout1, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "io", "stat", "-m"))
 	if err != nil {
@@ -472,7 +469,7 @@ func (c *Client) ListIOInfo(ctx context.Context) ([]*IOInfo, error) {
 // List the IO info in the instance
 func (c *Client) ListIOAppInfo(ctx context.Context) ([]*IOInfo, error) {
 
-	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
+	ctx, cancel := c.getTimeout(ctx)
 	defer cancel()
 
 	stdout2, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "io", "stat", "-m", "-x"))
@@ -875,7 +872,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 		if UidLetter(kv["uid"]) && onlyUsers(kv["uid"], excl_uids) && batchMetrics[kv["uid"]+"-"+kv["cmd"]] {
 			var eos_instance string = "homecanary"
 			var level int = 0
-			ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
+			ctx, cancel := c.getTimeout(ctx)
 			defer cancel()
 
 			stdo, _, err := c.execute(exec.CommandContext(ctx, "eos", "version"))
@@ -1030,12 +1027,8 @@ func (c *Client) Recycle(ctx context.Context, username string) ([]*RecycleInfo, 
 	if err != nil {
 		return nil, err
 	}
-	var (
-		ctxWt  context.Context
-		cancel context.CancelFunc
-	)
 
-	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	ctxWt, cancel := c.getTimeout(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "recycle", "-m")
@@ -1114,12 +1107,7 @@ func (c *Client) Who(ctx context.Context, username string) ([]*WhoInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	var (
-		ctxWt  context.Context
-		cancel context.CancelFunc
-	)
-
-	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	ctxWt, cancel := c.getTimeout(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "who", "-a", "-m")
@@ -1203,12 +1191,7 @@ func (c *Client) ListSpace(ctx context.Context, username string) ([]*SpaceInfo, 
 		return nil, err
 	}
 
-	var (
-		ctxWt  context.Context
-		cancel context.CancelFunc
-	)
-
-	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	ctxWt, cancel := c.getTimeout(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "space", "ls", "-m")
@@ -1297,12 +1280,7 @@ func (c *Client) FsckReport(ctx context.Context, username string) ([]*FsckInfo, 
 		return nil, err
 	}
 
-	var (
-		ctxWt  context.Context
-		cancel context.CancelFunc
-	)
-
-	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	ctxWt, cancel := c.getTimeout(ctx)
 	defer cancel()
 
 	//cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "fsck", "report", "-a")
@@ -1361,12 +1339,7 @@ func (c *Client) ListFusex(ctx context.Context, username string) ([]*FusexInfo, 
 		return nil, err
 	}
 
-	var (
-		ctxWt  context.Context
-		cancel context.CancelFunc
-	)
-
-	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	ctxWt, cancel := c.getTimeout(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "fusex", "ls", "-m")
@@ -1428,12 +1401,7 @@ func (c *Client) ListInspectorLayout(ctx context.Context, username string) ([]*I
 		return nil, err
 	}
 
-	var (
-		ctxWt  context.Context
-		cancel context.CancelFunc
-	)
-
-	ctxWt, cancel = context.WithTimeout(ctx, cmdTimeout)
+	ctxWt, cancel := c.getTimeout(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "inspector", "-m")

@@ -14,6 +14,7 @@ import (
 )
 
 type FSCollector struct {
+	*CollectorOpts
 	Host                       *prometheus.GaugeVec
 	Port                       *prometheus.GaugeVec
 	Id                         *prometheus.GaugeVec
@@ -63,11 +64,13 @@ type FSCollector struct {
 
 // NewFSCollector creates an cluster of the FSCollector and instantiates
 // the individual metrics that show information about the FS.
-func NewFSCollector(cluster string) *FSCollector {
+func NewFSCollector(opts *CollectorOpts) *FSCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &FSCollector{
+		CollectorOpts: opts,
 		StatBoot: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -385,7 +388,7 @@ func getEOSInstance() string {
 func (o *FSCollector) collectFSDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		panic(err)
@@ -393,7 +396,7 @@ func (o *FSCollector) collectFSDF() error {
 
 	mds, err := client.ListFS(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Reset Gauge metrics to remove metrics of non existing filesystems
@@ -629,6 +632,7 @@ func (o *FSCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectFSDF(); err != nil {
 		log.Println("failed collecting fs metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

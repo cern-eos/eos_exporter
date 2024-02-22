@@ -10,16 +10,19 @@ import (
 )
 
 type FsckCollector struct {
+	*CollectorOpts
 	Count *prometheus.GaugeVec
 }
 
 // NewFSCollector creates an cluster of the FSCollector and instantiates
 // the individual metrics that show information about the FS.
-func NewFsckCollector(cluster string) *FsckCollector {
+func NewFsckCollector(opts *CollectorOpts) *FsckCollector {
+	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
 	namespace := "eos"
 	return &FsckCollector{
+		CollectorOpts: opts,
 		Count: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -67,7 +70,7 @@ func (o *FsckCollector) collectorList() []prometheus.Collector {
 func (o *FsckCollector) collectFsckDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		panic(err)
@@ -75,7 +78,7 @@ func (o *FsckCollector) collectFsckDF() error {
 
 	mds, err := client.FsckReport(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	o.Count.Reset()
@@ -105,6 +108,7 @@ func (o *FsckCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectFsckDF(); err != nil {
 		log.Println("failed collecting fsck metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {
