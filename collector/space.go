@@ -395,7 +395,7 @@ func (o *SpaceCollector) collectSpaceDF() error {
 
 	mds, err := client.ListSpace(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// reset gauges (to drop metrics of deleted spaces)
@@ -609,6 +609,7 @@ func (o *SpaceCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectSpaceDF(); err != nil {
 		log.Println("failed collecting space metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

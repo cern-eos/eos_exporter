@@ -564,8 +564,7 @@ func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient
 
 	mds, mdsact, mdsbatch, err := client.ListNS(context.Background())
 	if err != nil {
-		fmt.Println("Panic error in ListNS")
-		panic(err)
+		return nil, nil, nil, err
 	}
 
 	return mds, mdsact, mdsbatch, nil
@@ -576,7 +575,7 @@ func (o *NSCollector) collectNSDF() error {
 
 	Mds, Mdsact, Mdsbatch, err = getNSData()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	//var boot_status float64
@@ -915,6 +914,7 @@ func (o *NSCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectNSDF(); err != nil {
 		log.Println("failed collecting ns metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {
@@ -935,6 +935,7 @@ func (o *NSActivityCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectNSActivityDF(); err != nil {
 		log.Println("failed collecting ns_activity metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {
@@ -955,6 +956,7 @@ func (o *NSBatchCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectNSBatchDF(); err != nil {
 		log.Println("failed collecting space metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

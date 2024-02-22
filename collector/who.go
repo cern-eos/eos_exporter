@@ -77,7 +77,7 @@ func (o *WhoCollector) collectWhoDF() error {
 
 	whos, err := client.Who(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	//t := time.Now().String()
@@ -123,6 +123,7 @@ func (o *WhoCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectWhoDF(); err != nil {
 		log.Println("failed collecting who  metrics:", err)
+		return
 	}
 
 	for _, collector := range o.collectorList() {

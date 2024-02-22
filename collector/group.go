@@ -295,7 +295,6 @@ func (o *GroupCollector) collectGroupDF() error {
 
 	mds, err := client.ListGroup(context.Background(), "root")
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
@@ -473,6 +472,7 @@ func (o *GroupCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectGroupDF(); err != nil {
 		log.Println("failed collecting group metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

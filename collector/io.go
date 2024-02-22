@@ -280,8 +280,7 @@ func (o *IOInfoCollector) collectIOInfoDF() error {
 
 	mds, err := client.ListIOInfo(context.Background())
 	if err != nil {
-		fmt.Println("Panic error while ListIOInfo: ", err)
-		panic(err)
+		return err
 	}
 
 	for _, m := range mds {
@@ -397,9 +396,8 @@ func (o *IOAppInfoCollector) collectIOAppInfoDF() error {
 	}
 
 	mds, err := client.ListIOAppInfo(context.Background())
-
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	for _, m := range mds {
@@ -434,6 +432,7 @@ func (o *IOInfoCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectIOInfoDF(); err != nil {
 		log.Println("failed collecting IO info metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {
@@ -453,6 +452,7 @@ func (o *IOAppInfoCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectIOAppInfoDF(); err != nil {
 		log.Println("failed collecting IO info metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

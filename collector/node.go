@@ -298,7 +298,7 @@ func (o *NodeCollector) collectNodeDF() error {
 
 	mds, err := client.ListNode(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Reset gauge metrics to remove metrics of removed nodes
@@ -452,6 +452,7 @@ func (o *NodeCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectNodeDF(); err != nil {
 		log.Println("failed collecting node metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

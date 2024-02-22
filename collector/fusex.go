@@ -100,7 +100,7 @@ func (o *FusexCollector) collectFusexDF() error {
 
 	mds, err := client.ListFusex(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	o.Info.Reset()
@@ -127,6 +127,7 @@ func (o *FusexCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectFusexDF(); err != nil {
 		log.Println("failed collecting fsck metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

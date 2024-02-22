@@ -52,7 +52,7 @@ func (o *InspectorLayoutCollector) collectInspectorLayoutDF() error {
 
 	mds, err := client.ListInspectorLayout(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	o.Volume.Reset()
@@ -82,6 +82,7 @@ func (o *InspectorLayoutCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectInspectorLayoutDF(); err != nil {
 		log.Println("failed collecting eos inspector metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

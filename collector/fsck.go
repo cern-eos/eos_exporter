@@ -78,7 +78,7 @@ func (o *FsckCollector) collectFsckDF() error {
 
 	mds, err := client.FsckReport(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	o.Count.Reset()
@@ -108,6 +108,7 @@ func (o *FsckCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectFsckDF(); err != nil {
 		log.Println("failed collecting fsck metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

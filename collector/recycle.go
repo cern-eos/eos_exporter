@@ -91,7 +91,7 @@ func (o *RecycleCollector) collectRecycleDF() error {
 
 	mds, err := client.Recycle(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	for _, m := range mds {
@@ -133,6 +133,7 @@ func (o *RecycleCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectRecycleDF(); err != nil {
 		log.Println("failed collecting recycle metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {

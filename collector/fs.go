@@ -396,7 +396,7 @@ func (o *FSCollector) collectFSDF() error {
 
 	mds, err := client.ListFS(context.Background(), "root")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Reset Gauge metrics to remove metrics of non existing filesystems
@@ -632,6 +632,7 @@ func (o *FSCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectFSDF(); err != nil {
 		log.Println("failed collecting fs metrics:", err)
+		return
 	}
 
 	for _, metric := range o.collectorList() {
