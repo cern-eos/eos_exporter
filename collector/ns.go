@@ -552,10 +552,10 @@ func (o *NSBatchCollector) collectorList() []prometheus.Collector {
 	}
 }
 
-func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient.NSBatchInfo, error) {
+func getNSData(o *CollectorOpts) ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient.NSBatchInfo, error) {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		fmt.Println("Panic error when creating eosclient in getNSData")
@@ -573,7 +573,7 @@ func getNSData() ([]*eosclient.NSInfo, []*eosclient.NSActivityInfo, []*eosclient
 
 func (o *NSCollector) collectNSDF() error {
 
-	Mds, Mdsact, Mdsbatch, err = getNSData()
+	Mds, Mdsact, Mdsbatch, err = getNSData(o.CollectorOpts)
 	if err != nil {
 		return err
 	}

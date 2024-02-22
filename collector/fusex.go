@@ -92,7 +92,7 @@ func (o *FusexCollector) collectorList() []prometheus.Collector {
 func (o *FusexCollector) collectFusexDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		panic(err)

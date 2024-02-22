@@ -271,7 +271,7 @@ func (o *IOAppInfoCollector) collectorList() []prometheus.Collector {
 func (o *IOInfoCollector) collectIOInfoDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		fmt.Println("Panic error while getting new eosclient: ", err)
@@ -389,7 +389,7 @@ func (o *IOInfoCollector) collectIOInfoDF() error {
 func (o *IOAppInfoCollector) collectIOAppInfoDF() error {
 	ins := getEOSInstance()
 	url := "root://" + ins
-	opt := &eosclient.Options{URL: url}
+	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
 	client, err := eosclient.New(opt)
 	if err != nil {
 		panic(err)
