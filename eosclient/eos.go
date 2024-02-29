@@ -1381,9 +1381,26 @@ func (c *Client) parseFusexInfo(line string) (*FusexInfo, error) {
 // ----------------------------------------//
 // EOS INSPECTOR INFORMATION 		       //
 // ----------------------------------------//
+
+//LAYOUT INFO
 // eos inspector -m | grep layout
 // key=last layout=00000000 type=plain nominal_stripes=1 checksum=none blockchecksum=none blocksize=4k locations=0 nolocation=51051 physicalsize=78670882614 repdelta:-1=51051 unlinkedlocations=0 volume=78670882614 zerosize=51016
 // eos_inspector_layout_volume{layout="00000000", type="plain", nominal_stripes="1", blocksize="4k"} 78670882614
+
+//ACCESS TIME VOLUME
+// eos inspector -m | grep accesstime::volume
+// key=last tag=accesstime::volume bin=86400 value=3273370937835520
+// eos_inspector_accesstime_volume{bin="86400"} 3273370937835520
+
+// ACCESS TIME FILES
+// eos inspector -m | grep accesstime::files
+// key=last tag=accesstime::files bin=86400 value=5455901
+// eos_inspector_accesstime_files{bin="86400"} 5455901
+
+// BIRTH ACCESS TIME FILES
+// eos inspector -m | grep birthvsaccesstime::files
+// key=last tag=birthvsaccesstime::files xbin=86400 ybin=0 value=125
+// eos_inspector_birth accesstime_files{xbin="86400 ybin=0"} 125
 
 // struct definition
 type InspectorLayoutInfo struct {
@@ -1392,6 +1409,18 @@ type InspectorLayoutInfo struct {
 	NominalStripes string
 	BlockSize      string
 	Volume         string
+}
+
+// struct definition
+type InspectorAccessTimeVolumeInfo struct {
+	Bin    string
+	Volume string
+}
+
+// struct definition
+type InspectorAccessTimeFilesInfo struct {
+	Bin   string
+	Files string
 }
 
 // List Inspector Layout
@@ -1409,11 +1438,11 @@ func (c *Client) ListInspectorLayout(ctx context.Context, username string) ([]*I
 	if err != nil {
 		return nil, err
 	}
-	return c.parseInsepectorLayoutsInfo(stdout)
+	return c.parseInspectorLayoutsInfo(stdout)
 }
 
 // Gathers the information of all lines.
-func (c *Client) parseInsepectorLayoutsInfo(raw string) ([]*InspectorLayoutInfo, error) {
+func (c *Client) parseInspectorLayoutsInfo(raw string) ([]*InspectorLayoutInfo, error) {
 	inspectorLayoutInfos := []*InspectorLayoutInfo{}
 	rawLines := strings.Split(raw, "\n")
 	for _, rl := range rawLines {
@@ -1441,4 +1470,96 @@ func (c *Client) parseInspectorLayoutLine(line string) (*InspectorLayoutInfo, er
 		kv["volume"],
 	}
 	return layoutInfo, nil
+}
+
+// List Inspector AccessTime Volume
+func (c *Client) ListInspectorAccessTimeVolume(ctx context.Context, username string) ([]*InspectorAccessTimeVolumeInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "inspector", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseInspectorAccessTimeVolumeInfo(stdout)
+}
+
+// Gathers the information of all lines.
+func (c *Client) parseInspectorAccessTimeVolumeInfo(raw string) ([]*InspectorAccessTimeVolumeInfo, error) {
+	inspectorAccessTimeVolumeInfos := []*InspectorAccessTimeVolumeInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" || !strings.Contains(rl, "accesstime::volume") {
+			continue
+		}
+		inspectorAccessTimeVolume, err := c.parseInspectorAccessTimeVolumeLine(rl)
+
+		if err != nil {
+			return nil, err
+		}
+		inspectorAccessTimeVolumeInfos = append(inspectorAccessTimeVolumeInfos, inspectorAccessTimeVolume)
+	}
+	return inspectorAccessTimeVolumeInfos, nil
+}
+
+// Gathers information of one single line
+func (c *Client) parseInspectorAccessTimeVolumeLine(line string) (*InspectorAccessTimeVolumeInfo, error) {
+	kv := c.getMap(line)
+	accessTimeVolumeInfo := &InspectorAccessTimeVolumeInfo{
+		kv["bin"],
+		kv["value"],
+	}
+	return accessTimeVolumeInfo, nil
+}
+
+// List Inspector Access Time Files
+func (c *Client) ListInspectorAccessTimeFiles(ctx context.Context, username string) ([]*InspectorAccessTimeFilesInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "inspector", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseInspectorAccessTimeFilesInfo(stdout)
+}
+
+// Gathers the information of all lines.
+func (c *Client) parseInspectorAccessTimeFilesInfo(raw string) ([]*InspectorAccessTimeFilesInfo, error) {
+	inspectorAccessTimeFilesInfos := []*InspectorAccessTimeFilesInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" || !strings.Contains(rl, "accesstime::files") {
+			continue
+		}
+		inspectorAccessTimeFiles, err := c.parseInspectorAccessTimeFilesLine(rl)
+
+		if err != nil {
+			return nil, err
+		}
+		inspectorAccessTimeFilesInfos = append(inspectorAccessTimeFilesInfos, inspectorAccessTimeFiles)
+	}
+	return inspectorAccessTimeFilesInfos, nil
+}
+
+// Gathers information of one single line
+func (c *Client) parseInspectorAccessTimeFilesLine(line string) (*InspectorAccessTimeFilesInfo, error) {
+	kv := c.getMap(line)
+	accessTimeFilesInfo := &InspectorAccessTimeFilesInfo{
+		kv["bin"],
+		kv["value"],
+	}
+	return accessTimeFilesInfo, nil
 }
