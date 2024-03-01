@@ -1771,7 +1771,7 @@ func (c *Client) parseInspectorGroupCostDiskInfo(raw string) ([]*InspectorGroupC
 }
 
 // Gathers information of one single line
-func (c *Client) parseInspectorGroupCostDiskLine(line string) (*InspectorCostDiskInfo, error) {
+func (c *Client) parseInspectorGroupCostDiskLine(line string) (*InspectorGroupCostDiskInfo, error) {
 	kv := c.getMap(line)
 	groupCostDiskInfo := &InspectorGroupCostDiskInfo{
 		kv["groupname"],
