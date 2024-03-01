@@ -1469,10 +1469,9 @@ func secondsToHumanReadable(secondsStr string) string {
 		// Handle the error (e.g., invalid input)
 		return "Invalid input"
 	}
+
 	if seconds == 0 {
 		return "0D"
-	} else if seconds == 86400 {
-		return "1D"
 	}
 
 	duration := time.Second * time.Duration(seconds)
@@ -1490,17 +1489,11 @@ func secondsToHumanReadable(secondsStr string) string {
 
 	if years > 0 {
 		result += fmt.Sprintf("%dY", years)
-	}
-
-	if weeks > 0 {
+	} else if weeks > 0 {
 		result += fmt.Sprintf("%dW", weeks)
-	}
-
-	if months > 0 {
+	} else if months > 0 {
 		result += fmt.Sprintf("%dM", months)
-	}
-
-	if days%7 > 0 {
+	} else if days%7 > 0 {
 		result += fmt.Sprintf("%dD", days%7)
 	}
 
@@ -1778,7 +1771,7 @@ func (c *Client) parseInspectorGroupCostDiskInfo(raw string) ([]*InspectorGroupC
 }
 
 // Gathers information of one single line
-func (c *Client) parseInspectorGroupCostDiskLine(line string) (*InspectorGroupCostDiskInfo, error) {
+func (c *Client) parseInspectorGroupCostDiskLine(line string) (*InspectorCostDiskInfo, error) {
 	kv := c.getMap(line)
 	groupCostDiskInfo := &InspectorGroupCostDiskInfo{
 		kv["groupname"],
