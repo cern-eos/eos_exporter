@@ -1397,10 +1397,25 @@ func (c *Client) parseFusexInfo(line string) (*FusexInfo, error) {
 // key=last tag=accesstime::files bin=86400 value=5455901
 // eos_inspector_accesstime_files{bin="86400"} 5455901
 
-// BIRTH ACCESS TIME FILES
-// eos inspector -m | grep birthvsaccesstime::files
-// key=last tag=birthvsaccesstime::files xbin=86400 ybin=0 value=125
-// eos_inspector_birth accesstime_files{xbin="86400 ybin=0"} 125
+// BIRTH TIME VOLUME
+// eos inspector -m | grep birthtime::volume
+// key=last tag=birthtime::volume bin=0 value=916068146306018
+// eos_inspector_birthtime_volume{bin="0"} 916068146306018
+
+// BIRTH TIME FILES
+// eos inspector -m | grep birthtime::files
+// key=last tag=birthtime::files bin=86400 value=4670044
+// eos_inspector_accesstime_files{bin="86400"} 4670044
+
+// GROUP COST DISK
+// eos inspector -m | grep group::cost::disk
+// key=last tag=group::cost::disk groupname=root gid=0 cost=263.975993 price=20.000000 tbyears=13.198800
+// eos_inspector_group_cost{groupname="root", gid=0, price=20.000000, ybin=0"} 263.975993
+
+// GROUP TBYEARS DISK
+// eos inspector -m | grep group::cost::disk
+// key=last tag=group::cost::disk groupname=root gid=0 cost=263.975993 price=20.000000 tbyears=13.198800
+// eos_inspector_group_cost{groupname="root", gid=0, price=20.000000, ybin=0"} 13.198800
 
 // struct definition
 type InspectorLayoutInfo struct {
@@ -1421,6 +1436,75 @@ type InspectorAccessTimeVolumeInfo struct {
 type InspectorAccessTimeFilesInfo struct {
 	Bin   string
 	Files string
+}
+
+// struct definition
+type InspectorBirthTimeVolumeInfo struct {
+	Bin    string
+	Volume string
+}
+
+// struct definition
+type InspectorBirthTimeFilesInfo struct {
+	Bin   string
+	Files string
+}
+
+// struct definition
+type InspectorGroupCostDiskInfo struct {
+	Groupname string
+	Price     string
+	Cost      string
+}
+
+// struct definition
+type InspectorGroupCostDiskTBYearsInfo struct {
+	Groupname string
+	TBYears   string
+}
+
+func secondsToHumanReadable(secondsStr string) string {
+	seconds, err := strconv.Atoi(secondsStr)
+	if err != nil {
+		// Handle the error (e.g., invalid input)
+		return "Invalid input"
+	}
+	if seconds == 0 {
+		return "0D"
+	} else if seconds == 86400 {
+		return "1D"
+	}
+
+	duration := time.Second * time.Duration(seconds)
+	days := int(duration.Hours() / 24)
+	years := days / 365
+	months := (days % 365) / 30
+	weeks := (days % 365) / 7
+
+	// Round to the nearest year
+	if (days%365)*2 > 365 {
+		years++
+	}
+
+	var result string
+
+	if years > 0 {
+		result += fmt.Sprintf("%dY", years)
+	}
+
+	if weeks > 0 {
+		result += fmt.Sprintf("%dW", weeks)
+	}
+
+	if months > 0 {
+		result += fmt.Sprintf("%dM", months)
+	}
+
+	if days%7 > 0 {
+		result += fmt.Sprintf("%dD", days%7)
+	}
+
+	return result
 }
 
 // List Inspector Layout
@@ -1512,7 +1596,7 @@ func (c *Client) parseInspectorAccessTimeVolumeInfo(raw string) ([]*InspectorAcc
 func (c *Client) parseInspectorAccessTimeVolumeLine(line string) (*InspectorAccessTimeVolumeInfo, error) {
 	kv := c.getMap(line)
 	accessTimeVolumeInfo := &InspectorAccessTimeVolumeInfo{
-		kv["bin"],
+		secondsToHumanReadable(kv["bin"]),
 		kv["value"],
 	}
 	return accessTimeVolumeInfo, nil
@@ -1558,8 +1642,194 @@ func (c *Client) parseInspectorAccessTimeFilesInfo(raw string) ([]*InspectorAcce
 func (c *Client) parseInspectorAccessTimeFilesLine(line string) (*InspectorAccessTimeFilesInfo, error) {
 	kv := c.getMap(line)
 	accessTimeFilesInfo := &InspectorAccessTimeFilesInfo{
-		kv["bin"],
+		secondsToHumanReadable(kv["bin"]),
 		kv["value"],
 	}
 	return accessTimeFilesInfo, nil
+}
+
+// BIRTHTIME METRICS
+// List Inspector BirthTime Volume
+func (c *Client) ListInspectorBirthTimeVolume(ctx context.Context, username string) ([]*InspectorBirthTimeVolumeInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "inspector", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseInspectorBirthTimeVolumeInfo(stdout)
+}
+
+// Gathers the information of all lines.
+func (c *Client) parseInspectorBirthTimeVolumeInfo(raw string) ([]*InspectorBirthTimeVolumeInfo, error) {
+	inspectorBirthTimeVolumeInfos := []*InspectorBirthTimeVolumeInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" || !strings.Contains(rl, "birthtime::volume") {
+			continue
+		}
+		inspectorBirthTimeVolume, err := c.parseInspectorBirthTimeVolumeLine(rl)
+
+		if err != nil {
+			return nil, err
+		}
+		inspectorBirthTimeVolumeInfos = append(inspectorBirthTimeVolumeInfos, inspectorBirthTimeVolume)
+	}
+	return inspectorBirthTimeVolumeInfos, nil
+}
+
+// Gathers information of one single line
+func (c *Client) parseInspectorBirthTimeVolumeLine(line string) (*InspectorBirthTimeVolumeInfo, error) {
+	kv := c.getMap(line)
+	birthTimeVolumeInfo := &InspectorBirthTimeVolumeInfo{
+		secondsToHumanReadable(kv["bin"]),
+		kv["value"],
+	}
+	return birthTimeVolumeInfo, nil
+}
+
+// List Inspector Birth Time Files
+func (c *Client) ListInspectorBirthTimeFiles(ctx context.Context, username string) ([]*InspectorBirthTimeFilesInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "inspector", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseInspectorBirthTimeFilesInfo(stdout)
+}
+
+// Gathers the information of all lines.
+func (c *Client) parseInspectorBirthTimeFilesInfo(raw string) ([]*InspectorBirthTimeFilesInfo, error) {
+	inspectorBirthTimeFilesInfos := []*InspectorBirthTimeFilesInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" || !strings.Contains(rl, "birthtime::files") {
+			continue
+		}
+		inspectorBirthTimeFiles, err := c.parseInspectorBirthTimeFilesLine(rl)
+
+		if err != nil {
+			return nil, err
+		}
+		inspectorBirthTimeFilesInfos = append(inspectorBirthTimeFilesInfos, inspectorBirthTimeFiles)
+	}
+	return inspectorBirthTimeFilesInfos, nil
+}
+
+// Gathers information of one single line
+func (c *Client) parseInspectorBirthTimeFilesLine(line string) (*InspectorBirthTimeFilesInfo, error) {
+	kv := c.getMap(line)
+	birthTimeFilesInfo := &InspectorBirthTimeFilesInfo{
+		secondsToHumanReadable(kv["bin"]),
+		kv["value"],
+	}
+	return birthTimeFilesInfo, nil
+}
+
+// List Inspector Cost Disk
+func (c *Client) ListInspectorGroupCostDisk(ctx context.Context, username string) ([]*InspectorGroupCostDiskInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "inspector", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseInspectorGroupCostDiskInfo(stdout)
+}
+
+// Gathers the information of all lines.
+func (c *Client) parseInspectorGroupCostDiskInfo(raw string) ([]*InspectorGroupCostDiskInfo, error) {
+	inspectorGroupCostDiskInfos := []*InspectorGroupCostDiskInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" || !strings.Contains(rl, "group::cost::disk") {
+			continue
+		}
+		inspectorGroupCostDisk, err := c.parseInspectorGroupCostDiskLine(rl)
+
+		if err != nil {
+			return nil, err
+		}
+		inspectorGroupCostDiskInfos = append(inspectorGroupCostDiskInfos, inspectorGroupCostDisk)
+	}
+	return inspectorGroupCostDiskInfos, nil
+}
+
+// Gathers information of one single line
+func (c *Client) parseInspectorGroupCostDiskLine(line string) (*InspectorGroupCostDiskInfo, error) {
+	kv := c.getMap(line)
+	groupCostDiskInfo := &InspectorGroupCostDiskInfo{
+		kv["groupname"],
+		kv["price"],
+		kv["cost"],
+	}
+	return groupCostDiskInfo, nil
+}
+
+// List Inspector Cost Disk
+func (c *Client) ListInspectorGroupCostDiskTBYears(ctx context.Context, username string) ([]*InspectorGroupCostDiskTBYearsInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "inspector", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseInspectorGroupCostDiskTBYearsInfo(stdout)
+}
+
+// Gathers the information of all lines.
+func (c *Client) parseInspectorGroupCostDiskTBYearsInfo(raw string) ([]*InspectorGroupCostDiskTBYearsInfo, error) {
+	inspectorGroupCostDiskTBYearsInfos := []*InspectorGroupCostDiskTBYearsInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" || !strings.Contains(rl, "group::cost::disk") {
+			continue
+		}
+		inspectorGroupCostDiskTBYears, err := c.parseInspectorGroupCostDiskTBYearsLine(rl)
+
+		if err != nil {
+			return nil, err
+		}
+		inspectorGroupCostDiskTBYearsInfos = append(inspectorGroupCostDiskTBYearsInfos, inspectorGroupCostDiskTBYears)
+	}
+	return inspectorGroupCostDiskTBYearsInfos, nil
+}
+
+// Gathers information of one single line
+func (c *Client) parseInspectorGroupCostDiskTBYearsLine(line string) (*InspectorGroupCostDiskTBYearsInfo, error) {
+	kv := c.getMap(line)
+	groupCostDiskTBYearsInfo := &InspectorGroupCostDiskTBYearsInfo{
+		kv["groupname"],
+		kv["tbyears"],
+	}
+	return groupCostDiskTBYearsInfo, nil
 }
