@@ -1476,25 +1476,29 @@ func secondsToHumanReadable(secondsStr string) string {
 
 	duration := time.Second * time.Duration(seconds)
 	days := int(duration.Hours() / 24)
-	years := days / 365
+	weeks := days / 7
 	months := (days % 365) / 30
-	weeks := (days % 365) / 7
+	years := days / 365
 
-	// Round to the nearest year
+	// Round to the nearest year, month, week, or day
 	if (days%365)*2 > 365 {
 		years++
+	} else if (days%30)*2 > 30 {
+		months++
+	} else if days%7 > 3 {
+		weeks++
 	}
 
 	var result string
 
 	if years > 0 {
 		result += fmt.Sprintf("%dY", years)
-	} else if weeks > 0 {
-		result += fmt.Sprintf("%dW", weeks)
 	} else if months > 0 {
 		result += fmt.Sprintf("%dM", months)
-	} else if days%7 > 0 {
-		result += fmt.Sprintf("%dD", days%7)
+	} else if weeks > 0 {
+		result += fmt.Sprintf("%dW", weeks)
+	} else {
+		result += fmt.Sprintf("%dD", days)
 	}
 
 	return result
