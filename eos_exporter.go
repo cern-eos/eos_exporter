@@ -61,20 +61,27 @@ var _ prometheus.Collector = &EOSExporter{}
 func NewEOSExporter(opts *collector.CollectorOpts) *EOSExporter {
 	return &EOSExporter{
 		collectors: []prometheus.Collector{
-			collector.NewSpaceCollector(opts),           // eos space stats
-			collector.NewGroupCollector(opts),           // eos scheduling group stats
-			collector.NewNodeCollector(opts),            // eos node stats
-			collector.NewFSCollector(opts),              // eos filesystem stats
-			collector.NewIOInfoCollector(opts),          // eos io stat information
-			collector.NewIOAppInfoCollector(opts),       // eos io stat information per App
-			collector.NewNSCollector(opts),              // eos namespace information
-			collector.NewNSActivityCollector(opts),      // eos namespace activity information
-			collector.NewNSBatchCollector(opts),         // eos namespace potential batch overload information
-			collector.NewRecycleCollector(opts),         // eos recycle bin information
-			collector.NewWhoCollector(opts),             // eos who information
-			collector.NewFsckCollector(opts),            // eos fsck information
-			collector.NewFusexCollector(opts),           // eos fusex information
-			collector.NewInspectorLayoutCollector(opts), // eos inspector layout information
+			collector.NewSpaceCollector(opts),                         // eos space stats
+			collector.NewGroupCollector(opts),                         // eos scheduling group stats
+			collector.NewNodeCollector(opts),                          // eos node stats
+			collector.NewFSCollector(opts),                            // eos filesystem stats
+			collector.NewIOInfoCollector(opts),                        // eos io stat information
+			collector.NewIOAppInfoCollector(opts),                     // eos io stat information per App
+			collector.NewNSCollector(opts),                            // eos namespace information
+			collector.NewNSActivityCollector(opts),                    // eos namespace activity information
+			collector.NewNSBatchCollector(opts),                       // eos namespace potential batch overload information
+			collector.NewRecycleCollector(opts),                       // eos recycle bin information
+			collector.NewWhoCollector(opts),                           // eos who information
+			collector.NewFsckCollector(opts),                          // eos fsck information
+			collector.NewFusexCollector(opts),                         // eos fusex information
+			collector.NewInspectorLayoutCollector(opts),               // eos inspector layout information
+			collector.NewInspectorAccessTimeVolumeCollector(opts),     // eos inspector accesstime volume information
+			collector.NewInspectorAccessTimeFilesCollector(opts),      // eos inspector accesstime files information
+			collector.NewInspectorBirthTimeVolumeCollector(opts),      // eos inspector birthtime volume information
+			collector.NewInspectorBirthTimeFilesCollector(opts),       // eos inspector birthtime files information
+			collector.NewInspectorGroupCostDiskCollector(opts),        // eos inspector group cost disk information
+			collector.NewInspectorGroupCostDiskTBYearsCollector(opts), // eos inspector group cost disk tbyears information
+
 		},
 	}
 }
