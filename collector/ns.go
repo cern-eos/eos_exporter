@@ -787,21 +787,21 @@ func (o *NSCollector) collectNSDF() error {
 
 		// Qclient_rtt_ms_min
 
-		qclient_rtt_ms_min, err := strconv.ParseFloat(m.QClient_rtt_min, 64)
+		qclient_rtt_ms_min, err := strconv.ParseFloat(m.Qclient_rtt_ms_min, 64)
 		if err == nil {
 			o.Qclient_rtt_ms_min.WithLabelValues().Set(qclient_rtt_ms_min)
 		}
 
 		// Qclient_rtt_ms_avg
 
-		qclient_rtt_ms_avg, err := strconv.ParseFloat(m.QClient_rtt_avg, 64)
+		qclient_rtt_ms_avg, err := strconv.ParseFloat(m.Qclient_rtt_ms_avg, 64)
 		if err == nil {
 			o.Qclient_rtt_ms_avg.WithLabelValues().Set(qclient_rtt_ms_avg)
 		}
 
 		// Qclient_rtt_ms_max
 
-		qclient_rtt_ms_max, err := strconv.ParseFloat(m.QClient_rtt_max, 64)
+		qclient_rtt_ms_max, err := strconv.ParseFloat(m.Qclient_rtt_ms_max, 64)
 		if err == nil {
 			o.Qclient_rtt_ms_max.WithLabelValues().Set(qclient_rtt_ms_max)
 		}
