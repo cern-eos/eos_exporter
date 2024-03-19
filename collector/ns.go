@@ -36,6 +36,12 @@ type NSCollector struct {
 	Latencypeak_eosviewmutex_2min              *prometheus.GaugeVec
 	Latencypeak_eosviewmutex_5min              *prometheus.GaugeVec
 	Latencypeak_eosviewmutex_last              *prometheus.GaugeVec
+	Qclient_rtt_ms_min                         *prometheus.GaugeVec
+	Qclient_rtt_ms_avg                         *prometheus.GaugeVec
+	Qclient_rtt_ms_max                         *prometheus.GaugeVec
+	Qclient_rtt_ms_peak_1min                   *prometheus.GaugeVec
+	Qclient_rtt_ms_peak_2min                   *prometheus.GaugeVec
+	Qclient_rtt_ms_peak_5min                   *prometheus.GaugeVec
 	Memory_growth                              *prometheus.GaugeVec
 	Memory_resident                            *prometheus.GaugeVec
 	Memory_share                               *prometheus.GaugeVec
@@ -258,6 +264,60 @@ func NewNSCollector(opts *CollectorOpts) *NSCollector {
 				Namespace:   namespace,
 				Name:        "ns_lat_eosvm_last_seconds",
 				Help:        "Latencypeak_eosviewmutex_last: TODO.",
+				ConstLabels: labels,
+			},
+			[]string{},
+		),
+		Qclient_rtt_ms_min: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_qclient_rtt_min_milliseconds",
+				Help:        "QClient_rtt_min: TODO.",
+				ConstLabels: labels,
+			},
+			[]string{},
+		),
+		Qclient_rtt_ms_avg: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_qclient_rtt_avg_milliseconds",
+				Help:        "QClient_rtt_avg: TODO.",
+				ConstLabels: labels,
+			},
+			[]string{},
+		),
+		Qclient_rtt_ms_max: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_qclient_rtt_max_milliseconds",
+				Help:        "QClient_rtt_max: TODO.",
+				ConstLabels: labels,
+			},
+			[]string{},
+		),
+		Qclient_rtt_ms_peak_1min: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_qclient_rtt_peak_1min_milliseconds",
+				Help:        "QClient_rtt_peak_1min: TODO.",
+				ConstLabels: labels,
+			},
+			[]string{},
+		),
+		Qclient_rtt_ms_peak_2min: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_qclient_rtt_peak_2min_milliseconds",
+				Help:        "QClient_rtt_peak_2min: TODO.",
+				ConstLabels: labels,
+			},
+			[]string{},
+		),
+		Qclient_rtt_ms_peak_5min: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_qclient_rtt_peak_5min_milliseconds",
+				Help:        "QClient_rtt_peak_5min: TODO.",
 				ConstLabels: labels,
 			},
 			[]string{},
@@ -517,6 +577,13 @@ func (o *NSCollector) collectorList() []prometheus.Collector {
 		o.Latencypeak_eosviewmutex_2min,
 		o.Latencypeak_eosviewmutex_5min,
 		o.Latencypeak_eosviewmutex_last,
+		o.Latencypeak_eosviewmutex_last,
+		o.Qclient_rtt_ms_min,
+		o.Qclient_rtt_ms_avg,
+		o.Qclient_rtt_ms_max,
+		o.Qclient_rtt_ms_peak_1min,
+		o.Qclient_rtt_ms_peak_2min,
+		o.Qclient_rtt_ms_peak_5min,
 		o.Memory_growth,
 		o.Memory_resident,
 		o.Memory_share,
@@ -716,6 +783,48 @@ func (o *NSCollector) collectNSDF() error {
 		lat_eosvm_last, err := strconv.ParseFloat(m.Latencypeak_eosviewmutex_last, 64)
 		if err == nil {
 			o.Latencypeak_eosviewmutex_last.WithLabelValues().Set(lat_eosvm_last)
+		}
+
+		// Qclient_rtt_ms_min
+
+		qclient_rtt_ms_min, err := strconv.ParseFloat(m.QClient_rtt_min, 64)
+		if err == nil {
+			o.Qclient_rtt_ms_min.WithLabelValues().Set(qclient_rtt_ms_min)
+		}
+
+		// Qclient_rtt_ms_avg
+
+		qclient_rtt_ms_avg, err := strconv.ParseFloat(m.QClient_rtt_avg, 64)
+		if err == nil {
+			o.Qclient_rtt_ms_avg.WithLabelValues().Set(qclient_rtt_ms_avg)
+		}
+
+		// Qclient_rtt_ms_max
+
+		qclient_rtt_ms_max, err := strconv.ParseFloat(m.QClient_rtt_max, 64)
+		if err == nil {
+			o.Qclient_rtt_ms_max.WithLabelValues().Set(qclient_rtt_ms_max)
+		}
+
+		// Qclient_rtt_ms_peak_1min
+
+		qclient_rtt_ms_peak_1min, err := strconv.ParseFloat(m.Qclient_rtt_ms_peak_1min, 64)
+		if err == nil {
+			o.Qclient_rtt_ms_peak_1min.WithLabelValues().Set(qclient_rtt_ms_peak_1min)
+		}
+
+		// Qclient_rtt_ms_peak_2min
+
+		qclient_rtt_ms_peak_2min, err := strconv.ParseFloat(m.Qclient_rtt_ms_peak_2min, 64)
+		if err == nil {
+			o.Qclient_rtt_ms_peak_2min.WithLabelValues().Set(qclient_rtt_ms_peak_2min)
+		}
+
+		// Qclient_rtt_ms_peak_5min
+
+		qclient_rtt_ms_peak_5min, err := strconv.ParseFloat(m.Qclient_rtt_ms_peak_5min, 64)
+		if err == nil {
+			o.Qclient_rtt_ms_peak_5min.WithLabelValues().Set(qclient_rtt_ms_peak_5min)
 		}
 
 		// Memory_growth
