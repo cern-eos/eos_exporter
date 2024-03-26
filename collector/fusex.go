@@ -78,7 +78,7 @@ func NewFusexCollector(opts *CollectorOpts) *FusexCollector {
 				Help:        "fusex mount information",
 				ConstLabels: labels,
 			},
-			[]string{"host", "version"},
+			[]string{"host", "version", "blockedms", "blockedfunc", "blockedops", "blockedroot"},
 		),
 	}
 }
@@ -107,7 +107,7 @@ func (o *FusexCollector) collectFusexDF() error {
 
 	for _, m := range mds {
 		// We just send a dummy 1 as value
-		o.Info.WithLabelValues(m.Host, m.Version).Set(1)
+		o.Info.WithLabelValues(m.Host, m.Version, m.Blockedms, m.Blockedfunc, m.Blockedops, m.Blockedroot).Set(1)
 	}
 
 	return nil

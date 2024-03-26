@@ -1340,8 +1340,12 @@ func (c *Client) parseFsckLineInfo(line string) (*FsckInfo, error) {
 
 // struct definition
 type FusexInfo struct {
-	Host    string
-	Version string
+	Host        string
+	Version     string
+	Blockedms   string
+	Blockedfunc string
+	Blockedops  string
+	Blockedroot string
 }
 
 // List the fusexs on the instance
@@ -1386,6 +1390,10 @@ func (c *Client) parseFusexInfo(line string) (*FusexInfo, error) {
 	fusex := &FusexInfo{
 		kv["host"],
 		kv["version"],
+		kv["blockedms"],
+		kv["blockedfunc"],
+		kv["blockedops"],
+		kv["blockedroot"],
 	}
 	return fusex, nil
 }
