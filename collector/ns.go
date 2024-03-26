@@ -577,7 +577,6 @@ func (o *NSCollector) collectorList() []prometheus.Collector {
 		o.Latencypeak_eosviewmutex_2min,
 		o.Latencypeak_eosviewmutex_5min,
 		o.Latencypeak_eosviewmutex_last,
-		o.Latencypeak_eosviewmutex_last,
 		o.Qclient_rtt_ms_min,
 		o.Qclient_rtt_ms_avg,
 		o.Qclient_rtt_ms_max,
