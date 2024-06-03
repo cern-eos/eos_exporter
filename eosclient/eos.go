@@ -203,6 +203,12 @@ type NSInfo struct {
 	Latencypeak_eosviewmutex_2min              string
 	Latencypeak_eosviewmutex_5min              string
 	Latencypeak_eosviewmutex_last              string
+	Qclient_rtt_ms_min                         string
+	Qclient_rtt_ms_avg                         string
+	Qclient_rtt_ms_max                         string
+	Qclient_rtt_ms_peak_1min                   string
+	Qclient_rtt_ms_peak_2min                   string
+	Qclient_rtt_ms_peak_5min                   string
 	Memory_growth                              string
 	Memory_resident                            string
 	Memory_share                               string
@@ -850,6 +856,12 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 								kv["ns.latencypeak.eosviewmutex.2min"],
 								kv["ns.latencypeak.eosviewmutex.5min"],
 								kv["ns.latencypeak.eosviewmutex.last"],
+								kv["ns.qclient.rtt_ms.min"],
+								kv["ns.qclient.rtt_ms.avg"],
+								kv["ns.qclient.rtt_ms.max"],
+								kv["ns.qclient.rtt_ms_peak.1min"],
+								kv["ns.qclient.rtt_ms_peak.2min"],
+								kv["ns.qclient.rtt_ms_peak.5min"],
 								kv["ns.memory.growth"],
 								kv["ns.memory.resident"],
 								kv["ns.memory.share"],
