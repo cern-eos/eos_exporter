@@ -1,7 +1,7 @@
 #
 # eos_exporter spec file
 #
-%define version _VERSION_
+%define version 0.1.8
 
 Name: eos_exporter
 Summary: The Prometheus EOS exporter exposes EOS metrics.
@@ -58,6 +58,10 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Mon Jun 3 2024 Cedric Caffy <ccaffy@cern.ch> 0.1.8-1
+- Adds new eos inspector metrics as access time volume and files, birthtime and cost per group.
+- Adds qclient metrics
+- Package name includes the OS distribution
 * Thu Feb 8 2024 Hugo Gonzalez <gonzalhu@cern.ch> 0.1.7-1
 - Adds new eos inspector collector and volume per layout metrics
 * Mon Jan 22 2024 Roberto Valverde <rvalverd@cern.ch> 0.1.6-1
