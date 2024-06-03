@@ -6,7 +6,7 @@
 Name: eos_exporter
 Summary: The Prometheus EOS exporter exposes EOS metrics.
 Version: %{version}
-Release: 1
+Release: 1%{?dist}
 License: AGPLv3
 BuildRoot: %{_tmppath}/%{name}-buildroot
 Group: CERN-IT/ST
