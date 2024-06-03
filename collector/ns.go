@@ -272,7 +272,7 @@ func NewNSCollector(opts *CollectorOpts) *NSCollector {
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
 				Name:        "ns_qclient_rtt_min_milliseconds",
-				Help:        "QClient_rtt_min: TODO.",
+				Help:        "QClient_rtt_min: QClient minimum round-trip-time in milliseconds between the MGM and QuarkDB since the startup of the MGM.",
 				ConstLabels: labels,
 			},
 			[]string{},
@@ -281,7 +281,7 @@ func NewNSCollector(opts *CollectorOpts) *NSCollector {
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
 				Name:        "ns_qclient_rtt_avg_milliseconds",
-				Help:        "QClient_rtt_avg: TODO.",
+				Help:        "QClient_rtt_avg: QClient average round-trip-time in milliseconds between the MGM and QuarkDB since the startup of the MGM.",
 				ConstLabels: labels,
 			},
 			[]string{},
@@ -290,7 +290,7 @@ func NewNSCollector(opts *CollectorOpts) *NSCollector {
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
 				Name:        "ns_qclient_rtt_max_milliseconds",
-				Help:        "QClient_rtt_max: TODO.",
+				Help:        "QClient_rtt_max: QClient maximum round-trip-time in milliseconds between the MGM and QuarkDB since the startup of the MGM.",
 				ConstLabels: labels,
 			},
 			[]string{},
@@ -299,7 +299,7 @@ func NewNSCollector(opts *CollectorOpts) *NSCollector {
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
 				Name:        "ns_qclient_rtt_peak_1min_milliseconds",
-				Help:        "QClient_rtt_peak_1min: TODO.",
+				Help:        "QClient_rtt_peak_1min: QClient peak round-trip-time in the last 60 seconds.",
 				ConstLabels: labels,
 			},
 			[]string{},
@@ -308,7 +308,7 @@ func NewNSCollector(opts *CollectorOpts) *NSCollector {
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
 				Name:        "ns_qclient_rtt_peak_2min_milliseconds",
-				Help:        "QClient_rtt_peak_2min: TODO.",
+				Help:        "QClient_rtt_peak_2min: QClient peak round-trip-time in the last 120 seconds.",
 				ConstLabels: labels,
 			},
 			[]string{},
@@ -317,7 +317,7 @@ func NewNSCollector(opts *CollectorOpts) *NSCollector {
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
 				Name:        "ns_qclient_rtt_peak_5min_milliseconds",
-				Help:        "QClient_rtt_peak_5min: TODO.",
+				Help:        "QClient_rtt_peak_5min: QClient peak round-trip-time in the last 5 minutes.",
 				ConstLabels: labels,
 			},
 			[]string{},
