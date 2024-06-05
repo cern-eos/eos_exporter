@@ -44,8 +44,6 @@ rpm_artifacts:
     - job: el-7
     - job: el-8
     - job: el-9
-  tags:
-    - docker_node
   retry: 2
   when: manual
   only:
