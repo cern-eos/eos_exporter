@@ -85,7 +85,7 @@ func NewQuotaCollector(opts *CollectorOpts) *QuotaCollector {
 				Help:        "Quota Maximum Number of Bytes",
 				ConstLabels: labels,
 			},
-			[]string{"group"},
+			[]string{"quota"},
 		),
 		MaxLogicalBytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -94,7 +94,7 @@ func NewQuotaCollector(opts *CollectorOpts) *QuotaCollector {
 				Help:        "Quota maximum Logical Bytes",
 				ConstLabels: labels,
 			},
-			[]string{"group"},
+			[]string{"quota"},
 		),
 		MaxFiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -121,7 +121,7 @@ func NewQuotaCollector(opts *CollectorOpts) *QuotaCollector {
 				Help:        "Quota Status Bytes (ok or exceeded)",
 				ConstLabels: labels,
 			},
-			[]string{"group"},
+			[]string{"quota"},
 		),
 		StatusFiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -130,7 +130,7 @@ func NewQuotaCollector(opts *CollectorOpts) *QuotaCollector {
 				Help:        "Quota Status Files (ok or exceeded)",
 				ConstLabels: labels,
 			},
-			[]string{"group"},
+			[]string{"quota"},
 		),
 	}
 }
@@ -164,7 +164,7 @@ func (o *QuotaCollector) collectQuotaDF() error {
 		return err
 	}
 
-	// Reset gauge metrics to remove metrics of deleted groups
+	// Reset gauge metrics to remove metrics of deleted quotas
 
 	o.Uid.Reset()
 	o.Gid.Reset()
@@ -237,9 +237,9 @@ func (o *QuotaCollector) collectQuotaDF() error {
 
 	return nil
 
-} // collectGroupDF()
+} // collectQuotaDF()
 
-// Describe sends the descriptors of each GroupCollector related metrics we have defined
+// Describe sends the descriptors of each QuotaCollector related metrics we have defined
 func (o *QuotaCollector) Describe(ch chan<- *prometheus.Desc) {
 	for _, metric := range o.collectorList() {
 		metric.Describe(ch)
@@ -250,7 +250,7 @@ func (o *QuotaCollector) Describe(ch chan<- *prometheus.Desc) {
 func (o *QuotaCollector) Collect(ch chan<- prometheus.Metric) {
 
 	if err := o.collectQuotaDF(); err != nil {
-		log.Println("failed collecting group metrics:", err)
+		log.Println("failed collecting quota metrics:", err)
 		return
 	}
 
