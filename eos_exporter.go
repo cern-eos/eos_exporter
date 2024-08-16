@@ -81,6 +81,7 @@ func NewEOSExporter(opts *collector.CollectorOpts) *EOSExporter {
 			collector.NewInspectorBirthTimeFilesCollector(opts),       // eos inspector birthtime files information
 			collector.NewInspectorGroupCostDiskCollector(opts),        // eos inspector group cost disk information
 			collector.NewInspectorGroupCostDiskTBYearsCollector(opts), // eos inspector group cost disk tbyears information
+			collector.NewQuotaCollector(opts),                         // eos quota node stats
 
 		},
 	}

@@ -1842,3 +1842,83 @@ func (c *Client) parseInspectorGroupCostDiskTBYearsLine(line string) (*Inspector
 	}
 	return groupCostDiskTBYearsInfo, nil
 }
+
+// ----------------------------------------//
+// EOS QUOTA INFORMATION 	     	       //
+// ----------------------------------------//
+
+//QUOTA INFO
+// eos quota ls -m
+// quota=node gid=ALL space=/eos/totem/user/ usedbytes=21246061309106 usedlogicalbytes=10623030654553 usedfiles=130430 maxbytes=0 maxlogicalbytes=0 maxfiles=0 percentageusedbytes=100.00 statusbytes=ignored statusfiles=ignored
+
+type QuotaInfo struct {
+	QuotaNode           string
+	Uid                 string
+	Gid                 string
+	UsedBytes           string
+	UsedLogicalBytes    string
+	UsedFiles           string
+	MaxBytes            string
+	MaxLogicalBytes     string
+	MaxFiles            string
+	PercentageUsedBytes string
+	StatusBytes         string
+	StatusFiles         string
+}
+
+// List the scheduling groups on the instance
+func (c *Client) ListQuota(ctx context.Context, username string) ([]*QuotaInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "quota", "ls", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseQuotasInfo(stdout)
+}
+
+// Gathers information of all quota nodes
+func (c *Client) parseQuotasInfo(raw string) ([]*QuotaInfo, error) {
+	quotainfos := []*QuotaInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" {
+			continue
+		}
+		quota, err := c.parseQuotaInfo(rl)
+
+		if err != nil {
+			return nil, err
+		}
+		quotainfos = append(quotainfos, quota)
+	}
+	return quotainfos, nil
+}
+
+// Gathers information of one single quota
+func (c *Client) parseQuotaInfo(line string) (*QuotaInfo, error) {
+	//kv := make(map[string]string)
+	kv := c.getMap(line)
+	quota := &QuotaInfo{
+		kv["space"],
+		kv["uid"],
+		kv["gid"],
+		kv["usedbytes"],
+		kv["usedlogicalbytes"],
+		kv["usedfiles"],
+		kv["maxbytes"],
+		kv["maxlogicalbytes"],
+		kv["maxfiles"],
+		kv["percentageusedbytes"],
+		kv["statusfiles"],
+		kv["statusbytes"],
+	}
+	return quota, nil
+}
