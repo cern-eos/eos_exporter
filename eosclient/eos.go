@@ -428,21 +428,6 @@ func (c *Client) ListFS(ctx context.Context, username string) ([]*FSInfo, error)
 	return c.parseFSsInfo(stdout)
 }
 
-func (c *Client) getEosMGMVersion(ctx context.Context) (string, error) {
-	out, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "version"))
-	if err != nil {
-		return "", err
-	}
-	stdo_mgm := strings.Split(out, "\n")
-	for _, l := range stdo_mgm {
-		if strings.HasPrefix(l, "EOS_SERVER_VERSION=") {
-			s := strings.Split(l, " ")
-			return strings.Split(s[0], "EOS_SERVER_VERSION=")[1], nil
-		}
-	}
-	return "", errors.New("version not found")
-}
-
 // List the activity of different users in the instance
 func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
 	// eos ns stat, without -a will exclude batch users info (this adds to much latency in the instance where the exporter is deployed)
@@ -883,7 +868,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 		// Check that user has stall operation and is actually that operation to be exposed, plus is legitimate user
 		if UidLetter(kv["uid"]) && onlyUsers(kv["uid"], excl_uids) && batchMetrics[kv["uid"]+"-"+kv["cmd"]] {
 			var eos_instance string = "homecanary"
-			var level int = 0
+			level := 0
 			ctx, cancel := c.getTimeout(ctx)
 			defer cancel()
 
@@ -1077,6 +1062,76 @@ func (c *Client) parseRecycleLineInfo(line string) (*RecycleInfo, error) {
 		kv["ratio"],
 	}
 	return rb, nil
+}
+
+// Data struct //
+type QuotaInfo struct {
+	Uid              string
+	Gid              string
+	Space            string
+	UsedBytes        int64
+	MaxBytes         int64
+	UsedLogicalBytes int64
+	MaxLogicalBytes  int64
+	UsedFiles        int64
+	MaxFiles         int64
+}
+
+// Launch who command //
+func (c *Client) Quotas(ctx context.Context, username string) ([]*QuotaInfo, error) {
+	unixUser, err := getUnixUser(username)
+	if err != nil {
+		return nil, err
+	}
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "-r", unixUser.Uid, unixUser.Gid, "quota", "ls", "-m")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return c.parseQuotaInfo(stdout)
+}
+
+// Parse information from recycle bin //
+func (c *Client) parseQuotaInfo(raw string) ([]*QuotaInfo, error) {
+	whoInfo := []*QuotaInfo{}
+	rawLines := strings.Split(raw, "\n")
+	for _, rl := range rawLines {
+		if rl == "" {
+			continue
+		}
+
+		kv := c.getMap(rl)
+		uid, okuid := kv["uid"]
+		gid, okgid := kv["gid"]
+		if !okuid && !okgid {
+			continue
+		}
+
+		usedBytes, _ := strconv.ParseInt(kv["usedbytes"], 10, 64)
+		maxBytes, _ := strconv.ParseInt(kv["maxbytes"], 10, 64)
+		usedLogicalBytes, _ := strconv.ParseInt(kv["usedlogicalbytes"], 10, 64)
+		maxLogicalBytes, _ := strconv.ParseInt(kv["maxlogicalbytes"], 10, 64)
+		usedFiles, _ := strconv.ParseInt(kv["usedfiles"], 10, 64)
+		maxFiles, _ := strconv.ParseInt(kv["maxfiles"], 10, 64)
+
+		who := &QuotaInfo{
+			Uid:              uid,
+			Gid:              gid,
+			Space:            kv["space"],
+			UsedBytes:        usedBytes,
+			MaxBytes:         maxBytes,
+			UsedLogicalBytes: usedLogicalBytes,
+			MaxLogicalBytes:  maxLogicalBytes,
+			UsedFiles:        usedFiles,
+			MaxFiles:         maxFiles,
+		}
+
+		whoInfo = append(whoInfo, who)
+	}
+	return whoInfo, nil
 }
 
 // ----------------------------------------//

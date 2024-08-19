@@ -31,7 +31,7 @@ import (
 	// "github.com/prometheus/common/log"
 	/* // For enabling profile mode in Go
 	"github.com/pkg/profile"*/
-	"gitlab.cern.ch/rvalverd/eos_exporter/collector"
+	"github.com/cern-eos/eos_exporter/collector"
 
 	_ "embed"
 )
@@ -72,6 +72,7 @@ func NewEOSExporter(opts *collector.CollectorOpts) *EOSExporter {
 			collector.NewNSBatchCollector(opts),                       // eos namespace potential batch overload information
 			collector.NewRecycleCollector(opts),                       // eos recycle bin information
 			collector.NewWhoCollector(opts),                           // eos who information
+			collector.NewQuotasCollector(opts),                        // eos quota information
 			collector.NewFsckCollector(opts),                          // eos fsck information
 			collector.NewFusexCollector(opts),                         // eos fusex information
 			collector.NewInspectorLayoutCollector(opts),               // eos inspector layout information
