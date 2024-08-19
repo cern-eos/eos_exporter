@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"gitlab.cern.ch/rvalverd/eos_exporter/eosclient"
+	"github.com/cern-eos/eos_exporter/eosclient"
 )
 
 type GroupCollector struct {
