@@ -17,7 +17,7 @@ stages:
 
 el-7:
   image: gitlab-registry.cern.ch/linuxsupport/cc7-base
-   script:
+  script:
     - yum-config-manager --save --setopt=epel.baseurl=https://linuxsoft.cern.ch/internal/archive/epel/7/x86_64/ 
     - yum install -y sudo sssd-client createrepo tree
     - tree
