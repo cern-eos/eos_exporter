@@ -15,18 +15,6 @@ stages:
       - ${CI_JOB_NAME}_artifacts
     expire_in: 1 week
 
-el-7:
-  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
-  variables:
-    PKG_MGR: yum
-  extends: .build_eos-exporter-template
-
-el-8:
-  image: gitlab-registry.cern.ch/linuxsupport/alma8-base
-  variables:
-    PKG_MGR: dnf
-  extends: .build_eos-exporter-template
-
 el-9:
   image: gitlab-registry.cern.ch/linuxsupport/alma9-base
   variables:
@@ -35,14 +23,12 @@ el-9:
 
 rpm_artifacts:
   stage: publish
-  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
+  image: gitlab-registry.cern.ch/linuxsupport/alma9-base
   script:
     - yum install -y sudo sssd-client createrepo tree
     - tree
     - sudo -u stci -H ./gitlab-ci/publish_rpms.sh
   needs:
-    - job: el-7
-    - job: el-8
     - job: el-9
   tags:
     - docker_node
