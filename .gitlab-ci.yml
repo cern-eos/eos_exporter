@@ -17,6 +17,11 @@ stages:
 
 el-7:
   image: gitlab-registry.cern.ch/linuxsupport/cc7-base
+   script:
+    - yum-config-manager --save --setopt=epel.baseurl=https://linuxsoft.cern.ch/internal/archive/epel/7/x86_64/ 
+    - yum install -y sudo sssd-client createrepo tree
+    - tree
+    - sudo -u stci -H ./gitlab-ci/publish_rpms.sh
   variables:
     PKG_MGR: yum
   extends: .build_eos-exporter-template
@@ -37,6 +42,7 @@ rpm_artifacts:
   stage: publish
   image: gitlab-registry.cern.ch/linuxsupport/cc7-base
   script:
+    - yum-config-manager --save --setopt=epel.baseurl=https://linuxsoft.cern.ch/internal/archive/epel/7/x86_64/ 
     - yum install -y sudo sssd-client createrepo tree
     - tree
     - sudo -u stci -H ./gitlab-ci/publish_rpms.sh
