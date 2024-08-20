@@ -1,6 +1,5 @@
 stages:
   - build:rpm
-  - el-7
   - publish
   
 .build_eos-exporter-template: &build_eos-exporter_definition
@@ -18,6 +17,7 @@ stages:
 
 el-7:
   image: gitlab-registry.cern.ch/linuxsupport/cc7-base
+  stage: build:rpm
   script:
     - yum-config-manager --save --setopt=epel.baseurl=https://linuxsoft.cern.ch/internal/archive/epel/7/x86_64/ 
     - yum install -y sudo sssd-client createrepo tree
