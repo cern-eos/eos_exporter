@@ -1,7 +1,7 @@
 #
 # eos_exporter spec file
 #
-%define version 0.1.12
+%define version 0.1.13
 
 Name: eos_exporter
 Summary: The Prometheus EOS exporter exposes EOS metrics.
@@ -58,6 +58,8 @@ rm -rf %buildroot/
 %systemd_preun %{name}.service
 
 %changelog
+* Wed Aug 21 2024 Hugo Gonzalez Labrador <hugo.gonzalez.labrador@cern.ch> 0.1.13-1
+- Fix CI by using new docker runners
 * Tue Aug 20 2024 Hugo Gonzalez Labrador <hugo.gonzalez.labrador@cern.ch> 0.1.12-1
 - Fix CI
 * Tue Aug 20 2024 Hugo Gonzalez Labrador <hugo.gonzalez.labrador@cern.ch> 0.1.11-1
