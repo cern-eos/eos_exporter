@@ -6,7 +6,7 @@
 Name: eos_exporter
 Summary: The Prometheus EOS exporter exposes EOS metrics.
 Version: %{version}
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: AGPLv3
 BuildRoot: %{_tmppath}/%{name}-buildroot
 Group: CERN-IT/ST
@@ -57,7 +57,12 @@ rm -rf %buildroot/
 %preun
 %systemd_preun %{name}.service
 
+%postun
+%systemd_postun_with_restart %{name}.service
+
 %changelog
+* Tue Oct 8 2024 Jan Iven <jan.iven@cern.ch> 0.1.13-2
+- restart after RPM update
 * Wed Aug 21 2024 Hugo Gonzalez Labrador <hugo.gonzalez.labrador@cern.ch> 0.1.13-1
 - Fix CI by using new docker runners
 * Tue Aug 20 2024 Hugo Gonzalez Labrador <hugo.gonzalez.labrador@cern.ch> 0.1.12-1
