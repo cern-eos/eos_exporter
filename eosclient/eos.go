@@ -1363,7 +1363,7 @@ func (c *Client) FsckReport(ctx context.Context, username string) ([]*FsckInfo, 
 func (c *Client) parseFsckInfo(raw string) ([]*FsckInfo, error) {
 	fsckInfo := []*FsckInfo{}
 	rawLines := strings.Split(raw, "\n")
-	var re = regexp.MustCompile(`d_cx_diff|d_mem_sz_diff|m_cx_diff|m_mem_sz_diff|orphans_n|rep_diff_n|rep_missing_n|unreg_n`)
+	var re = regexp.MustCompile(`d_cx_diff|d_mem_sz_diff|m_cx_diff|m_mem_sz_diff|orphans_n|rep_diff_n|rep_missing_n|unreg_n|blockxs_err|stripe_err`)
 	for _, rl := range rawLines {
 		if !strings.Contains(rl, "Info") && re.MatchString(rl) {
 			fsck, err := c.parseFsckLineInfo(rl)
