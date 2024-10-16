@@ -28,6 +28,26 @@ make build
     - Change the url with `-telemetry-path`
 - For more options, use `--help`
 
+## Tagging
+1. To tag a new version, update the `eos_exporter.spec` file with the following:
+   - `%define version 0.1.14` (aka next tag version)
+   - Add your commits/changes in the changelog with this format:
+
+     ```plaintext
+     %changelog
+     * Wed Oct 16 2024 Maria Arsuaga Rios <maria.arsuaga.rios@cern.ch> 0.1.14-1
+     - Adding EC categories for fsck
+     ```
+
+2. Create a pull request for your branch: [https://github.com/cern-eos/eos_exporter/pulls](https://github.com/cern-eos/eos_exporter/pulls)
+
+3. When the reviewer approves your pull request, click **Rebase and Merge**.
+
+4. Meanwhile, create the corresponding tag in the `master` branch (ensure `git pull` first):
+   ```bash
+   git tag -d v0.1.14
+   git push --tags
+   
 ## Prometheus example configuration
 
 ```
