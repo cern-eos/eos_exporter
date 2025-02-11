@@ -60,6 +60,8 @@ rm -rf %buildroot/
 %changelog
 * Wed Aug 20 2025 Pablo Medina Ramos <pablo.medina.ramos@cern.ch> 0.1.15-1
 - Adding namespace cache hit rate metrics.
+- remove obsolete StandardOutput= from systemd unit file
+- stop building for el7
 * Wed Oct 16 2024 Maria Arsuaga Rios <maria.arsuaga.rios@cern.ch> 0.1.14-1
 - Adding EC categories for fsck
 * Wed Aug 21 2024 Hugo Gonzalez Labrador <hugo.gonzalez.labrador@cern.ch> 0.1.13-1

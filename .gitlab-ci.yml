@@ -1,7 +1,7 @@
 stages:
   - build:rpm
   - publish
-  
+
 .build_eos-exporter-template: &build_eos-exporter_definition
   stage: build:rpm
   script:
@@ -15,23 +15,6 @@ stages:
       - ${CI_JOB_NAME}_artifacts
     expire_in: 1 week
 
-el-7:
-  image: gitlab-registry.cern.ch/linuxsupport/cc7-base
-  stage: build:rpm
-  script:
-    - yum-config-manager --save --setopt=epel.baseurl=https://linuxsoft.cern.ch/internal/archive/epel/7/x86_64/ 
-    - yum install -y sudo sssd-client createrepo tree
-    - tree
-    - yum install -y golang rpm-devel rpm-build make rpmdevtools sudo createrepo git
-    - make rpm
-    - mkdir -p ${CI_JOB_NAME}_artifacts
-    - cp --recursive rpmbuild/SRPMS/ ${CI_JOB_NAME}_artifacts
-    - cp --recursive rpmbuild/RPMS/ ${CI_JOB_NAME}_artifacts
-  artifacts:
-    paths:
-      - ${CI_JOB_NAME}_artifacts
-    expire_in: 1 week
-  
 el-8:
   image: gitlab-registry.cern.ch/linuxsupport/alma8-base
   variables:
@@ -53,7 +36,6 @@ rpm_artifacts:
     - tree
     - sudo -u stci -H ./gitlab-ci/publish_rpms.sh
   needs:
-    - job: el-7
     - job: el-8
     - job: el-9
   tags:
