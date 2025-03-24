@@ -1,135 +1,146 @@
 package collector
 
 import (
+	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strings"
+	"sync"
+	"time"
+	"unicode/utf8"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type ErrorLogMetric struct {
+	Func   string
 	Level  string
+	Unit   string
 	Source string
+	Msg    string
 	Count  float64
-	Host   string
 }
 
 type ErrorLogCollector struct {
 	*CollectorOpts
-	Count *prometheus.GaugeVec
+	Count       *prometheus.GaugeVec
+	lastOffset  int64
+	logFilePath string
+	mutex       sync.Mutex
 }
 
-// NewErrorLogCollector creates an ErrorLogCollector and instantiates
-// the individual metrics that show information about the EOS error logs.
+var (
+	re = regexp.MustCompile(`func=(\w+)\s+level=(\w+).*?unit=fst@([^:\s]+)(?::\d+)?\s.*?source=([^\s]+).*?msg="([^"]*)"`)
+)
+
 func NewErrorLogCollector(opts *CollectorOpts) *ErrorLogCollector {
 	cluster := opts.Cluster
 	labels := make(prometheus.Labels)
 	labels["cluster"] = cluster
-	namespace := "eos"
 
-	return &ErrorLogCollector{
+	collector := &ErrorLogCollector{
 		CollectorOpts: opts,
 		Count: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Namespace:   namespace,
+				Namespace:   "eos",
 				Name:        "error_log_stat",
-				Help:        "eos error log statistics",
+				Help:        "EOS error log statistics",
 				ConstLabels: labels,
 			},
-			[]string{"level", "source", "host"},
+			[]string{"func", "level", "source", "unit", "msg"},
 		),
+		logFilePath: "/var/log/eos/mgm/error.log",
 	}
+
+	go collector.startScraping()
+
+	return collector
 }
 
-func (o *ErrorLogCollector) collectorList() []prometheus.Collector {
-	return []prometheus.Collector{
-		o.Count,
+func sanitizeUTF8(input string) string {
+	if utf8.ValidString(input) {
+		return input
 	}
-}
-
-// scrapeAllErrorLogs gathers information about error logs from the eos error log file.
-func (o *ErrorLogCollector) scrapeAllErrorLogs() ([]*ErrorLogMetric, error) {
-	filePath := "/var/log/eos/mgm/error.log"
-	raw, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("error reading the file %s: %v", filePath, err)
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, fmt.Errorf("error obtaining hostname: %v", err)
-	}
-
-	errorLogMetrics := []*ErrorLogMetric{}
-	rawLines := strings.Split(string(raw), "\n")
-
-	re := regexp.MustCompile(`.*level=([^\s]+).*source=([^\s:]+)`)
-
-	counts := make(map[struct{ Level, Source string }]int)
-	for _, rl := range rawLines {
-		if rl == "" {
-			continue
+	var output strings.Builder
+	for _, r := range input {
+		if r != utf8.RuneError {
+			output.WriteRune(r)
 		}
-		matches := re.FindStringSubmatch(rl)
-		if len(matches) >= 3 {
-			entry := struct{ Level, Source string }{Level: matches[1], Source: matches[2]}
+	}
+	return output.String()
+}
+
+func (o *ErrorLogCollector) scrapeAllErrorLogs() ([]*ErrorLogMetric, error) {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
+	file, err := os.Open(o.logFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("error opening file %s: %v", o.logFilePath, err)
+	}
+	defer file.Close()
+
+	file.Seek(o.lastOffset, 0)
+
+	scanner := bufio.NewScanner(file)
+	counts := make(map[ErrorLogMetric]int)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := re.FindStringSubmatch(line)
+		if len(matches) == 6 {
+			entry := ErrorLogMetric{
+				Func:   matches[1],
+				Level:  matches[2],
+				Unit:   matches[3],
+				Source: matches[4],
+				Msg:    sanitizeUTF8(matches[5]),
+			}
 			counts[entry]++
 		}
 	}
 
-	maxCountWidth := 0
-	for _, count := range counts {
-		countStr := fmt.Sprintf("%d", count)
-		if len(countStr) > maxCountWidth {
-			maxCountWidth = len(countStr)
-		}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error scanning file: %v", err)
 	}
 
+	newOffset, _ := file.Seek(0, os.SEEK_CUR)
+	o.lastOffset = newOffset
+
+	var metrics []*ErrorLogMetric
 	for entry, count := range counts {
-		countStr := fmt.Sprintf("%*d", maxCountWidth, count)
-		errorLogMetrics = append(errorLogMetrics, &ErrorLogMetric{
-			Level:  entry.Level,
-			Source: entry.Source,
-			Count:  float64(count),
-			Host:   hostname,
-		})
-
-		// Printing the result, useful for debugging
-		fmt.Printf("%s level=%s source=%s host=%s\n", countStr, entry.Level, entry.Source, hostname)
+		entry.Count = float64(count)
+		metrics = append(metrics, &entry)
 	}
 
-	return errorLogMetrics, nil
+	return metrics, nil
 }
 
-// Collect sends all the collected error log metrics to the provided Prometheus channel.
-func (o *ErrorLogCollector) Collect(ch chan<- prometheus.Metric) {
-	// Collect error logs data
-	errorLogMetrics, err := o.scrapeAllErrorLogs()
+func (o *ErrorLogCollector) startScraping() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		o.Collect()
+	}
+}
+
+func (o *ErrorLogCollector) Collect() {
+	metrics, err := o.scrapeAllErrorLogs()
 	if err != nil {
-		log.Println("failed collecting error log metrics:", err)
+		fmt.Println("failed collecting error log metrics:", err)
 		return
 	}
 
-	// Reset the metrics
 	o.Count.Reset()
-
-	// Update the metrics with the error log data
-	for _, metric := range errorLogMetrics {
-		o.Count.WithLabelValues(metric.Level, metric.Source, metric.Host).Set(metric.Count)
-	}
-
-	// Collect the metrics
-	for _, metric := range o.collectorList() {
-		metric.Collect(ch)
+	for _, metric := range metrics {
+		o.Count.WithLabelValues(metric.Func, metric.Level, metric.Source, metric.Unit, metric.Msg).Set(metric.Count)
 	}
 }
 
-// Describe sends the descriptors of each ErrorLogCollector related metrics.
 func (o *ErrorLogCollector) Describe(ch chan<- *prometheus.Desc) {
-	for _, metric := range o.collectorList() {
+	for _, metric := range []prometheus.Collector{o.Count} {
 		metric.Describe(ch)
 	}
 }
