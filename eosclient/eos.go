@@ -221,6 +221,10 @@ type NSInfo struct {
 	Total_files_changelog_avg_entry_size       string
 	Total_files_changelog_size                 string
 	Uptime                                     string
+	Cache_files_requests                       string
+	Cache_files_hits                           string
+	Cache_containers_requests                  string
+	Cache_containers_hits                      string
 }
 
 type NSActivityInfo struct {
@@ -859,6 +863,10 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 								kv["ns.total.files.changelog.avg_entry_size"],
 								kv["ns.total.files.changelog.size"],
 								kv["ns.uptime"],
+								kv["ns.cache.files.requests"],
+								kv["ns.cache.files.hits"],
+								kv["ns.cache.containers.requests"],
+								kv["ns.cache.containers.hits"],
 							}
 						}
 					}
