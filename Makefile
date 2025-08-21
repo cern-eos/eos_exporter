@@ -4,7 +4,7 @@ BUILD_DATE = $(shell date +%FT%T%z)
 GO_VERSION = $(shell go version | awk '{print $$3}')
 GIT_COMMIT = $(shell git rev-parse --short HEAD)
 PACKAGE  = $(shell awk '$$1 == "Name:"     { print $$2 }' $(SPECFILE) )
-VERSION  = $(shell git describe --tags | sed 's/^v//g' )
+VERSION  = $(shell git describe --abbrev=0 | sed 's/^v//g' )
 RELEASE  = $(shell awk '$$1 == "Release:"  { print $$2 }' $(SPECFILE) )
 OS_ARCH = $(shell echo "$$(uname -s)/$$(uname -m)")
 rpmbuild = ${shell pwd}/rpmbuild
