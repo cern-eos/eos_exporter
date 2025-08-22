@@ -1,7 +1,7 @@
 #
 # eos_exporter spec file
 #
-%define version 0.1.15
+%define version 0.1.16
 
 Name: eos_exporter
 Summary: The Prometheus EOS exporter exposes EOS metrics.
