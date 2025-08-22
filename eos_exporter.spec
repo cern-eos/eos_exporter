@@ -57,7 +57,12 @@ rm -rf %buildroot/
 %preun
 %systemd_preun %{name}.service
 
+%postun
+%systemd_postun_with_restart %{name}.service
+
 %changelog
+* Fri Aug 22 2025 Jan Iven <jan.iven@cern.ch> 0.1.16-1       
+- Restart after RPM update
 * Wed Aug 20 2025 Pablo Medina Ramos <pablo.medina.ramos@cern.ch> 0.1.15-1
 - Adding namespace cache hit rate metrics.
 - remove obsolete StandardOutput= from systemd unit file
