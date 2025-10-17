@@ -1,7 +1,7 @@
 #
 # eos_exporter spec file
 #
-%define version 0.1.16
+%define version 0.1.17
 
 Name: eos_exporter
 Summary: The Prometheus EOS exporter exposes EOS metrics.
@@ -61,6 +61,8 @@ rm -rf %buildroot/
 %systemd_postun_with_restart %{name}.service
 
 %changelog
+* Mon Oct 20 2025 Pablo Medina <pablo.medina.ramos@cern.ch> 0.1.17-1
+- Add geotag label to FS metrics. 
 * Fri Aug 22 2025 Jan Iven <jan.iven@cern.ch> 0.1.16-1
 - Restart after RPM update
 * Wed Aug 20 2025 Pablo Medina Ramos <pablo.medina.ramos@cern.ch> 0.1.15-1
