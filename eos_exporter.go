@@ -44,7 +44,7 @@ var (
 	buildDate string
 	//go:embed .version
 	version string
-	// go:embed .go_version
+	//go:embed .go_version
 	goVersion string
 )
 
