@@ -67,6 +67,8 @@ func NewEOSExporter(opts *collector.CollectorOpts) *EOSExporter {
 			collector.NewFSCollector(opts),                            // eos filesystem stats
 			collector.NewIOInfoCollector(opts),                        // eos io stat information
 			collector.NewIOAppInfoCollector(opts),                     // eos io stat information per App
+			collector.NewIOShapingCollector(opts),                     // eos io shaping information
+			collector.NewIOShapingPolicyCollector(opts),               // eos io shaping policy information
 			collector.NewNSCollector(opts),                            // eos namespace information
 			collector.NewNSActivityCollector(opts),                    // eos namespace activity information
 			collector.NewNSBatchCollector(opts),                       // eos namespace potential batch overload information
@@ -139,9 +141,9 @@ func validate() error {
 		return nil
 	}
 
-	// EOSInstamce is required
+	// `--eos-instance` is required
 	if cmdOptions.EOSInstance == "" {
-		return errors.New("Specify an EOS instance using the -eos-instance flag")
+		return errors.New("Specify an EOS instance using the --eos-instance flag")
 	}
 
 	return nil
