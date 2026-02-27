@@ -15,16 +15,21 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors" // <-- New Import
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/cern-eos/eos_exporter/collector"
@@ -92,54 +97,20 @@ var availableCollectors = []struct {
 	}},
 }
 
-// EOSExporter wraps all the EOS collectors and provides a single global exporter to extracts metrics out of.
+// EOSExporter wraps a list of registered EOS collectors
 type EOSExporter struct {
 	mu         sync.RWMutex
 	collectors []prometheus.Collector
 }
 
-// Verify that the exporter implements the interface correctly.
 var _ prometheus.Collector = &EOSExporter{}
 
-// NewEOSExporter creates an instance to EOSExporter based on the requested collectors
-func NewEOSExporter(opts *collector.CollectorOpts, enabled string) *EOSExporter {
-	var activeCollectors []prometheus.Collector
-
-	if enabled == "all" || enabled == "" {
-		// Enable all collectors
-		for _, c := range availableCollectors {
-			activeCollectors = append(activeCollectors, c.creator(opts))
-		}
-	} else {
-		// Parse comma-separated list
-		requested := strings.Split(enabled, ",")
-		requestedMap := make(map[string]bool)
-		for _, r := range requested {
-			requestedMap[strings.TrimSpace(r)] = true
-		}
-
-		// Enable only the requested ones
-		for _, c := range availableCollectors {
-			if requestedMap[c.name] {
-				activeCollectors = append(activeCollectors, c.creator(opts))
-				log.Printf("Enabled collector: %s", c.name)
-			}
-		}
-	}
-
-	return &EOSExporter{
-		collectors: activeCollectors,
-	}
-}
-
-// Describe sends all the descriptors of the collectors included to the provided channel.
 func (c *EOSExporter) Describe(ch chan<- *prometheus.Desc) {
 	for _, cc := range c.collectors {
 		cc.Describe(ch)
 	}
 }
 
-// Collect sends the collected metrics from each of the collectors to prometheus.
 func (c *EOSExporter) Collect(ch chan<- prometheus.Metric) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -150,29 +121,30 @@ func (c *EOSExporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 type Options struct {
-	ListenAddress string
-	MetricsPath   string
-	EOSInstance   string
-	Collectors    string
-	Version       bool
-	Help          bool
-	Timeout       int
+	ListenAddress     string
+	ListenAddressFast string
+	MetricsPath       string
+	EOSInstance       string
+	Collectors        string
+	Version           bool
+	Help              bool
+	Timeout           int
 }
 
 var cmdOptions *Options = &Options{}
 
 func init() {
-	flag.StringVar(&cmdOptions.ListenAddress, "listen-address", ":9986", "Address on which to expose metrics and web interface.")
+	flag.StringVar(&cmdOptions.ListenAddress, "listen-address", ":9986", "Address on which to expose standard metrics.")
+	flag.StringVar(&cmdOptions.ListenAddressFast, "listen-address-fast", ":9987", "Address on which to expose fast metrics.")
 	flag.StringVar(&cmdOptions.MetricsPath, "telemetry-path", "/metrics", "Path under which to expose metrics.")
 	flag.IntVar(&cmdOptions.Timeout, "timeout", 30, "Number of seconds to timeout when querying EOS.")
 	flag.StringVar(&cmdOptions.EOSInstance, "eos-instance", "", "EOS instance name.")
-	flag.StringVar(&cmdOptions.Collectors, "collectors", "all", "Comma-separated list of collectors to enable (e.g. 'space,node,traffic_shaping_io,traffic_shaping_policy'). Default is 'all'.")
+	flag.StringVar(&cmdOptions.Collectors, "collectors", "all", "Comma-separated list of standard collectors to enable (e.g. 'space,node'). Default is 'all'.")
 	flag.BoolVar(&cmdOptions.Help, "help", false, "Show the help and exit.")
 	flag.BoolVar(&cmdOptions.Version, "version", false, "Show the version and exit.")
 	flag.Parse()
 
-	err := validate()
-	if err != nil {
+	if err := validate(); err != nil {
 		fmt.Printf("Error: %s\n", err.Error())
 		printUsage()
 	}
@@ -206,8 +178,23 @@ func printVersion() {
 	os.Exit(0)
 }
 
-func main() {
+// createServer builds an HTTP server for a specific registry to isolate the metrics paths cleanly
+func createServer(address, path string, registry *prometheus.Registry) *http.Server {
+	mux := http.NewServeMux()
+	mux.Handle(path, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<html>
+          <head><title>EOS Exporter</title></head>
+          <body>
+          <h1>EOS Exporter</h1>
+          <p><a href="` + path + `">Metrics</a></p>
+          </body>
+          </html>`))
+	})
+	return &http.Server{Addr: address, Handler: mux}
+}
 
+func main() {
 	if cmdOptions.Help {
 		printUsage()
 	}
@@ -223,25 +210,97 @@ func main() {
 
 	log.Println("Starting eos exporter for instance", cmdOptions.EOSInstance)
 
-	exporter := NewEOSExporter(collectorOpts, cmdOptions.Collectors)
-	if err := prometheus.Register(exporter); err != nil {
-		log.Fatal(err)
+	fastCollectorsSet := map[string]bool{
+		"traffic_shaping_io":     true,
+		"traffic_shaping_policy": true,
+		// Add future fast metrics here
 	}
 
-	http.Handle(cmdOptions.MetricsPath, promhttp.Handler())
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
-			<head><title>EOS Exporter</title></head>
-			<body>
-			<h1>EOS Exporter</h1>
-			<p><a href="` + cmdOptions.MetricsPath + `">Metrics</a></p>
-			</body>
-			</html>`))
-	})
-
-	log.Println("Listening on", cmdOptions.ListenAddress)
-	err := http.ListenAndServe(cmdOptions.ListenAddress, nil)
-	if err != nil {
-		log.Fatal(err)
+	// Fast metrics will not be exposed in the standard endpoint to avoid duplication!
+	isFastCollector := func(name string) bool {
+		return fastCollectorsSet[name]
 	}
+
+	requestedMap := make(map[string]bool)
+	if cmdOptions.Collectors != "all" && cmdOptions.Collectors != "" {
+		for _, r := range strings.Split(cmdOptions.Collectors, ",") {
+			requestedMap[strings.TrimSpace(r)] = true
+		}
+	}
+
+	var slowCollectors []prometheus.Collector
+	var fastCollectors []prometheus.Collector
+
+	// Distribute collectors based on type and flags
+	for _, c := range availableCollectors {
+		if isFastCollector(c.name) {
+			// Fast collectors are ALWAYS enabled and routed to the fast port
+			fastCollectors = append(fastCollectors, c.creator(collectorOpts))
+		} else {
+			// Slow collectors obey the --collectors flag
+			if cmdOptions.Collectors == "all" || cmdOptions.Collectors == "" || requestedMap[c.name] {
+				slowCollectors = append(slowCollectors, c.creator(collectorOpts))
+			}
+		}
+	}
+
+	fastRegistry := prometheus.NewRegistry()
+	if len(fastCollectors) > 0 {
+		fastRegistry.MustRegister(&EOSExporter{collectors: fastCollectors})
+	}
+	fastServer := createServer(cmdOptions.ListenAddressFast, cmdOptions.MetricsPath, fastRegistry)
+
+	stdRegistry := prometheus.NewRegistry()
+
+	stdRegistry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+	stdRegistry.MustRegister(collectors.NewGoCollector())
+
+	if len(slowCollectors) > 0 {
+		stdRegistry.MustRegister(&EOSExporter{collectors: slowCollectors})
+	}
+
+	stdServer := createServer(cmdOptions.ListenAddress, cmdOptions.MetricsPath, stdRegistry)
+
+	go func() {
+		log.Println("Fast metrics listening on", cmdOptions.ListenAddressFast)
+		if err := fastServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Fast server failed: %v", err)
+		}
+	}()
+
+	go func() {
+		log.Println("Standard metrics listening on", cmdOptions.ListenAddress)
+		if err := stdServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Standard server failed: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+	log.Println("Interrupt signal received. Shutting down servers gracefully...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		if err := fastServer.Shutdown(ctx); err != nil {
+			log.Printf("Fast server shutdown error: %v", err)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		if err := stdServer.Shutdown(ctx); err != nil {
+			log.Printf("Standard server shutdown error: %v", err)
+		}
+	}()
+
+	wg.Wait()
+	log.Println("EOS Exporter successfully stopped.")
 }
