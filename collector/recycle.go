@@ -2,15 +2,11 @@ package collector
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strconv"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/cern-eos/eos_exporter/eosclient"
-	//"os"
-	//"bufio"
-	//"strings"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // eos recycle -m
@@ -123,7 +119,6 @@ func (o *RecycleCollector) collectRecycleDF() error {
 // Describe sends the descriptors of each SpaceCollector related metrics we have defined
 func (o *RecycleCollector) Describe(ch chan<- *prometheus.Desc) {
 	for _, metric := range o.collectorList() {
-		fmt.Print(metric)
 		metric.Describe(ch)
 	}
 }
