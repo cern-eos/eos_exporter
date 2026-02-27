@@ -21,16 +21,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	// "github.com/prometheus/common/log"
-
-	// "github.com/prometheus/common/log"
-	/* // For enabling profile mode in Go
-	"github.com/pkg/profile"*/
 	"github.com/cern-eos/eos_exporter/collector"
 
 	_ "embed"
@@ -48,6 +44,54 @@ var (
 	goVersion string
 )
 
+// List of all available collectors and their constructor functions wrapped to return the interface
+var availableCollectors = []struct {
+	name    string
+	creator func(*collector.CollectorOpts) prometheus.Collector
+}{
+	{"space", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewSpaceCollector(opts) }},
+	{"group", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewGroupCollector(opts) }},
+	{"node", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewNodeCollector(opts) }},
+	{"fs", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewFSCollector(opts) }},
+	{"io_info", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewIOInfoCollector(opts) }},
+	{"io_app_info", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewIOAppInfoCollector(opts) }},
+	{"traffic_shaping_io", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewIOShapingCollector(opts) }},
+	{"traffic_shaping_policy", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewIOShapingPolicyCollector(opts)
+	}},
+	{"ns", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewNSCollector(opts) }},
+	{"ns_activity", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewNSActivityCollector(opts)
+	}},
+	{"ns_batch", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewNSBatchCollector(opts) }},
+	{"recycle", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewRecycleCollector(opts) }},
+	{"who", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewWhoCollector(opts) }},
+	{"quotas", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewQuotasCollector(opts) }},
+	{"fsck", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewFsckCollector(opts) }},
+	{"fusex", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewFusexCollector(opts) }},
+	{"inspector_layout", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorLayoutCollector(opts)
+	}},
+	{"inspector_accesstime_volume", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorAccessTimeVolumeCollector(opts)
+	}},
+	{"inspector_accesstime_files", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorAccessTimeFilesCollector(opts)
+	}},
+	{"inspector_birthtime_volume", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorBirthTimeVolumeCollector(opts)
+	}},
+	{"inspector_birthtime_files", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorBirthTimeFilesCollector(opts)
+	}},
+	{"inspector_groupcost_disk", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorGroupCostDiskCollector(opts)
+	}},
+	{"inspector_groupcost_disktbyears", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorGroupCostDiskTBYearsCollector(opts)
+	}},
+}
+
 // EOSExporter wraps all the EOS collectors and provides a single global exporter to extracts metrics out of.
 type EOSExporter struct {
 	mu         sync.RWMutex
@@ -57,35 +101,34 @@ type EOSExporter struct {
 // Verify that the exporter implements the interface correctly.
 var _ prometheus.Collector = &EOSExporter{}
 
-// NewEOSExporter creates an instance to EOSExporter
-func NewEOSExporter(opts *collector.CollectorOpts) *EOSExporter {
-	return &EOSExporter{
-		collectors: []prometheus.Collector{
-			collector.NewSpaceCollector(opts),                         // eos space stats
-			collector.NewGroupCollector(opts),                         // eos scheduling group stats
-			collector.NewNodeCollector(opts),                          // eos node stats
-			collector.NewFSCollector(opts),                            // eos filesystem stats
-			collector.NewIOInfoCollector(opts),                        // eos io stat information
-			collector.NewIOAppInfoCollector(opts),                     // eos io stat information per App
-			collector.NewIOShapingCollector(opts),                     // eos io shaping information
-			collector.NewIOShapingPolicyCollector(opts),               // eos io shaping policy information
-			collector.NewNSCollector(opts),                            // eos namespace information
-			collector.NewNSActivityCollector(opts),                    // eos namespace activity information
-			collector.NewNSBatchCollector(opts),                       // eos namespace potential batch overload information
-			collector.NewRecycleCollector(opts),                       // eos recycle bin information
-			collector.NewWhoCollector(opts),                           // eos who information
-			collector.NewQuotasCollector(opts),                        // eos quota information
-			collector.NewFsckCollector(opts),                          // eos fsck information
-			collector.NewFusexCollector(opts),                         // eos fusex information
-			collector.NewInspectorLayoutCollector(opts),               // eos inspector layout information
-			collector.NewInspectorAccessTimeVolumeCollector(opts),     // eos inspector accesstime volume information
-			collector.NewInspectorAccessTimeFilesCollector(opts),      // eos inspector accesstime files information
-			collector.NewInspectorBirthTimeVolumeCollector(opts),      // eos inspector birthtime volume information
-			collector.NewInspectorBirthTimeFilesCollector(opts),       // eos inspector birthtime files information
-			collector.NewInspectorGroupCostDiskCollector(opts),        // eos inspector group cost disk information
-			collector.NewInspectorGroupCostDiskTBYearsCollector(opts), // eos inspector group cost disk tbyears information
+// NewEOSExporter creates an instance to EOSExporter based on the requested collectors
+func NewEOSExporter(opts *collector.CollectorOpts, enabled string) *EOSExporter {
+	var activeCollectors []prometheus.Collector
 
-		},
+	if enabled == "all" || enabled == "" {
+		// Enable all collectors
+		for _, c := range availableCollectors {
+			activeCollectors = append(activeCollectors, c.creator(opts))
+		}
+	} else {
+		// Parse comma-separated list
+		requested := strings.Split(enabled, ",")
+		requestedMap := make(map[string]bool)
+		for _, r := range requested {
+			requestedMap[strings.TrimSpace(r)] = true
+		}
+
+		// Enable only the requested ones
+		for _, c := range availableCollectors {
+			if requestedMap[c.name] {
+				activeCollectors = append(activeCollectors, c.creator(opts))
+				log.Printf("Enabled collector: %s", c.name)
+			}
+		}
+	}
+
+	return &EOSExporter{
+		collectors: activeCollectors,
 	}
 }
 
@@ -110,6 +153,7 @@ type Options struct {
 	ListenAddress string
 	MetricsPath   string
 	EOSInstance   string
+	Collectors    string
 	Version       bool
 	Help          bool
 	Timeout       int
@@ -122,6 +166,7 @@ func init() {
 	flag.StringVar(&cmdOptions.MetricsPath, "telemetry-path", "/metrics", "Path under which to expose metrics.")
 	flag.IntVar(&cmdOptions.Timeout, "timeout", 30, "Number of seconds to timeout when querying EOS.")
 	flag.StringVar(&cmdOptions.EOSInstance, "eos-instance", "", "EOS instance name.")
+	flag.StringVar(&cmdOptions.Collectors, "collectors", "all", "Comma-separated list of collectors to enable (e.g. 'space,node,traffic_shaping_io,traffic_shaping_policy'). Default is 'all'.")
 	flag.BoolVar(&cmdOptions.Help, "help", false, "Show the help and exit.")
 	flag.BoolVar(&cmdOptions.Version, "version", false, "Show the version and exit.")
 	flag.Parse()
@@ -134,16 +179,12 @@ func init() {
 }
 
 func validate() error {
-	// TODO (gdelmont): check that ListenAddress is a valid address:port string
-
-	// skip all check when either help or version flags are provided
 	if cmdOptions.Help || cmdOptions.Version {
 		return nil
 	}
 
-	// `--eos-instance` is required
 	if cmdOptions.EOSInstance == "" {
-		return errors.New("Specify an EOS instance using the --eos-instance flag")
+		return errors.New("specify an EOS instance using the --eos-instance flag")
 	}
 
 	return nil
@@ -181,11 +222,11 @@ func main() {
 	}
 
 	log.Println("Starting eos exporter for instance", cmdOptions.EOSInstance)
-	if err := prometheus.Register(NewEOSExporter(collectorOpts)); err != nil {
+
+	exporter := NewEOSExporter(collectorOpts, cmdOptions.Collectors)
+	if err := prometheus.Register(exporter); err != nil {
 		log.Fatal(err)
 	}
-	/* Enable Goroutine profiling
-	//defer profile.Start(profile.GoroutineProfile).Stop()*/
 
 	http.Handle(cmdOptions.MetricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
