@@ -15,22 +15,23 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"strings"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors" // <-- New Import
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	// "github.com/prometheus/common/log"
-
-	// "github.com/prometheus/common/log"
-	/* // For enabling profile mode in Go
-	"github.com/pkg/profile"*/
 	"github.com/cern-eos/eos_exporter/collector"
 
 	_ "embed"
@@ -44,57 +45,72 @@ var (
 	buildDate string
 	//go:embed .version
 	version string
-	// go:embed .go_version
+	//go:embed .go_version
 	goVersion string
 )
 
-// EOSExporter wraps all the EOS collectors and provides a single global exporter to extracts metrics out of.
+// List of all available collectors and their constructor functions wrapped to return the interface
+var availableCollectors = []struct {
+	name    string
+	creator func(*collector.CollectorOpts) prometheus.Collector
+}{
+	{"space", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewSpaceCollector(opts) }},
+	{"group", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewGroupCollector(opts) }},
+	{"node", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewNodeCollector(opts) }},
+	{"fs", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewFSCollector(opts) }},
+	{"io_info", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewIOInfoCollector(opts) }},
+	{"io_app_info", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewIOAppInfoCollector(opts) }},
+	{"traffic_shaping_io", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewIOShapingCollector(opts) }},
+	{"traffic_shaping_policy", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewIOShapingPolicyCollector(opts)
+	}},
+	{"ns", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewNSCollector(opts) }},
+	{"ns_activity", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewNSActivityCollector(opts)
+	}},
+	{"ns_batch", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewNSBatchCollector(opts) }},
+	{"recycle", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewRecycleCollector(opts) }},
+	{"who", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewWhoCollector(opts) }},
+	{"quotas", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewQuotasCollector(opts) }},
+	{"fsck", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewFsckCollector(opts) }},
+	{"fusex", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewFusexCollector(opts) }},
+	{"inspector_layout", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorLayoutCollector(opts)
+	}},
+	{"inspector_accesstime_volume", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorAccessTimeVolumeCollector(opts)
+	}},
+	{"inspector_accesstime_files", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorAccessTimeFilesCollector(opts)
+	}},
+	{"inspector_birthtime_volume", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorBirthTimeVolumeCollector(opts)
+	}},
+	{"inspector_birthtime_files", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorBirthTimeFilesCollector(opts)
+	}},
+	{"inspector_groupcost_disk", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorGroupCostDiskCollector(opts)
+	}},
+	{"inspector_groupcost_disktbyears", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewInspectorGroupCostDiskTBYearsCollector(opts)
+	}},
+}
+
+// EOSExporter wraps a list of registered EOS collectors
 type EOSExporter struct {
 	mu         sync.RWMutex
 	collectors []prometheus.Collector
 }
 
-// Verify that the exporter implements the interface correctly.
 var _ prometheus.Collector = &EOSExporter{}
 
-// NewEOSExporter creates an instance to EOSExporter
-func NewEOSExporter(opts *collector.CollectorOpts) *EOSExporter {
-	return &EOSExporter{
-		collectors: []prometheus.Collector{
-			collector.NewSpaceCollector(opts),                         // eos space stats
-			collector.NewGroupCollector(opts),                         // eos scheduling group stats
-			collector.NewNodeCollector(opts),                          // eos node stats
-			collector.NewFSCollector(opts),                            // eos filesystem stats
-			collector.NewIOInfoCollector(opts),                        // eos io stat information
-			collector.NewIOAppInfoCollector(opts),                     // eos io stat information per App
-			collector.NewNSCollector(opts),                            // eos namespace information
-			collector.NewNSActivityCollector(opts),                    // eos namespace activity information
-			collector.NewNSBatchCollector(opts),                       // eos namespace potential batch overload information
-			collector.NewRecycleCollector(opts),                       // eos recycle bin information
-			collector.NewWhoCollector(opts),                           // eos who information
-			collector.NewQuotasCollector(opts),                        // eos quota information
-			collector.NewFsckCollector(opts),                          // eos fsck information
-			collector.NewFusexCollector(opts),                         // eos fusex information
-			collector.NewInspectorLayoutCollector(opts),               // eos inspector layout information
-			collector.NewInspectorAccessTimeVolumeCollector(opts),     // eos inspector accesstime volume information
-			collector.NewInspectorAccessTimeFilesCollector(opts),      // eos inspector accesstime files information
-			collector.NewInspectorBirthTimeVolumeCollector(opts),      // eos inspector birthtime volume information
-			collector.NewInspectorBirthTimeFilesCollector(opts),       // eos inspector birthtime files information
-			collector.NewInspectorGroupCostDiskCollector(opts),        // eos inspector group cost disk information
-			collector.NewInspectorGroupCostDiskTBYearsCollector(opts), // eos inspector group cost disk tbyears information
-
-		},
-	}
-}
-
-// Describe sends all the descriptors of the collectors included to the provided channel.
 func (c *EOSExporter) Describe(ch chan<- *prometheus.Desc) {
 	for _, cc := range c.collectors {
 		cc.Describe(ch)
 	}
 }
 
-// Collect sends the collected metrics from each of the collectors to prometheus.
 func (c *EOSExporter) Collect(ch chan<- prometheus.Metric) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -105,43 +121,42 @@ func (c *EOSExporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 type Options struct {
-	ListenAddress string
-	MetricsPath   string
-	EOSInstance   string
-	Version       bool
-	Help          bool
-	Timeout       int
+	ListenAddress     string
+	ListenAddressFast string
+	MetricsPath       string
+	EOSInstance       string
+	Collectors        string
+	Version           bool
+	Help              bool
+	Timeout           int
 }
 
 var cmdOptions *Options = &Options{}
 
 func init() {
-	flag.StringVar(&cmdOptions.ListenAddress, "listen-address", ":9986", "Address on which to expose metrics and web interface.")
+	flag.StringVar(&cmdOptions.ListenAddress, "listen-address", ":9986", "Address on which to expose standard metrics.")
+	flag.StringVar(&cmdOptions.ListenAddressFast, "listen-address-fast", ":9987", "Address on which to expose fast metrics.")
 	flag.StringVar(&cmdOptions.MetricsPath, "telemetry-path", "/metrics", "Path under which to expose metrics.")
 	flag.IntVar(&cmdOptions.Timeout, "timeout", 30, "Number of seconds to timeout when querying EOS.")
 	flag.StringVar(&cmdOptions.EOSInstance, "eos-instance", "", "EOS instance name.")
+	flag.StringVar(&cmdOptions.Collectors, "collectors", "all", "Comma-separated list of standard collectors to enable (e.g. 'space,node'). Default is 'all'.")
 	flag.BoolVar(&cmdOptions.Help, "help", false, "Show the help and exit.")
 	flag.BoolVar(&cmdOptions.Version, "version", false, "Show the version and exit.")
 	flag.Parse()
 
-	err := validate()
-	if err != nil {
+	if err := validate(); err != nil {
 		fmt.Printf("Error: %s\n", err.Error())
 		printUsage()
 	}
 }
 
 func validate() error {
-	// TODO (gdelmont): check that ListenAddress is a valid address:port string
-
-	// skip all check when either help or version flags are provided
 	if cmdOptions.Help || cmdOptions.Version {
 		return nil
 	}
 
-	// EOSInstamce is required
 	if cmdOptions.EOSInstance == "" {
-		return errors.New("Specify an EOS instance using the -eos-instance flag")
+		return errors.New("specify an EOS instance using the --eos-instance flag")
 	}
 
 	return nil
@@ -163,8 +178,23 @@ func printVersion() {
 	os.Exit(0)
 }
 
-func main() {
+// createServer builds an HTTP server for a specific registry to isolate the metrics paths cleanly
+func createServer(address, path string, registry *prometheus.Registry) *http.Server {
+	mux := http.NewServeMux()
+	mux.Handle(path, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<html>
+          <head><title>EOS Exporter</title></head>
+          <body>
+          <h1>EOS Exporter</h1>
+          <p><a href="` + path + `">Metrics</a></p>
+          </body>
+          </html>`))
+	})
+	return &http.Server{Addr: address, Handler: mux}
+}
 
+func main() {
 	if cmdOptions.Help {
 		printUsage()
 	}
@@ -179,26 +209,98 @@ func main() {
 	}
 
 	log.Println("Starting eos exporter for instance", cmdOptions.EOSInstance)
-	if err := prometheus.Register(NewEOSExporter(collectorOpts)); err != nil {
-		log.Fatal(err)
-	}
-	/* Enable Goroutine profiling
-	//defer profile.Start(profile.GoroutineProfile).Stop()*/
 
-	http.Handle(cmdOptions.MetricsPath, promhttp.Handler())
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
-			<head><title>EOS Exporter</title></head>
-			<body>
-			<h1>EOS Exporter</h1>
-			<p><a href="` + cmdOptions.MetricsPath + `">Metrics</a></p>
-			</body>
-			</html>`))
-	})
-
-	log.Println("Listening on", cmdOptions.ListenAddress)
-	err := http.ListenAndServe(cmdOptions.ListenAddress, nil)
-	if err != nil {
-		log.Fatal(err)
+	fastCollectorsSet := map[string]bool{
+		"traffic_shaping_io":     true,
+		"traffic_shaping_policy": true,
+		// Add future fast metrics here
 	}
+
+	// Fast metrics will not be exposed in the standard endpoint to avoid duplication!
+	isFastCollector := func(name string) bool {
+		return fastCollectorsSet[name]
+	}
+
+	requestedMap := make(map[string]bool)
+	if cmdOptions.Collectors != "all" && cmdOptions.Collectors != "" {
+		for _, r := range strings.Split(cmdOptions.Collectors, ",") {
+			requestedMap[strings.TrimSpace(r)] = true
+		}
+	}
+
+	var slowCollectors []prometheus.Collector
+	var fastCollectors []prometheus.Collector
+
+	// Distribute collectors based on type and flags
+	for _, c := range availableCollectors {
+		if isFastCollector(c.name) {
+			// Fast collectors are ALWAYS enabled and routed to the fast port
+			fastCollectors = append(fastCollectors, c.creator(collectorOpts))
+		} else {
+			// Slow collectors obey the --collectors flag
+			if cmdOptions.Collectors == "all" || cmdOptions.Collectors == "" || requestedMap[c.name] {
+				slowCollectors = append(slowCollectors, c.creator(collectorOpts))
+			}
+		}
+	}
+
+	fastRegistry := prometheus.NewRegistry()
+	if len(fastCollectors) > 0 {
+		fastRegistry.MustRegister(&EOSExporter{collectors: fastCollectors})
+	}
+	fastServer := createServer(cmdOptions.ListenAddressFast, cmdOptions.MetricsPath, fastRegistry)
+
+	stdRegistry := prometheus.NewRegistry()
+
+	stdRegistry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+	stdRegistry.MustRegister(collectors.NewGoCollector())
+
+	if len(slowCollectors) > 0 {
+		stdRegistry.MustRegister(&EOSExporter{collectors: slowCollectors})
+	}
+
+	stdServer := createServer(cmdOptions.ListenAddress, cmdOptions.MetricsPath, stdRegistry)
+
+	go func() {
+		log.Println("Fast metrics listening on", cmdOptions.ListenAddressFast)
+		if err := fastServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Fast server failed: %v", err)
+		}
+	}()
+
+	go func() {
+		log.Println("Standard metrics listening on", cmdOptions.ListenAddress)
+		if err := stdServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Standard server failed: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+	log.Println("Interrupt signal received. Shutting down servers gracefully...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		if err := fastServer.Shutdown(ctx); err != nil {
+			log.Printf("Fast server shutdown error: %v", err)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		if err := stdServer.Shutdown(ctx); err != nil {
+			log.Printf("Standard server shutdown error: %v", err)
+		}
+	}()
+
+	wg.Wait()
+	log.Println("EOS Exporter successfully stopped.")
 }

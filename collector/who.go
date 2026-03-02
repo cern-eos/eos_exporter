@@ -2,15 +2,12 @@ package collector
 
 import (
 	"context"
-	"fmt"
-	"os"
-
-	// "time"
 	"log"
+	"os"
 	"strings"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/cern-eos/eos_exporter/eosclient"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // eos who -a -m provides 3 clusters of information
@@ -113,7 +110,6 @@ func (o *WhoCollector) collectWhoDF() error {
 // Describe sends the descriptors of each SpaceCollector related metrics we have defined
 func (o *WhoCollector) Describe(ch chan<- *prometheus.Desc) {
 	for _, metric := range o.collectorList() {
-		fmt.Print(metric)
 		metric.Describe(ch)
 	}
 }
