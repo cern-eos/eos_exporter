@@ -1952,7 +1952,7 @@ func (c *Client) ListIOShaping(ctx context.Context, windowTimeSeconds int) ([]*I
 	defer cancel()
 
 	var allStats []*IOShapingStat
-	groupFlags := []string{"--apps", "--users", "--groups"}
+	groupFlags := []string{"--apps", "--users", "--groups", "--nodes"}
 
 	for _, flag := range groupFlags {
 		// Appended "--sys" to ensure the system object is included in the JSON array
