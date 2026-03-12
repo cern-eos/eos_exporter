@@ -2032,24 +2032,28 @@ func (c *Client) parseIOShaping(raw string) ([]*IOShapingStat, error) {
 
 // ShapingPolicyJSON represents a single policy from the new flat JSON array
 type ShapingPolicyJSON struct {
-	ID                          string      `json:"id"`
-	Type                        string      `json:"type"`
-	IsEnabled                   bool        `json:"is_enabled"`
-	LimitReadBytesPerSec        json.Number `json:"limit_read_bytes_per_sec"`
-	LimitWriteBytesPerSec       json.Number `json:"limit_write_bytes_per_sec"`
-	ReservationReadBytesPerSec  json.Number `json:"reservation_read_bytes_per_sec"`
-	ReservationWriteBytesPerSec json.Number `json:"reservation_write_bytes_per_sec"`
+	ID                              string      `json:"id"`
+	Type                            string      `json:"type"`
+	IsEnabled                       bool        `json:"is_enabled"`
+	LimitReadBytesPerSec            json.Number `json:"limit_read_bytes_per_sec"`
+	LimitWriteBytesPerSec           json.Number `json:"limit_write_bytes_per_sec"`
+	ReservationReadBytesPerSec      json.Number `json:"reservation_read_bytes_per_sec"`
+	ReservationWriteBytesPerSec     json.Number `json:"reservation_write_bytes_per_sec"`
+	ControllerLimitReadBytesPerSec  json.Number `json:"controller_limit_read_bytes_per_sec"`
+	ControllerLimitWriteBytesPerSec json.Number `json:"controller_limit_write_bytes_per_sec"`
 }
 
 // IOShapingPolicyStat is the parsing-friendly struct
 type IOShapingPolicyStat struct {
-	Type                  string
-	ID                    string
-	IsEnabled             bool
-	LimitReadBytes        string
-	LimitWriteBytes       string
-	ReservationReadBytes  string
-	ReservationWriteBytes string
+	Type                      string
+	ID                        string
+	IsEnabled                 bool
+	LimitReadBytes            string
+	LimitWriteBytes           string
+	ReservationReadBytes      string
+	ReservationWriteBytes     string
+	ControllerLimitReadBytes  string
+	ControllerLimitWriteBytes string
 }
 
 // ListIOShapingPolicies runs `eos io shaping policy ls --json` and parses the output
@@ -2083,13 +2087,15 @@ func (c *Client) parseIOShapingPolicies(raw string) ([]*IOShapingPolicyStat, err
 	var out []*IOShapingPolicyStat
 	for _, p := range policies {
 		out = append(out, &IOShapingPolicyStat{
-			Type:                  p.Type,
-			ID:                    p.ID,
-			IsEnabled:             p.IsEnabled,
-			LimitReadBytes:        p.LimitReadBytesPerSec.String(),
-			LimitWriteBytes:       p.LimitWriteBytesPerSec.String(),
-			ReservationReadBytes:  p.ReservationReadBytesPerSec.String(),
-			ReservationWriteBytes: p.ReservationWriteBytesPerSec.String(),
+			Type:                      p.Type,
+			ID:                        p.ID,
+			IsEnabled:                 p.IsEnabled,
+			LimitReadBytes:            p.LimitReadBytesPerSec.String(),
+			LimitWriteBytes:           p.LimitWriteBytesPerSec.String(),
+			ReservationReadBytes:      p.ReservationReadBytesPerSec.String(),
+			ReservationWriteBytes:     p.ReservationWriteBytesPerSec.String(),
+			ControllerLimitReadBytes:  p.ControllerLimitReadBytesPerSec.String(),
+			ControllerLimitWriteBytes: p.ControllerLimitWriteBytesPerSec.String(),
 		})
 	}
 
