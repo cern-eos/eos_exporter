@@ -19,8 +19,8 @@ type IOShapingCollector struct {
 	ReadIops  *prometheus.GaugeVec
 	WriteIops *prometheus.GaugeVec
 
-	// System loop metrics (Grouped into one metric)
-	SystemLoopDurationUs *prometheus.GaugeVec
+	SystemLoopDurationUs   *prometheus.GaugeVec
+	SystemReportsProcessed *prometheus.GaugeVec
 }
 
 func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
@@ -29,7 +29,8 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 	namespace := "eos"
 
 	standardLabels := []string{"type", "id", "window_sec"}
-	systemLabels := []string{"loop_name", "stat"} // e.g., loop_name="estimators", stat="mean"
+	systemLabels := []string{"loop_name", "stat"}
+	reportLabels := []string{"stat"}
 
 	return &IOShapingCollector{
 		CollectorOpts: opts,
@@ -47,16 +48,18 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 			Namespace: namespace, Name: "io_shaping_write_iops", Help: "Write IOPS", ConstLabels: labels,
 		}, standardLabels),
 
-		// Single grouped System Metric
 		SystemLoopDurationUs: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace, Name: "io_shaping_sys_loop_duration_microseconds", Help: "System thread loop duration in microseconds", ConstLabels: labels,
 		}, systemLabels),
+		SystemReportsProcessed: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace, Name: "io_shaping_reports_processed_per_sec", Help: "Number of FST IO reports processed by the shaping engine per tick", ConstLabels: labels,
+		}, reportLabels),
 	}
 }
 
 func (o *IOShapingCollector) collectorList() []prometheus.Collector {
 	return []prometheus.Collector{
-		o.ReadRate, o.WriteRate, o.ReadIops, o.WriteIops, o.SystemLoopDurationUs,
+		o.ReadRate, o.WriteRate, o.ReadIops, o.WriteIops, o.SystemLoopDurationUs, o.SystemReportsProcessed,
 	}
 }
 
@@ -79,9 +82,8 @@ func (o *IOShapingCollector) collectIOShaping() error {
 		}
 
 		for _, s := range stats {
-			// Handle System Stats elegantly with labels
 			if s.Type == "system" {
-				setSysMetric := func(loopName, statName, valStr string) {
+				setSysDurationMetric := func(loopName, statName, valStr string) {
 					if valStr == "" {
 						return
 					}
@@ -90,18 +92,28 @@ func (o *IOShapingCollector) collectIOShaping() error {
 					}
 				}
 
-				setSysMetric("estimators", "mean", s.EstimatorsLoopMeanUs)
-				setSysMetric("estimators", "min", s.EstimatorsLoopMinUs)
-				setSysMetric("estimators", "max", s.EstimatorsLoopMaxUs)
+				setSysCountMetric := func(statName, valStr string) {
+					if valStr == "" {
+						return
+					}
+					if val, err := strconv.ParseFloat(valStr, 64); err == nil {
+						o.SystemReportsProcessed.WithLabelValues(statName).Set(val)
+					}
+				}
 
-				setSysMetric("fst_limits", "mean", s.FstLimitsLoopMeanUs)
-				setSysMetric("fst_limits", "min", s.FstLimitsLoopMinUs)
-				setSysMetric("fst_limits", "max", s.FstLimitsLoopMaxUs)
+				setSysDurationMetric("estimators", "median", s.EstimatorsLoopMedianUs)
+				setSysDurationMetric("estimators", "min", s.EstimatorsLoopMinUs)
+				setSysDurationMetric("estimators", "max", s.EstimatorsLoopMaxUs)
 
-				continue // Skip the standard groupings for this system JSON object
+				setSysDurationMetric("fst_limits", "median", s.FstLimitsLoopMedianUs)
+				setSysDurationMetric("fst_limits", "min", s.FstLimitsLoopMinUs)
+				setSysDurationMetric("fst_limits", "max", s.FstLimitsLoopMaxUs)
+
+				setSysCountMetric("mean", s.FstReportsProcessedPerSecMean)
+
+				continue
 			}
 
-			// Handle Standard Groupings
 			setMetric := func(vec *prometheus.GaugeVec, valStr string) {
 				if val, err := strconv.ParseFloat(valStr, 64); err == nil {
 					vec.WithLabelValues(s.Type, s.ID, s.WindowSec).Set(val)
@@ -125,7 +137,6 @@ func (o *IOShapingCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (o *IOShapingCollector) Collect(ch chan<- prometheus.Metric) {
-	// Reset all GaugeVecs
 	for _, metric := range o.collectorList() {
 		if gaugeVec, ok := metric.(*prometheus.GaugeVec); ok {
 			gaugeVec.Reset()

@@ -1918,12 +1918,16 @@ type ShapingStatsJSON struct {
 	WriteIops    json.Number `json:"write_iops"`
 
 	// System meta stats
-	EstimatorsLoopMeanUs     json.Number `json:"estimators_loop_mean_us"`
-	EstimatorsLoopMinUs      json.Number `json:"estimators_loop_min_us"`
-	EstimatorsLoopMaxUs      json.Number `json:"estimators_loop_max_us"`
-	FstLimitsLoopMeanUs      json.Number `json:"fst_limits_loop_mean_us"`
-	FstLimitsLoopMinUs       json.Number `json:"fst_limits_loop_min_us"`
-	FstLimitsLoopMaxUs       json.Number `json:"fst_limits_loop_max_us"`
+	EstimatorsLoopMedianUs json.Number `json:"estimators_loop_median_us"`
+	EstimatorsLoopMinUs    json.Number `json:"estimators_loop_min_us"`
+	EstimatorsLoopMaxUs    json.Number `json:"estimators_loop_max_us"`
+
+	FstLimitsLoopMedianUs json.Number `json:"fst_limits_loop_median_us"`
+	FstLimitsLoopMinUs    json.Number `json:"fst_limits_loop_min_us"`
+	FstLimitsLoopMaxUs    json.Number `json:"fst_limits_loop_max_us"`
+
+	FstReportsProcessedPerSecMean json.Number `json:"reports_processed_per_sec_mean"`
+
 	SystemStatsWindowSeconds json.Number `json:"system_stats_window_seconds"`
 }
 
@@ -1937,12 +1941,16 @@ type IOShapingStat struct {
 	ReadIops     string
 	WriteIops    string
 
-	EstimatorsLoopMeanUs     string
-	EstimatorsLoopMinUs      string
-	EstimatorsLoopMaxUs      string
-	FstLimitsLoopMeanUs      string
-	FstLimitsLoopMinUs       string
-	FstLimitsLoopMaxUs       string
+	EstimatorsLoopMedianUs string
+	EstimatorsLoopMinUs    string
+	EstimatorsLoopMaxUs    string
+
+	FstLimitsLoopMedianUs string
+	FstLimitsLoopMinUs    string
+	FstLimitsLoopMaxUs    string
+
+	FstReportsProcessedPerSecMean string
+
 	SystemStatsWindowSeconds string
 }
 
@@ -2000,20 +2008,21 @@ func (c *Client) parseIOShaping(raw string) ([]*IOShapingStat, error) {
 	out := make([]*IOShapingStat, 0, len(mj))
 	for _, v := range mj {
 		stat := &IOShapingStat{
-			ID:                       v.ID,
-			Type:                     v.Type,
-			WindowSec:                v.WindowSec.String(),
-			ReadRateBps:              v.ReadRateBps.String(),
-			WriteRateBps:             v.WriteRateBps.String(),
-			ReadIops:                 v.ReadIops.String(),
-			WriteIops:                v.WriteIops.String(),
-			EstimatorsLoopMeanUs:     v.EstimatorsLoopMeanUs.String(),
-			EstimatorsLoopMinUs:      v.EstimatorsLoopMinUs.String(),
-			EstimatorsLoopMaxUs:      v.EstimatorsLoopMaxUs.String(),
-			FstLimitsLoopMeanUs:      v.FstLimitsLoopMeanUs.String(),
-			FstLimitsLoopMinUs:       v.FstLimitsLoopMinUs.String(),
-			FstLimitsLoopMaxUs:       v.FstLimitsLoopMaxUs.String(),
-			SystemStatsWindowSeconds: v.SystemStatsWindowSeconds.String(),
+			ID:                            v.ID,
+			Type:                          v.Type,
+			WindowSec:                     v.WindowSec.String(),
+			ReadRateBps:                   v.ReadRateBps.String(),
+			WriteRateBps:                  v.WriteRateBps.String(),
+			ReadIops:                      v.ReadIops.String(),
+			WriteIops:                     v.WriteIops.String(),
+			EstimatorsLoopMedianUs:        v.EstimatorsLoopMedianUs.String(),
+			EstimatorsLoopMinUs:           v.EstimatorsLoopMinUs.String(),
+			EstimatorsLoopMaxUs:           v.EstimatorsLoopMaxUs.String(),
+			FstLimitsLoopMedianUs:         v.FstLimitsLoopMedianUs.String(),
+			FstLimitsLoopMinUs:            v.FstLimitsLoopMinUs.String(),
+			FstLimitsLoopMaxUs:            v.FstLimitsLoopMaxUs.String(),
+			FstReportsProcessedPerSecMean: v.FstReportsProcessedPerSecMean.String(),
+			SystemStatsWindowSeconds:      v.SystemStatsWindowSeconds.String(),
 		}
 		out = append(out, stat)
 	}
