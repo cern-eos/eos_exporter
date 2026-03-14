@@ -22,8 +22,8 @@ func NewIOShapingPolicyCollector(opts *CollectorOpts) *IOShapingPolicyCollector 
 	labels := prometheus.Labels{"cluster": cluster}
 	namespace := "eos"
 
-	// "rule" distinguishes between limit_read, limit_write, controller_limit_write, etc.
-	standardLabels := []string{"type", "id", "rule"}
+	// Split labels: rule (limit/reservation/controller_limit) and operation (read/write)
+	standardLabels := []string{"type", "id", "rule", "operation"}
 
 	return &IOShapingPolicyCollector{
 		CollectorOpts: opts,
@@ -57,26 +57,35 @@ func (o *IOShapingPolicyCollector) collectIOShapingPolicies() error {
 	}
 
 	for _, p := range policies {
-		setMetric := func(ruleName string, valStr string, respectsEnableToggle bool) {
+		// Helper to set the metric: uses the actual value if enabled, otherwise 0
+		setMetric := func(ruleName string, operation string, valStr string) {
 			valToSet := 0.0
-			if valStr != "" {
-				if parsedVal, err := strconv.ParseFloat(valStr, 64); err == nil {
-					if !respectsEnableToggle || p.IsEnabled {
+
+			// Ephemeral plugin limits are ALWAYS active when > 0, they bypass p.IsEnabled.
+			// User limits/reservations strictly depend on the p.IsEnabled flag.
+			if ruleName == "controller_limit" {
+				if valStr != "" {
+					if parsedVal, err := strconv.ParseFloat(valStr, 64); err == nil {
+						valToSet = parsedVal
+					}
+				}
+			} else {
+				if p.IsEnabled && valStr != "" {
+					if parsedVal, err := strconv.ParseFloat(valStr, 64); err == nil {
 						valToSet = parsedVal
 					}
 				}
 			}
 
-			o.PolicyBytes.WithLabelValues(p.Type, p.ID, ruleName).Set(valToSet)
+			o.PolicyBytes.WithLabelValues(p.Type, p.ID, ruleName, operation).Set(valToSet)
 		}
 
-		setMetric("limit_read", p.LimitReadBytes, true)
-		setMetric("limit_write", p.LimitWriteBytes, true)
-		setMetric("reservation_read", p.ReservationReadBytes, true)
-		setMetric("reservation_write", p.ReservationWriteBytes, true)
-
-		setMetric("controller_limit_read", p.ControllerLimitReadBytes, false)
-		setMetric("controller_limit_write", p.ControllerLimitWriteBytes, false)
+		setMetric("limit", "read", p.LimitReadBytes)
+		setMetric("limit", "write", p.LimitWriteBytes)
+		setMetric("reservation", "read", p.ReservationReadBytes)
+		setMetric("reservation", "write", p.ReservationWriteBytes)
+		setMetric("controller_limit", "read", p.ControllerLimitReadBytes)
+		setMetric("controller_limit", "write", p.ControllerLimitWriteBytes)
 	}
 
 	return nil
