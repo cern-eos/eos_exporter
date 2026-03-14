@@ -1917,13 +1917,16 @@ type ShapingStatsJSON struct {
 	ReadIops     json.Number `json:"read_iops"`
 	WriteIops    json.Number `json:"write_iops"`
 
-	// System meta stats
-	EstimatorsLoopMeanUs     json.Number `json:"estimators_loop_mean_us"`
-	EstimatorsLoopMinUs      json.Number `json:"estimators_loop_min_us"`
-	EstimatorsLoopMaxUs      json.Number `json:"estimators_loop_max_us"`
-	FstLimitsLoopMeanUs      json.Number `json:"fst_limits_loop_mean_us"`
-	FstLimitsLoopMinUs       json.Number `json:"fst_limits_loop_min_us"`
-	FstLimitsLoopMaxUs       json.Number `json:"fst_limits_loop_max_us"`
+	EstimatorsLoopMedianUs json.Number `json:"estimators_loop_median_us"`
+	EstimatorsLoopMinUs    json.Number `json:"estimators_loop_min_us"`
+	EstimatorsLoopMaxUs    json.Number `json:"estimators_loop_max_us"`
+
+	FstLimitsLoopMedianUs json.Number `json:"fst_limits_loop_median_us"`
+	FstLimitsLoopMinUs    json.Number `json:"fst_limits_loop_min_us"`
+	FstLimitsLoopMaxUs    json.Number `json:"fst_limits_loop_max_us"`
+
+	ReportsProcessedPerSecMean json.Number `json:"reports_processed_per_sec_mean"`
+
 	SystemStatsWindowSeconds json.Number `json:"system_stats_window_seconds"`
 }
 
@@ -1937,12 +1940,16 @@ type IOShapingStat struct {
 	ReadIops     string
 	WriteIops    string
 
-	EstimatorsLoopMeanUs     string
-	EstimatorsLoopMinUs      string
-	EstimatorsLoopMaxUs      string
-	FstLimitsLoopMeanUs      string
-	FstLimitsLoopMinUs       string
-	FstLimitsLoopMaxUs       string
+	EstimatorsLoopMedianUs string
+	EstimatorsLoopMinUs    string
+	EstimatorsLoopMaxUs    string
+
+	FstLimitsLoopMedianUs string
+	FstLimitsLoopMinUs    string
+	FstLimitsLoopMaxUs    string
+
+	ReportsProcessedPerSecMean string
+
 	SystemStatsWindowSeconds string
 }
 
@@ -2000,20 +2007,21 @@ func (c *Client) parseIOShaping(raw string) ([]*IOShapingStat, error) {
 	out := make([]*IOShapingStat, 0, len(mj))
 	for _, v := range mj {
 		stat := &IOShapingStat{
-			ID:                       v.ID,
-			Type:                     v.Type,
-			WindowSec:                v.WindowSec.String(),
-			ReadRateBps:              v.ReadRateBps.String(),
-			WriteRateBps:             v.WriteRateBps.String(),
-			ReadIops:                 v.ReadIops.String(),
-			WriteIops:                v.WriteIops.String(),
-			EstimatorsLoopMeanUs:     v.EstimatorsLoopMeanUs.String(),
-			EstimatorsLoopMinUs:      v.EstimatorsLoopMinUs.String(),
-			EstimatorsLoopMaxUs:      v.EstimatorsLoopMaxUs.String(),
-			FstLimitsLoopMeanUs:      v.FstLimitsLoopMeanUs.String(),
-			FstLimitsLoopMinUs:       v.FstLimitsLoopMinUs.String(),
-			FstLimitsLoopMaxUs:       v.FstLimitsLoopMaxUs.String(),
-			SystemStatsWindowSeconds: v.SystemStatsWindowSeconds.String(),
+			ID:                         v.ID,
+			Type:                       v.Type,
+			WindowSec:                  v.WindowSec.String(),
+			ReadRateBps:                v.ReadRateBps.String(),
+			WriteRateBps:               v.WriteRateBps.String(),
+			ReadIops:                   v.ReadIops.String(),
+			WriteIops:                  v.WriteIops.String(),
+			EstimatorsLoopMedianUs:     v.EstimatorsLoopMedianUs.String(),
+			EstimatorsLoopMinUs:        v.EstimatorsLoopMinUs.String(),
+			EstimatorsLoopMaxUs:        v.EstimatorsLoopMaxUs.String(),
+			FstLimitsLoopMedianUs:      v.FstLimitsLoopMedianUs.String(),
+			FstLimitsLoopMinUs:         v.FstLimitsLoopMinUs.String(),
+			FstLimitsLoopMaxUs:         v.FstLimitsLoopMaxUs.String(),
+			ReportsProcessedPerSecMean: v.ReportsProcessedPerSecMean.String(),
+			SystemStatsWindowSeconds:   v.SystemStatsWindowSeconds.String(),
 		}
 		out = append(out, stat)
 	}
@@ -2023,24 +2031,28 @@ func (c *Client) parseIOShaping(raw string) ([]*IOShapingStat, error) {
 
 // ShapingPolicyJSON represents a single policy from the new flat JSON array
 type ShapingPolicyJSON struct {
-	ID                          string      `json:"id"`
-	Type                        string      `json:"type"`
-	IsEnabled                   bool        `json:"is_enabled"`
-	LimitReadBytesPerSec        json.Number `json:"limit_read_bytes_per_sec"`
-	LimitWriteBytesPerSec       json.Number `json:"limit_write_bytes_per_sec"`
-	ReservationReadBytesPerSec  json.Number `json:"reservation_read_bytes_per_sec"`
-	ReservationWriteBytesPerSec json.Number `json:"reservation_write_bytes_per_sec"`
+	ID                              string      `json:"id"`
+	Type                            string      `json:"type"`
+	IsEnabled                       bool        `json:"is_enabled"`
+	LimitReadBytesPerSec            json.Number `json:"limit_read_bytes_per_sec"`
+	LimitWriteBytesPerSec           json.Number `json:"limit_write_bytes_per_sec"`
+	ReservationReadBytesPerSec      json.Number `json:"reservation_read_bytes_per_sec"`
+	ReservationWriteBytesPerSec     json.Number `json:"reservation_write_bytes_per_sec"`
+	ControllerLimitReadBytesPerSec  json.Number `json:"controller_limit_read_bytes_per_sec"`
+	ControllerLimitWriteBytesPerSec json.Number `json:"controller_limit_write_bytes_per_sec"`
 }
 
 // IOShapingPolicyStat is the parsing-friendly struct
 type IOShapingPolicyStat struct {
-	Type                  string
-	ID                    string
-	IsEnabled             bool
-	LimitReadBytes        string
-	LimitWriteBytes       string
-	ReservationReadBytes  string
-	ReservationWriteBytes string
+	Type                      string
+	ID                        string
+	IsEnabled                 bool
+	LimitReadBytes            string
+	LimitWriteBytes           string
+	ReservationReadBytes      string
+	ReservationWriteBytes     string
+	ControllerLimitReadBytes  string
+	ControllerLimitWriteBytes string
 }
 
 // ListIOShapingPolicies runs `eos io shaping policy ls --json` and parses the output
@@ -2074,13 +2086,15 @@ func (c *Client) parseIOShapingPolicies(raw string) ([]*IOShapingPolicyStat, err
 	var out []*IOShapingPolicyStat
 	for _, p := range policies {
 		out = append(out, &IOShapingPolicyStat{
-			Type:                  p.Type,
-			ID:                    p.ID,
-			IsEnabled:             p.IsEnabled,
-			LimitReadBytes:        p.LimitReadBytesPerSec.String(),
-			LimitWriteBytes:       p.LimitWriteBytesPerSec.String(),
-			ReservationReadBytes:  p.ReservationReadBytesPerSec.String(),
-			ReservationWriteBytes: p.ReservationWriteBytesPerSec.String(),
+			Type:                      p.Type,
+			ID:                        p.ID,
+			IsEnabled:                 p.IsEnabled,
+			LimitReadBytes:            p.LimitReadBytesPerSec.String(),
+			LimitWriteBytes:           p.LimitWriteBytesPerSec.String(),
+			ReservationReadBytes:      p.ReservationReadBytesPerSec.String(),
+			ReservationWriteBytes:     p.ReservationWriteBytesPerSec.String(),
+			ControllerLimitReadBytes:  p.ControllerLimitReadBytesPerSec.String(),
+			ControllerLimitWriteBytes: p.ControllerLimitWriteBytesPerSec.String(),
 		})
 	}
 
