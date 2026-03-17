@@ -5,8 +5,8 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/cern-eos/eos_exporter/eosclient"
+	"github.com/prometheus/client_golang/prometheus"
 
 	//"os"
 	//"bufio"
@@ -54,6 +54,10 @@ type NSCollector struct {
 	Total_files_changelog_avg_entry_size       *prometheus.GaugeVec
 	Total_files_changelog_size                 *prometheus.GaugeVec
 	Uptime                                     *prometheus.GaugeVec
+	Cache_files_requests                       *prometheus.GaugeVec
+	Cache_files_hits                           *prometheus.GaugeVec
+	Cache_containers_requests                  *prometheus.GaugeVec
+	Cache_containers_hits                      *prometheus.GaugeVec
 }
 
 type NSActivityCollector struct {
@@ -430,6 +434,42 @@ func NewNSCollector(opts *CollectorOpts) *NSCollector {
 			},
 			[]string{},
 		),
+		Cache_files_requests: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_cache_files_requests_total",
+				Help:        "Cache_files_requests: Number of cache file requests.",
+				ConstLabels: labels,
+			},
+			[]string{},
+		),
+		Cache_files_hits: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_cache_files_hits_total",
+				Help:        "Cache_files_hits: Number of cache file hits.",
+				ConstLabels: labels,
+			},
+			[]string{},
+		),
+		Cache_containers_requests: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_cache_container_requests_total",
+				Help:        "Cache_container_requests: Number of cache container requests.",
+				ConstLabels: labels,
+			},
+			[]string{},
+		),
+		Cache_containers_hits: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   namespace,
+				Name:        "ns_cache_container_hits_total",
+				Help:        "Cache_container_hits: Number of cache container hits.",
+				ConstLabels: labels,
+			},
+			[]string{},
+		),
 		Hanging_since: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -595,6 +635,10 @@ func (o *NSCollector) collectorList() []prometheus.Collector {
 		o.Total_files_changelog_avg_entry_size,
 		o.Total_files_changelog_size,
 		o.Uptime,
+		o.Cache_files_requests,
+		o.Cache_files_hits,
+		o.Cache_containers_requests,
+		o.Cache_containers_hits,
 	}
 }
 
@@ -914,6 +958,30 @@ func (o *NSCollector) collectNSDF() error {
 		hanging_since, err := strconv.ParseFloat(m.Hanging_since, 64)
 		if err == nil {
 			o.Hanging_since.WithLabelValues().Set(hanging_since)
+		}
+
+		// Cache_files_requests
+		cache_files_requests, err := strconv.ParseFloat(m.Cache_files_requests, 64)
+		if err == nil {
+			o.Cache_files_requests.WithLabelValues().Set(cache_files_requests)
+		}
+
+		// Cache_files_hits
+		cache_files_hits, err := strconv.ParseFloat(m.Cache_files_hits, 64)
+		if err == nil {
+			o.Cache_files_hits.WithLabelValues().Set(cache_files_hits)
+		}
+
+		// Cache_containers_requests
+		cache_containers_requests, err := strconv.ParseFloat(m.Cache_containers_requests, 64)
+		if err == nil {
+			o.Cache_containers_requests.WithLabelValues().Set(cache_containers_requests)
+		}
+
+		// Cache_containers_hits
+		cache_containers_hits, err := strconv.ParseFloat(m.Cache_containers_hits, 64)
+		if err == nil {
+			o.Cache_containers_hits.WithLabelValues().Set(cache_containers_hits)
 		}
 	}
 

@@ -1,7 +1,7 @@
 #
 # eos_exporter spec file
 #
-%define version 0.1.13
+%define version 0.1.18
 
 Name: eos_exporter
 Summary: The Prometheus EOS exporter exposes EOS metrics.
@@ -61,8 +61,22 @@ rm -rf %buildroot/
 %systemd_postun_with_restart %{name}.service
 
 %changelog
-* Tue Oct 8 2024 Jan Iven <jan.iven@cern.ch> 0.1.13-2
-- restart after RPM update
+* Tue Mar 17 2026 Jan Iven <jan.iven@cern.ch> 0.1.19-1
+- Restart after RPM update
+* Mon Mar 2 2026 Luis Antonio Obis Aparicio <luis.obis@cern.ch> 0.1.18-1
+- Expose fast metrics on a dedicated port (9987 by default). The port can be set via `--listen-address-fast` CLI option.
+- Include `eos io shaping` traffic shaping metrics as fast metrics.
+- New CLI option `--collectors` to specify which collectors to run. All are enabled by default.
+* Mon Oct 20 2025 Pablo Medina <pablo.medina.ramos@cern.ch> 0.1.17-1
+- Add geotag label to FS metrics. 
+* Fri Aug 22 2025 Jan Iven <jan.iven@cern.ch> 0.1.16-1
+- Restart after RPM update
+* Wed Aug 20 2025 Pablo Medina Ramos <pablo.medina.ramos@cern.ch> 0.1.15-1
+- Adding namespace cache hit rate metrics.
+- remove obsolete StandardOutput= from systemd unit file
+- stop building for el7
+* Wed Oct 16 2024 Maria Arsuaga Rios <maria.arsuaga.rios@cern.ch> 0.1.14-1
+- Adding EC categories for fsck
 * Wed Aug 21 2024 Hugo Gonzalez Labrador <hugo.gonzalez.labrador@cern.ch> 0.1.13-1
 - Fix CI by using new docker runners
 * Tue Aug 20 2024 Hugo Gonzalez Labrador <hugo.gonzalez.labrador@cern.ch> 0.1.12-1

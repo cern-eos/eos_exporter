@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	osuser "os/user"
@@ -221,6 +222,10 @@ type NSInfo struct {
 	Total_files_changelog_avg_entry_size       string
 	Total_files_changelog_size                 string
 	Uptime                                     string
+	Cache_files_requests                       string
+	Cache_files_hits                           string
+	Cache_containers_requests                  string
+	Cache_containers_hits                      string
 }
 
 type NSActivityInfo struct {
@@ -859,6 +864,10 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 								kv["ns.total.files.changelog.avg_entry_size"],
 								kv["ns.total.files.changelog.size"],
 								kv["ns.uptime"],
+								kv["ns.cache.files.requests"],
+								kv["ns.cache.files.hits"],
+								kv["ns.cache.containers.requests"],
+								kv["ns.cache.containers.hits"],
 							}
 						}
 					}
@@ -1363,7 +1372,7 @@ func (c *Client) FsckReport(ctx context.Context, username string) ([]*FsckInfo, 
 func (c *Client) parseFsckInfo(raw string) ([]*FsckInfo, error) {
 	fsckInfo := []*FsckInfo{}
 	rawLines := strings.Split(raw, "\n")
-	var re = regexp.MustCompile(`d_cx_diff|d_mem_sz_diff|m_cx_diff|m_mem_sz_diff|orphans_n|rep_diff_n|rep_missing_n|unreg_n`)
+	var re = regexp.MustCompile(`d_cx_diff|d_mem_sz_diff|m_cx_diff|m_mem_sz_diff|orphans_n|rep_diff_n|rep_missing_n|unreg_n|blockxs_err|stripe_err`)
 	for _, rl := range rawLines {
 		if !strings.Contains(rl, "Info") && re.MatchString(rl) {
 			fsck, err := c.parseFsckLineInfo(rl)
@@ -1896,4 +1905,198 @@ func (c *Client) parseInspectorGroupCostDiskTBYearsLine(line string) (*Inspector
 		kv["tbyears"],
 	}
 	return groupCostDiskTBYearsInfo, nil
+}
+
+// ShapingStatsJSON represents a single entry returned by `eos io shaping ls --json`
+type ShapingStatsJSON struct {
+	ID           string      `json:"id"`
+	Type         string      `json:"type"`
+	WindowSec    json.Number `json:"window_sec"`
+	ReadRateBps  json.Number `json:"read_rate_bps"`
+	WriteRateBps json.Number `json:"write_rate_bps"`
+	ReadIops     json.Number `json:"read_iops"`
+	WriteIops    json.Number `json:"write_iops"`
+
+	EstimatorsLoopMedianUs json.Number `json:"estimators_loop_median_us"`
+	EstimatorsLoopMinUs    json.Number `json:"estimators_loop_min_us"`
+	EstimatorsLoopMaxUs    json.Number `json:"estimators_loop_max_us"`
+
+	FstLimitsLoopMedianUs json.Number `json:"fst_limits_loop_median_us"`
+	FstLimitsLoopMinUs    json.Number `json:"fst_limits_loop_min_us"`
+	FstLimitsLoopMaxUs    json.Number `json:"fst_limits_loop_max_us"`
+
+	ReportsProcessedPerSecMean json.Number `json:"reports_processed_per_sec_mean"`
+
+	SystemStatsWindowSeconds json.Number `json:"system_stats_window_seconds"`
+}
+
+// IOShapingStat is the parsing-friendly representation.
+type IOShapingStat struct {
+	ID           string
+	Type         string
+	WindowSec    string
+	ReadRateBps  string
+	WriteRateBps string
+	ReadIops     string
+	WriteIops    string
+
+	EstimatorsLoopMedianUs string
+	EstimatorsLoopMinUs    string
+	EstimatorsLoopMaxUs    string
+
+	FstLimitsLoopMedianUs string
+	FstLimitsLoopMinUs    string
+	FstLimitsLoopMaxUs    string
+
+	ReportsProcessedPerSecMean string
+
+	SystemStatsWindowSeconds string
+}
+
+// ListIOShaping runs `eos io shaping ls --json --sys --window` for apps, users, and groups
+func (c *Client) ListIOShaping(ctx context.Context, windowTimeSeconds int) ([]*IOShapingStat, error) {
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	var allStats []*IOShapingStat
+	groupFlags := []string{"--apps", "--users", "--groups", "--nodes"}
+
+	for _, flag := range groupFlags {
+		// Appended "--sys" to ensure the system object is included in the JSON array
+		cmd := exec.CommandContext(
+			ctxWt,
+			"/usr/bin/eos", "io", "shaping", "ls",
+			"--json", "--sys",
+			"--window", strconv.Itoa(windowTimeSeconds),
+			flag,
+		)
+
+		stdout, _, err := c.execute(cmd)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch shaping stats for %s: %w", flag, err)
+		}
+
+		parsed, err := c.parseIOShaping(stdout)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse shaping stats for %s: %w", flag, err)
+		}
+
+		allStats = append(allStats, parsed...)
+	}
+
+	return allStats, nil
+}
+
+func (c *Client) parseIOShaping(raw string) ([]*IOShapingStat, error) {
+	trim := strings.TrimSpace(raw)
+	if trim == "" {
+		return []*IOShapingStat{}, nil
+	}
+
+	dec := json.NewDecoder(strings.NewReader(raw))
+	dec.UseNumber()
+
+	var mj []ShapingStatsJSON
+	if err := dec.Decode(&mj); err != nil {
+		if err == io.EOF || trim == "[]" {
+			return []*IOShapingStat{}, nil
+		}
+		return nil, fmt.Errorf("failed to decode io shaping json: %w", err)
+	}
+
+	out := make([]*IOShapingStat, 0, len(mj))
+	for _, v := range mj {
+		stat := &IOShapingStat{
+			ID:                         v.ID,
+			Type:                       v.Type,
+			WindowSec:                  v.WindowSec.String(),
+			ReadRateBps:                v.ReadRateBps.String(),
+			WriteRateBps:               v.WriteRateBps.String(),
+			ReadIops:                   v.ReadIops.String(),
+			WriteIops:                  v.WriteIops.String(),
+			EstimatorsLoopMedianUs:     v.EstimatorsLoopMedianUs.String(),
+			EstimatorsLoopMinUs:        v.EstimatorsLoopMinUs.String(),
+			EstimatorsLoopMaxUs:        v.EstimatorsLoopMaxUs.String(),
+			FstLimitsLoopMedianUs:      v.FstLimitsLoopMedianUs.String(),
+			FstLimitsLoopMinUs:         v.FstLimitsLoopMinUs.String(),
+			FstLimitsLoopMaxUs:         v.FstLimitsLoopMaxUs.String(),
+			ReportsProcessedPerSecMean: v.ReportsProcessedPerSecMean.String(),
+			SystemStatsWindowSeconds:   v.SystemStatsWindowSeconds.String(),
+		}
+		out = append(out, stat)
+	}
+
+	return out, nil
+}
+
+// ShapingPolicyJSON represents a single policy from the new flat JSON array
+type ShapingPolicyJSON struct {
+	ID                              string      `json:"id"`
+	Type                            string      `json:"type"`
+	IsEnabled                       bool        `json:"is_enabled"`
+	LimitReadBytesPerSec            json.Number `json:"limit_read_bytes_per_sec"`
+	LimitWriteBytesPerSec           json.Number `json:"limit_write_bytes_per_sec"`
+	ReservationReadBytesPerSec      json.Number `json:"reservation_read_bytes_per_sec"`
+	ReservationWriteBytesPerSec     json.Number `json:"reservation_write_bytes_per_sec"`
+	ControllerLimitReadBytesPerSec  json.Number `json:"controller_limit_read_bytes_per_sec"`
+	ControllerLimitWriteBytesPerSec json.Number `json:"controller_limit_write_bytes_per_sec"`
+}
+
+// IOShapingPolicyStat is the parsing-friendly struct
+type IOShapingPolicyStat struct {
+	Type                      string
+	ID                        string
+	IsEnabled                 bool
+	LimitReadBytes            string
+	LimitWriteBytes           string
+	ReservationReadBytes      string
+	ReservationWriteBytes     string
+	ControllerLimitReadBytes  string
+	ControllerLimitWriteBytes string
+}
+
+// ListIOShapingPolicies runs `eos io shaping policy ls --json` and parses the output
+func (c *Client) ListIOShapingPolicies(ctx context.Context) ([]*IOShapingPolicyStat, error) {
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "io", "shaping", "policy", "ls", "--json")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch shaping policies: %w", err)
+	}
+
+	return c.parseIOShapingPolicies(stdout)
+}
+
+func (c *Client) parseIOShapingPolicies(raw string) ([]*IOShapingPolicyStat, error) {
+	trim := strings.TrimSpace(raw)
+	if trim == "" || trim == "[]" {
+		return []*IOShapingPolicyStat{}, nil
+	}
+
+	dec := json.NewDecoder(strings.NewReader(raw))
+	dec.UseNumber()
+
+	var policies []ShapingPolicyJSON
+	if err := dec.Decode(&policies); err != nil {
+		return nil, fmt.Errorf("failed to decode shaping policies json: %w", err)
+	}
+
+	var out []*IOShapingPolicyStat
+	for _, p := range policies {
+		out = append(out, &IOShapingPolicyStat{
+			Type:                      p.Type,
+			ID:                        p.ID,
+			IsEnabled:                 p.IsEnabled,
+			LimitReadBytes:            p.LimitReadBytesPerSec.String(),
+			LimitWriteBytes:           p.LimitWriteBytesPerSec.String(),
+			ReservationReadBytes:      p.ReservationReadBytesPerSec.String(),
+			ReservationWriteBytes:     p.ReservationWriteBytesPerSec.String(),
+			ControllerLimitReadBytes:  p.ControllerLimitReadBytesPerSec.String(),
+			ControllerLimitWriteBytes: p.ControllerLimitWriteBytesPerSec.String(),
+		})
+	}
+
+	return out, nil
 }

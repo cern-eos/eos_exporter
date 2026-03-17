@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/cern-eos/eos_exporter/eosclient"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type FSCollector struct {
@@ -78,7 +78,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Status 0=booted, 1=booting, 2=bootfailure, 3=opserror, 4=down",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		Configstatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -87,7 +87,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "Configstatus: 0=rw,1=ro,2=drain,3=empty",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatDiskLoad: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -96,7 +96,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS disk load",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatDiskReadratemb: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -105,7 +105,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS stat Disk Read Rate in MB/s",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatDiskWriteratemb: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -114,7 +114,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Stat Disk Write Rate in MB/s",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatNetEthratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -123,7 +123,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Stat Net Eth Rate in MiB/s",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatNetInratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -132,7 +132,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Stat Net In Rate MiB/s",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatNetOutratemib: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -141,7 +141,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Stat Net Out Rate MiB/s",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatRopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -150,7 +150,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Open reads",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatWopen: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -159,7 +159,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Open writes",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatStatfsUsedbytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -168,7 +168,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS StatFs Used Bytes",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatStatfsFreebytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -177,7 +177,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS StatFs Free Bytes",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatStatfsCapacity: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -186,7 +186,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS StatFs Capacity",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatStatfsFused: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -195,7 +195,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Used Files",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatStatfsFfree: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -204,7 +204,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Free-Files",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatStatfsFiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -213,7 +213,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Files",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		Drainstatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -222,7 +222,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Drain status: 0=nodrain,1=drained,2=draining,3=stalling,4=expired",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatDrainprogress: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -231,7 +231,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Drain progress %",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatDrainfiles: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -240,7 +240,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Drain files left",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatDrainbytesleft: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -249,7 +249,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Drain bytes left",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatDrainretry: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -258,7 +258,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Drain retries",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatDrainFailed: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -267,7 +267,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Drain failed",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatActive: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -276,7 +276,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "Status of fs: 0=offline,1=online",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatBalancerRunning: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -294,7 +294,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Stat Drainer Running",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatDiskIops: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -303,7 +303,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Stat Disk IOPS",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatDiskBw: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -312,7 +312,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Stat Disk BW MB/Sec",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 		StatHealth: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -321,7 +321,7 @@ func NewFSCollector(opts *CollectorOpts) *FSCollector {
 				Help:        "FS Stat Health: 0=OK,1=other",
 				ConstLabels: labels,
 			},
-			[]string{"fs", "node"},
+			[]string{"fs", "node", "geotag"},
 		),
 	}
 }
@@ -450,7 +450,7 @@ func (o *FSCollector) collectFSDF() error {
 			boot_status = 4
 		}
 
-		o.StatBoot.WithLabelValues(m.Id, m.Host).Set(float64(boot_status))
+		o.StatBoot.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(float64(boot_status))
 
 		// Config Status
 
@@ -468,76 +468,76 @@ func (o *FSCollector) collectFSDF() error {
 			config_status = 0
 		}
 
-		o.Configstatus.WithLabelValues(m.Id, m.Host).Set(float64(config_status))
+		o.Configstatus.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(float64(config_status))
 
 		diskload, err := strconv.ParseFloat(m.StatDiskLoad, 64)
 		if err == nil {
-			o.StatDiskLoad.WithLabelValues(m.Id, m.Host).Set(diskload)
+			o.StatDiskLoad.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(diskload)
 		}
 
 		diskr, err := strconv.ParseFloat(m.StatDiskReadratemb, 64)
 		if err == nil {
-			o.StatDiskReadratemb.WithLabelValues(m.Id, m.Host).Set(diskr)
+			o.StatDiskReadratemb.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(diskr)
 		}
 
 		diskw, err := strconv.ParseFloat(m.StatDiskWriteratemb, 64)
 		if err == nil {
-			o.StatDiskWriteratemb.WithLabelValues(m.Id, m.Host).Set(diskw)
+			o.StatDiskWriteratemb.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(diskw)
 		}
 
 		ethrate, err := strconv.ParseFloat(m.StatNetEthratemib, 64)
 		if err == nil {
-			o.StatNetEthratemib.WithLabelValues(m.Id, m.Host).Set(ethrate)
+			o.StatNetEthratemib.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(ethrate)
 		}
 
 		inrate, err := strconv.ParseFloat(m.StatNetInratemib, 64)
 		if err == nil {
-			o.StatNetInratemib.WithLabelValues(m.Id, m.Host).Set(inrate)
+			o.StatNetInratemib.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(inrate)
 		}
 
 		outrate, err := strconv.ParseFloat(m.StatNetOutratemib, 64)
 		if err == nil {
-			o.StatNetOutratemib.WithLabelValues(m.Id, m.Host).Set(outrate)
+			o.StatNetOutratemib.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(outrate)
 		}
 
 		ropen, err := strconv.ParseFloat(m.StatRopen, 64)
 		if err == nil {
-			o.StatRopen.WithLabelValues(m.Id, m.Host).Set(ropen)
+			o.StatRopen.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(ropen)
 		}
 
 		wopen, err := strconv.ParseFloat(m.StatWopen, 64)
 		if err == nil {
-			o.StatWopen.WithLabelValues(m.Id, m.Host).Set(wopen)
+			o.StatWopen.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(wopen)
 		}
 
 		usedb, err := strconv.ParseFloat(m.StatStatfsUsedbytes, 64)
 		if err == nil {
-			o.StatStatfsUsedbytes.WithLabelValues(m.Id, m.Host).Set(usedb)
+			o.StatStatfsUsedbytes.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(usedb)
 		}
 
 		fbytes, err := strconv.ParseFloat(m.StatStatfsFreebytes, 64)
 		if err == nil {
-			o.StatStatfsFreebytes.WithLabelValues(m.Id, m.Host).Set(fbytes)
+			o.StatStatfsFreebytes.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(fbytes)
 		}
 
 		fscap, err := strconv.ParseFloat(m.StatStatfsCapacity, 64)
 		if err == nil {
-			o.StatStatfsCapacity.WithLabelValues(m.Id, m.Host).Set(fscap)
+			o.StatStatfsCapacity.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(fscap)
 		}
 
 		ufiles, err := strconv.ParseFloat(m.StatStatfsFused, 64)
 		if err == nil {
-			o.StatStatfsFused.WithLabelValues(m.Id, m.Host).Set(ufiles)
+			o.StatStatfsFused.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(ufiles)
 		}
 
 		ffree, err := strconv.ParseFloat(m.StatStatfsFfree, 64)
 		if err == nil {
-			o.StatStatfsFfree.WithLabelValues(m.Id, m.Host).Set(ffree)
+			o.StatStatfsFfree.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(ffree)
 		}
 
 		files, err := strconv.ParseFloat(m.StatStatfsFiles, 64)
 		if err == nil {
-			o.StatStatfsFiles.WithLabelValues(m.Id, m.Host).Set(files)
+			o.StatStatfsFiles.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(files)
 		}
 
 		// Drain Status.
@@ -558,36 +558,36 @@ func (o *FSCollector) collectFSDF() error {
 			drain_status = 0
 		}
 
-		o.Drainstatus.WithLabelValues(m.Id, m.Host).Set(float64(drain_status))
+		o.Drainstatus.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(float64(drain_status))
 
 		balr, err := strconv.ParseFloat(m.StatBalancerRunning, 64)
 		if err == nil {
-			o.StatBalancerRunning.WithLabelValues(m.Id, m.Host).Set(balr)
+			o.StatBalancerRunning.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(balr)
 		}
 
 		drainr, err := strconv.ParseFloat(m.StatDrainerRunning, 64)
 		if err == nil {
-			o.StatDrainerRunning.WithLabelValues(m.Id, m.Host).Set(drainr)
+			o.StatDrainerRunning.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(drainr)
 		}
 
 		drainretry, err := strconv.ParseFloat(m.StatDrainretry, 64)
 		if err == nil {
-			o.StatDrainretry.WithLabelValues(m.Id, m.Host).Set(drainretry)
+			o.StatDrainretry.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(drainretry)
 		}
 
 		drainfailed, err := strconv.ParseFloat(m.StatDrainFailed, 64)
 		if err == nil {
-			o.StatDrainFailed.WithLabelValues(m.Id, m.Host).Set(drainfailed)
+			o.StatDrainFailed.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(drainfailed)
 		}
 
 		diskiops, err := strconv.ParseFloat(m.StatDiskIops, 64)
 		if err == nil {
-			o.StatDiskIops.WithLabelValues(m.Id, m.Host).Set(diskiops)
+			o.StatDiskIops.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(diskiops)
 		}
 
 		diskbw, err := strconv.ParseFloat(m.StatDiskBw, 64)
 		if err == nil {
-			o.StatDiskBw.WithLabelValues(m.Id, m.Host).Set(diskbw)
+			o.StatDiskBw.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(diskbw)
 		}
 
 		// FS Active Status.
@@ -602,7 +602,7 @@ func (o *FSCollector) collectFSDF() error {
 			active_status = 1
 		}
 
-		o.StatActive.WithLabelValues(m.Id, m.Host).Set(float64(active_status))
+		o.StatActive.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(float64(active_status))
 
 		// Health
 
@@ -612,7 +612,7 @@ func (o *FSCollector) collectFSDF() error {
 		} else {
 			health = 1
 		}
-		o.StatHealth.WithLabelValues(m.Id, m.Host).Set(float64(health))
+		o.StatHealth.WithLabelValues(m.Id, m.Host, m.StatGeotag).Set(float64(health))
 	}
 
 	return nil

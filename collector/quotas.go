@@ -2,9 +2,6 @@ package collector
 
 import (
 	"context"
-	"fmt"
-
-	// "time"
 	"log"
 
 	"github.com/cern-eos/eos_exporter/eosclient"
@@ -30,7 +27,6 @@ func NewQuotasCollector(opts *CollectorOpts) *QuotasCollector {
 	namespace := "eos"
 
 	return &QuotasCollector{
-		//file: f,
 		CollectorOpts: opts,
 		QuotaUsedBytes: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -117,7 +113,7 @@ func (o *QuotasCollector) collectQuotaDF() error {
 	// a GaugeVector keeps its state for any combination of labels until the process is restarted.
 	// For metrics obtained from systems like EOS that do not produce a complete set of metrics (only the active metrics)
 	// then we risk to expose these metrics forever until the next process restart.
-	// To workaround this, we reset the gauge vectors when collecting metrics.
+	// To work around this, we reset the gauge vectors when collecting metrics.
 
 	// output is like this:
 	// quota=node uid=9218 space=/eos/user/ usedbytes=158090138 usedlogicalbytes=79045069 usedfiles=1546 maxbytes=0 maxlogicalbytes=0 maxfiles=0 percentageusedbytes=100.00 statusbytes=ignored statusfiles=ignored
@@ -145,7 +141,6 @@ func (o *QuotasCollector) collectQuotaDF() error {
 // Describe sends the descriptors of each SpaceCollector related metrics we have defined
 func (o *QuotasCollector) Describe(ch chan<- *prometheus.Desc) {
 	for _, metric := range o.collectorList() {
-		fmt.Print(metric)
 		metric.Describe(ch)
 	}
 }
