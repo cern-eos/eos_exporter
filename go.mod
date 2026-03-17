@@ -1,8 +1,9 @@
 module github.com/cern-eos/eos_exporter
 
-go 1.18
+go 1.23
 
 require (
+	github.com/klauspost/compress v1.18.4
 	github.com/prometheus/client_golang v1.12.2
 	go.uber.org/zap v1.21.0
 )

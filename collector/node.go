@@ -2,6 +2,7 @@ package collector
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -12,6 +13,20 @@ import (
 const (
 	nodeLabelFormat = "node.%v"
 )
+
+// humanReadableBytes converts bytes to human readable format
+func humanReadableBytes(bytes float64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%.0f B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", bytes/float64(div), "KMGTPE"[exp])
+}
 
 type NodeCollector struct {
 	*CollectorOpts
@@ -37,6 +52,12 @@ type NodeCollector struct {
 	SumStatNetInratemib   *prometheus.GaugeVec
 	SumStatNetOutratemib  *prometheus.GaugeVec
 	Info                  *prometheus.GaugeVec
+	// Info metrics for readable units
+	StatfsFreeInfo        *prometheus.GaugeVec
+	StatfsUsedInfo        *prometheus.GaugeVec
+	StatfsTotalInfo       *prometheus.GaugeVec
+	VsizeInfo            *prometheus.GaugeVec
+	RssInfo              *prometheus.GaugeVec
 }
 
 /*
@@ -433,7 +454,23 @@ func (o *NodeCollector) collectNodeDF() error {
 
 		// We send just a dummy 1 as value for the eos_node_info metric, and metadata on labels
 		o.Info.WithLabelValues(m.Host, m.Port, m.EOSVersion, m.XRootDVersion, m.Kernel, m.Geotag).Set(1)
-		o.Info.WithLabelValues(m.Host, m.Port, m.EOSVersion, m.XRootDVersion, m.Kernel, m.Geotag).Set(1)
+
+		// Add readable byte info metrics
+		if fbytes, err := strconv.ParseFloat(m.SumStatStatfsFree, 64); err == nil {
+			o.StatfsFreeInfo.WithLabelValues(m.Host, m.Port, m.Geotag, humanReadableBytes(fbytes)).Set(fbytes)
+		}
+		if ubytes, err := strconv.ParseFloat(m.SumStatStatfsUsed, 64); err == nil {
+			o.StatfsUsedInfo.WithLabelValues(m.Host, m.Port, m.Geotag, humanReadableBytes(ubytes)).Set(ubytes)
+		}
+		if tbytes, err := strconv.ParseFloat(m.SumStatStatfsTotal, 64); err == nil {
+			o.StatfsTotalInfo.WithLabelValues(m.Host, m.Port, m.Geotag, humanReadableBytes(tbytes)).Set(tbytes)
+		}
+		if vsize, err := strconv.ParseFloat(m.CfgStatSysVsize, 64); err == nil {
+			o.VsizeInfo.WithLabelValues(m.Host, m.Port, m.Geotag, humanReadableBytes(vsize)).Set(vsize)
+		}
+		if rss, err := strconv.ParseFloat(m.CfgStatSysRss, 64); err == nil {
+			o.RssInfo.WithLabelValues(m.Host, m.Port, m.Geotag, humanReadableBytes(rss)).Set(rss)
+		}
 	}
 
 	return nil
