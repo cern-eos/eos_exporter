@@ -6,8 +6,8 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/cern-eos/eos_exporter/eosclient"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -53,11 +53,11 @@ type NodeCollector struct {
 	SumStatNetOutratemib  *prometheus.GaugeVec
 	Info                  *prometheus.GaugeVec
 	// Info metrics for readable units
-	StatfsFreeInfo        *prometheus.GaugeVec
-	StatfsUsedInfo        *prometheus.GaugeVec
-	StatfsTotalInfo       *prometheus.GaugeVec
-	VsizeInfo            *prometheus.GaugeVec
-	RssInfo              *prometheus.GaugeVec
+	StatfsFreeInfo  *prometheus.GaugeVec
+	StatfsUsedInfo  *prometheus.GaugeVec
+	StatfsTotalInfo *prometheus.GaugeVec
+	VsizeInfo       *prometheus.GaugeVec
+	RssInfo         *prometheus.GaugeVec
 }
 
 /*
@@ -281,6 +281,51 @@ func NewNodeCollector(opts *CollectorOpts) *NodeCollector {
 			},
 			[]string{"node", "port", "eos_version", "xrootd_version", "kernel", "geotag"},
 		),
+		StatfsFreeInfo: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_statfs_freebytes_info",
+				Help:        "Node Free Bytes with human-readable label",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port", "geotag", "human_readable"},
+		),
+		StatfsUsedInfo: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_statfs_usedbytes_info",
+				Help:        "Node Used Bytes with human-readable label",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port", "geotag", "human_readable"},
+		),
+		StatfsTotalInfo: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_statfs_sizebytes_info",
+				Help:        "Node Total Bytes with human-readable label",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port", "geotag", "human_readable"},
+		),
+		VsizeInfo: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_vsize_info",
+				Help:        "Node virtual memory size with human-readable label",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port", "geotag", "human_readable"},
+		),
+		RssInfo: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_rss_info",
+				Help:        "Node resident memory set size with human-readable label",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port", "geotag", "human_readable"},
+		),
 	}
 }
 
@@ -305,6 +350,11 @@ func (o *NodeCollector) collectorList() []prometheus.Collector {
 		o.SumStatNetInratemib,
 		o.SumStatNetOutratemib,
 		o.Info,
+		o.StatfsFreeInfo,
+		o.StatfsUsedInfo,
+		o.StatfsTotalInfo,
+		o.VsizeInfo,
+		o.RssInfo,
 	}
 }
 
@@ -343,6 +393,11 @@ func (o *NodeCollector) collectNodeDF() error {
 	o.SumStatNetInratemib.Reset()
 	o.SumStatNetOutratemib.Reset()
 	o.Info.Reset()
+	o.StatfsFreeInfo.Reset()
+	o.StatfsUsedInfo.Reset()
+	o.StatfsTotalInfo.Reset()
+	o.VsizeInfo.Reset()
+	o.RssInfo.Reset()
 
 	for _, m := range mds {
 
