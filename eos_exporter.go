@@ -95,6 +95,7 @@ var availableCollectors = []struct {
 	{"inspector_groupcost_disktbyears", func(opts *collector.CollectorOpts) prometheus.Collector {
 		return collector.NewInspectorGroupCostDiskTBYearsCollector(opts)
 	}},
+	{"audit", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewAuditCollector(opts) }},
 }
 
 // EOSExporter wraps a list of registered EOS collectors
@@ -129,6 +130,8 @@ type Options struct {
 	Version           bool
 	Help              bool
 	Timeout           int
+	AuditLogPath      string
+	AuditPollInterval int
 }
 
 var cmdOptions *Options = &Options{}
@@ -140,6 +143,8 @@ func init() {
 	flag.IntVar(&cmdOptions.Timeout, "timeout", 30, "Number of seconds to timeout when querying EOS.")
 	flag.StringVar(&cmdOptions.EOSInstance, "eos-instance", "", "EOS instance name.")
 	flag.StringVar(&cmdOptions.Collectors, "collectors", "all", "Comma-separated list of standard collectors to enable (e.g. 'space,node'). Default is 'all'.")
+	flag.StringVar(&cmdOptions.AuditLogPath, "audit-log-path", "/var/log/eos/mgm/audit/audit.zstd", "Path to the EOS audit log symlink. Default is standard EOS path.")
+	flag.IntVar(&cmdOptions.AuditPollInterval, "audit-poll-interval", 30, "Interval in seconds to check for new audit log files.")
 	flag.BoolVar(&cmdOptions.Help, "help", false, "Show the help and exit.")
 	flag.BoolVar(&cmdOptions.Version, "version", false, "Show the version and exit.")
 	flag.Parse()
@@ -204,8 +209,10 @@ func main() {
 	}
 
 	collectorOpts := &collector.CollectorOpts{
-		Cluster: cmdOptions.EOSInstance,
-		Timeout: cmdOptions.Timeout,
+		Cluster:           cmdOptions.EOSInstance,
+		Timeout:           cmdOptions.Timeout,
+		AuditLogPath:      cmdOptions.AuditLogPath,
+		AuditPollInterval: cmdOptions.AuditPollInterval,
 	}
 
 	log.Println("Starting eos exporter for instance", cmdOptions.EOSInstance)

@@ -2,16 +2,31 @@ package collector
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/cern-eos/eos_exporter/eosclient"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
 	nodeLabelFormat = "node.%v"
 )
+
+// humanReadableBytes converts bytes to human readable format
+func humanReadableBytes(bytes float64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%.0f B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", bytes/float64(div), "KMGTPE"[exp])
+}
 
 type NodeCollector struct {
 	*CollectorOpts
@@ -37,6 +52,12 @@ type NodeCollector struct {
 	SumStatNetInratemib   *prometheus.GaugeVec
 	SumStatNetOutratemib  *prometheus.GaugeVec
 	Info                  *prometheus.GaugeVec
+	// Info metrics for readable units
+	StatfsFreeInfo  *prometheus.GaugeVec
+	StatfsUsedInfo  *prometheus.GaugeVec
+	StatfsTotalInfo *prometheus.GaugeVec
+	VsizeInfo       *prometheus.GaugeVec
+	RssInfo         *prometheus.GaugeVec
 }
 
 /*
@@ -260,6 +281,51 @@ func NewNodeCollector(opts *CollectorOpts) *NodeCollector {
 			},
 			[]string{"node", "port", "eos_version", "xrootd_version", "kernel", "geotag"},
 		),
+		StatfsFreeInfo: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_statfs_freebytes_info",
+				Help:        "Node Free Bytes with human-readable label",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port", "geotag", "human_readable"},
+		),
+		StatfsUsedInfo: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_statfs_usedbytes_info",
+				Help:        "Node Used Bytes with human-readable label",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port", "geotag", "human_readable"},
+		),
+		StatfsTotalInfo: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_statfs_sizebytes_info",
+				Help:        "Node Total Bytes with human-readable label",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port", "geotag", "human_readable"},
+		),
+		VsizeInfo: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_vsize_info",
+				Help:        "Node virtual memory size with human-readable label",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port", "geotag", "human_readable"},
+		),
+		RssInfo: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace:   "eos",
+				Name:        "node_rss_info",
+				Help:        "Node resident memory set size with human-readable label",
+				ConstLabels: labels,
+			},
+			[]string{"node", "port", "geotag", "human_readable"},
+		),
 	}
 }
 
@@ -284,6 +350,11 @@ func (o *NodeCollector) collectorList() []prometheus.Collector {
 		o.SumStatNetInratemib,
 		o.SumStatNetOutratemib,
 		o.Info,
+		o.StatfsFreeInfo,
+		o.StatfsUsedInfo,
+		o.StatfsTotalInfo,
+		o.VsizeInfo,
+		o.RssInfo,
 	}
 }
 
@@ -322,6 +393,11 @@ func (o *NodeCollector) collectNodeDF() error {
 	o.SumStatNetInratemib.Reset()
 	o.SumStatNetOutratemib.Reset()
 	o.Info.Reset()
+	o.StatfsFreeInfo.Reset()
+	o.StatfsUsedInfo.Reset()
+	o.StatfsTotalInfo.Reset()
+	o.VsizeInfo.Reset()
+	o.RssInfo.Reset()
 
 	for _, m := range mds {
 
@@ -433,7 +509,23 @@ func (o *NodeCollector) collectNodeDF() error {
 
 		// We send just a dummy 1 as value for the eos_node_info metric, and metadata on labels
 		o.Info.WithLabelValues(m.Host, m.Port, m.EOSVersion, m.XRootDVersion, m.Kernel, m.Geotag).Set(1)
-		o.Info.WithLabelValues(m.Host, m.Port, m.EOSVersion, m.XRootDVersion, m.Kernel, m.Geotag).Set(1)
+
+		// Add readable byte info metrics
+		if fbytes, err := strconv.ParseFloat(m.SumStatStatfsFree, 64); err == nil {
+			o.StatfsFreeInfo.WithLabelValues(m.Host, m.Port, m.Geotag, humanReadableBytes(fbytes)).Set(fbytes)
+		}
+		if ubytes, err := strconv.ParseFloat(m.SumStatStatfsUsed, 64); err == nil {
+			o.StatfsUsedInfo.WithLabelValues(m.Host, m.Port, m.Geotag, humanReadableBytes(ubytes)).Set(ubytes)
+		}
+		if tbytes, err := strconv.ParseFloat(m.SumStatStatfsTotal, 64); err == nil {
+			o.StatfsTotalInfo.WithLabelValues(m.Host, m.Port, m.Geotag, humanReadableBytes(tbytes)).Set(tbytes)
+		}
+		if vsize, err := strconv.ParseFloat(m.CfgStatSysVsize, 64); err == nil {
+			o.VsizeInfo.WithLabelValues(m.Host, m.Port, m.Geotag, humanReadableBytes(vsize)).Set(vsize)
+		}
+		if rss, err := strconv.ParseFloat(m.CfgStatSysRss, 64); err == nil {
+			o.RssInfo.WithLabelValues(m.Host, m.Port, m.Geotag, humanReadableBytes(rss)).Set(rss)
+		}
 	}
 
 	return nil

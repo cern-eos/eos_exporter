@@ -1,7 +1,7 @@
 #
 # eos_exporter spec file
 #
-%define version 0.1.19
+%define version 0.1.20
 
 Name: eos_exporter
 Summary: The Prometheus EOS exporter exposes EOS metrics.
@@ -61,6 +61,13 @@ rm -rf %buildroot/
 %systemd_postun_with_restart %{name}.service
 
 %changelog
+* Mon Mar 17 2026 Pablo Medina Ramos <pablo.medina.ramos@cern.ch> 0.1.20-1
+- Add new audit collector to process EOS audit logs
+- Processes zstd-compressed rotated audit log files automatically
+- Exposes metrics: operations_total (by operation/auth/account), write_bytes_total, lifecycle_seconds_total
+- New CLI flags: --audit-log-path (default: /var/log/eos/mgm/audit/audit.zstd), --audit-poll-interval (default: 30s)
+- Audit collector runs in background, detecting log rotations and processing closed files
+- Add dependency: github.com/klauspost/compress/zstd for log decompression
 * Tue Mar 17 2026 Luis Antonio Obis Aparicio <luis.obis@cern.ch> 0.1.19-1
 - Support for new Traffic Shaping metrics in EOS 5.4.1
 * Mon Mar 2 2026 Luis Antonio Obis Aparicio <luis.obis@cern.ch> 0.1.18-1
