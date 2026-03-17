@@ -1,7 +1,7 @@
 #
 # eos_exporter spec file
 #
-%define version 0.1.18
+%define version 0.1.19
 
 Name: eos_exporter
 Summary: The Prometheus EOS exporter exposes EOS metrics.
@@ -61,6 +61,8 @@ rm -rf %buildroot/
 %systemd_postun_with_restart %{name}.service
 
 %changelog
+* Tue Mar 17 2026 Luis Antonio Obis Aparicio <luis.obis@cern.ch> 0.1.19-1
+- Support for new Traffic Shaping metrics in EOS 5.4.1
 * Mon Mar 2 2026 Luis Antonio Obis Aparicio <luis.obis@cern.ch> 0.1.18-1
 - Expose fast metrics on a dedicated port (9987 by default). The port can be set via `--listen-address-fast` CLI option.
 - Include `eos io shaping` traffic shaping metrics as fast metrics.
