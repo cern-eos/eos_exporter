@@ -7,5 +7,5 @@ bin/
 .version
 eos_exporter
 
-eos_exporter-0.*
+eos_exporter-[0-9]*
 rpmbuild/
