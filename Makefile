@@ -32,7 +32,8 @@ rpmdefines=--define='_topdir ${rpmbuild}' \
         --define='_sourcedir %{_topdir}/SOURCES' \
         --define='_builddir %{_topdir}/BUILD' \
         --define='_srcrpmdir %{_topdir}/SRPMS' \
-        --define='_rpmdir %{_topdir}/RPMS'
+        --define='_rpmdir %{_topdir}/RPMS' \
+        --define='version $(VERSION)'
 
 dist: clean
 	go generate
@@ -49,16 +50,17 @@ prepare: dist
 	@mkdir -p $(rpmbuild)/SOURCES/
 	@mkdir -p $(rpmbuild)/BUILD/
 	@mv $(PACKAGE)-$(VERSION).tar.gz $(rpmbuild)/SOURCES 
-	@cp $(SPECFILE) $(rpmbuild)/SOURCES 
+	@cp $(SPECFILE) $(rpmbuild)/SPECS/
+	@echo "" >> $(rpmbuild)/SPECS/$$(basename $(SPECFILE))
+	@echo "%changelog" >> $(rpmbuild)/SPECS/$$(basename $(SPECFILE))
+	@cat CHANGELOG >> $(rpmbuild)/SPECS/$$(basename $(SPECFILE))
 
 srpm: prepare $(SPECFILE)
-	@sed -i 's/_VERSION_/$(VERSION)/g' $(SPECFILE)
-	rpmbuild --nodeps -bs $(rpmdefines) $(SPECFILE)
+	rpmbuild --nodeps -bs $(rpmdefines) $(rpmbuild)/SPECS/$$(basename $(SPECFILE))
 	#cp $(rpmbuild)/SRPMS/* .
 
 rpm: srpm
-	@sed -i 's/_VERSION_/$(VERSION)/g' $(SPECFILE)
-	rpmbuild --nodeps -bb $(rpmdefines) $(SPECFILE)
+	rpmbuild --nodeps -bb $(rpmdefines) $(rpmbuild)/SPECS/$$(basename $(SPECFILE))
 	cp $(rpmbuild)/RPMS/x86_64/* .
 
 all: descr build
