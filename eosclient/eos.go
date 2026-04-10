@@ -226,6 +226,7 @@ type NSInfo struct {
 	Cache_files_hits                           string
 	Cache_containers_requests                  string
 	Cache_containers_hits                      string
+	Traffic_shaping_enabled                    string
 }
 
 type NSActivityInfo struct {
@@ -345,10 +346,6 @@ func getUnixUser(username string) (*osuser.User, error) {
 
 // exec executes the command and returns the stdout, stderr and return code
 func (c *Client) execute(cmd *exec.Cmd) (string, string, error) {
-	cmd.Env = []string{
-		"EOS_MGM_URL=" + c.opt.URL,
-	}
-
 	outBuf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
 	cmd.Stdout = outBuf
@@ -436,17 +433,25 @@ func (c *Client) ListFS(ctx context.Context, username string) ([]*FSInfo, error)
 // List the activity of different users in the instance
 func (c *Client) ListNS(ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
 	// eos ns stat, without -a will exclude batch users info (this adds to much latency in the instance where the exporter is deployed)
-	stdout, _, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "ns", "stat", "-m"))
+	stdout, stderr, err := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "ns", "stat", "-m"))
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("eos ns stat -m failed: %w (stderr: %s)", err, strings.TrimSpace(stderr))
 	}
 
-	stdo, _, err2 := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "who", "-a", "-m"))
+	stdoutHuman, stderrHuman, errHuman := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "ns", "stat"))
+	if errHuman != nil {
+		// Older EOS versions may not expose traffic shaping details in `eos ns stat`.
+		// Keep namespace metrics available and simply omit the shaping-enabled gauge.
+		c.opt.Logger.Info("optional eos ns stat failed, skipping traffic shaping status", zap.Error(errHuman), zap.String("stderr", strings.TrimSpace(stderrHuman)))
+		stdoutHuman = ""
+	}
+
+	stdo, stderrWho, err2 := c.execute(exec.CommandContext(ctx, "/usr/bin/eos", "who", "-a", "-m"))
 	if err2 != nil {
-		return nil, nil, nil, err2
+		return nil, nil, nil, fmt.Errorf("eos who -a -m failed: %w (stderr: %s)", err2, strings.TrimSpace(stderrWho))
 	}
 
-	return c.parseNSsInfo(stdout, stdo, ctx)
+	return c.parseNSsInfo(stdout, stdoutHuman, stdo, ctx)
 }
 
 // List the IO info in the instance
@@ -726,8 +731,31 @@ func isInMap(a string, m map[string]int) bool {
 	return false
 }
 
+func parseNSTrafficShapingEnabled(raw string) string {
+	for _, line := range strings.Split(raw, "\n") {
+		lower := strings.ToLower(line)
+		if !strings.Contains(lower, "traffic shaping info") {
+			continue
+		}
+
+		idx := strings.Index(lower, "is_enabled=")
+		if idx == -1 {
+			continue
+		}
+
+		value := strings.TrimSpace(line[idx+len("is_enabled="):])
+		if value == "" {
+			continue
+		}
+
+		return strings.Fields(value)[0]
+	}
+
+	return ""
+}
+
 // Gathers information of the namespace
-func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
+func (c *Client) parseNSsInfo(raw string, rawHuman string, raw_batch string, ctx context.Context) ([]*NSInfo, []*NSActivityInfo, []*NSBatchInfo, error) {
 	var kv map[string]string
 	var kvb map[string]string
 	var nsinfo *NSInfo
@@ -741,6 +769,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 	batchUsers := make(map[string]int)
 	batchMetrics := make(map[string]bool)
 	excl_uids := []string{"root", "nobody", "daemon", "wwweos", "all"}
+	trafficShapingEnabled := parseNSTrafficShapingEnabled(rawHuman)
 	for _, rlb := range rawBatchLines {
 		if rlb == "" {
 			continue
@@ -868,6 +897,7 @@ func (c *Client) parseNSsInfo(raw string, raw_batch string, ctx context.Context)
 								kv["ns.cache.files.hits"],
 								kv["ns.cache.containers.requests"],
 								kv["ns.cache.containers.hits"],
+								trafficShapingEnabled,
 							}
 						}
 					}
