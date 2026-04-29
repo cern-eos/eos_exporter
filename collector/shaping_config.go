@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-const ioShapingConfigRefreshInterval = 5 * time.Minute
+const ioShapingConfigRefreshInterval = 0 * time.Minute
 
 type IOShapingConfigCollector struct {
 	*CollectorOpts
