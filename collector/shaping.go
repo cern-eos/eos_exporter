@@ -21,6 +21,7 @@ type IOShapingCollector struct {
 
 	AllRateBytes *prometheus.GaugeVec
 	AllRateIops  *prometheus.GaugeVec
+	AllEntries   *prometheus.GaugeVec
 
 	// System metrics
 	SystemLoopDurationUs   *prometheus.GaugeVec
@@ -83,6 +84,13 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 			ConstLabels: labels,
 		}, allLabels),
 
+		AllEntries: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Name:        "io_shaping_all_entries",
+			Help:        "Number of entries returned by eos io shaping ls --all --json.",
+			ConstLabels: labels,
+		}, []string{}),
+
 		SystemLoopDurationUs: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace:   namespace,
 			Name:        "io_shaping_sys_loop_duration_microseconds",
@@ -101,7 +109,7 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 
 func (o *IOShapingCollector) collectorList() []prometheus.Collector {
 	return []prometheus.Collector{
-		o.RateBytes, o.RateIops, o.FSRateBytes, o.FSRateIops, o.AllRateBytes, o.AllRateIops, o.SystemLoopDurationUs, o.ReportsProcessedPerSec,
+		o.RateBytes, o.RateIops, o.FSRateBytes, o.FSRateIops, o.AllRateBytes, o.AllRateIops, o.AllEntries, o.SystemLoopDurationUs, o.ReportsProcessedPerSec,
 	}
 }
 
@@ -197,6 +205,8 @@ func (o *IOShapingCollector) collectIOShaping() error {
 		log.Printf("failed to collect IO shaping all-tags stats: %v", err)
 		return nil
 	}
+
+	o.AllEntries.WithLabelValues().Set(float64(len(allStats)))
 
 	for _, s := range allStats {
 		setAllMetric := func(vec *prometheus.GaugeVec, operation, valStr string) {
