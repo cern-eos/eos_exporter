@@ -42,11 +42,11 @@ func TestParseGetentName(t *testing.T) {
 	}
 }
 
-func TestUnixIDResolverUsesCachedMiss(t *testing.T) {
+func TestUnixIDResolverUsesNumericIDForCachedMiss(t *testing.T) {
 	resolver := newUnixIDResolver()
 	resolver.users["12345"] = cachedIDName{name: "", expires: time.Now().Add(time.Minute)}
 
-	if got := resolver.ResolveUser("12345"); got != "" {
-		t.Fatalf("ResolveUser returned %q, want cached miss", got)
+	if got := resolver.ResolveUser("12345"); got != "12345" {
+		t.Fatalf("ResolveUser returned %q, want numeric fallback", got)
 	}
 }

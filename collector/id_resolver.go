@@ -51,6 +51,9 @@ func (r *unixIDResolver) resolve(id string, cache map[string]cachedIDName, datab
 	cached, ok := cache[id]
 	if ok && now.Before(cached.expires) {
 		r.mu.Unlock()
+		if cached.name == "" {
+			return id
+		}
 		return cached.name
 	}
 	r.mu.Unlock()
@@ -64,6 +67,10 @@ func (r *unixIDResolver) resolve(id string, cache map[string]cachedIDName, datab
 	r.mu.Lock()
 	cache[id] = cachedIDName{name: name, expires: now.Add(ttl)}
 	r.mu.Unlock()
+
+	if name == "" {
+		return id
+	}
 
 	return name
 }
