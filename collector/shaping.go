@@ -12,6 +12,7 @@ import (
 
 type IOShapingCollector struct {
 	*CollectorOpts
+	idResolver *unixIDResolver
 
 	RateBytes *prometheus.GaugeVec
 	RateIops  *prometheus.GaugeVec
@@ -35,12 +36,13 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 
 	standardLabels := []string{"type", "id", "window_sec", "operation"}
 	fsLabels := []string{"node_id", "fsid", "window_sec", "operation"}
-	allLabels := []string{"node_id", "fsid", "app", "uid", "gid", "window_sec", "operation"}
+	allLabels := []string{"node_id", "fsid", "app", "uid", "uid_name", "gid", "gid_name", "window_sec", "operation"}
 	systemLabels := []string{"loop_name", "stat"}
 	reportLabels := []string{"stat"}
 
 	return &IOShapingCollector{
 		CollectorOpts: opts,
+		idResolver:    newUnixIDResolver(),
 
 		RateBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace:   namespace,
@@ -209,12 +211,15 @@ func (o *IOShapingCollector) collectIOShaping() error {
 	o.AllEntries.WithLabelValues().Set(float64(len(allStats)))
 
 	for _, s := range allStats {
+		uidName := o.idResolver.ResolveUser(s.UID)
+		gidName := o.idResolver.ResolveGroup(s.GID)
+
 		setAllMetric := func(vec *prometheus.GaugeVec, operation, valStr string) {
 			if valStr == "" {
 				return
 			}
 			if val, err := strconv.ParseFloat(valStr, 64); err == nil {
-				vec.WithLabelValues(s.NodeID, s.FSID, s.App, s.UID, s.GID, s.WindowSec, operation).Set(val)
+				vec.WithLabelValues(s.NodeID, s.FSID, s.App, s.UID, uidName, s.GID, gidName, s.WindowSec, operation).Set(val)
 			}
 		}
 
