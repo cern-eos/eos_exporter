@@ -38,6 +38,23 @@ func TestParseIOShapingConfig(t *testing.T) {
 	}
 }
 
+func TestParseIOShapingConfigFSDetail(t *testing.T) {
+	raw := `{
+		"enabled": true,
+		"detail_level": "fs"
+	}`
+
+	client := &Client{}
+	config, err := client.parseIOShapingConfig(raw)
+	if err != nil {
+		t.Fatalf("parseIOShapingConfig returned error: %v", err)
+	}
+
+	if !config.DetailFilesystem {
+		t.Fatal("expected detail filesystem to be true for fs detail")
+	}
+}
+
 func TestParseIOShapingConfigAggregateDetail(t *testing.T) {
 	raw := `{
 		"enabled": false,

@@ -2254,12 +2254,14 @@ func (c *Client) parseIOShapingConfig(raw string) (*IOShapingConfig, error) {
 		return nil, fmt.Errorf("failed to decode shaping config json: %w", err)
 	}
 
+	detailLevel := strings.ToLower(strings.TrimSpace(config.DetailLevel))
+
 	return &IOShapingConfig{
 		Enabled:                      config.Enabled,
 		EstimatorsUpdatePeriodMs:     config.EstimatorsUpdatePeriodMs.String(),
 		FstIOPolicyUpdatePeriodMs:    config.FstIOPolicyUpdatePeriodMs.String(),
 		FstIOStatsReportingPeriodMs:  config.FstIOStatsReportingPeriodMs.String(),
-		DetailFilesystem:             strings.EqualFold(config.DetailLevel, "filesystem"),
+		DetailFilesystem:             detailLevel == "fs" || detailLevel == "filesystem",
 		SystemStatsTimeWindowSeconds: config.SystemStatsTimeWindowSeconds.String(),
 	}, nil
 }
