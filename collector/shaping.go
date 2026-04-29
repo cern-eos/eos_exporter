@@ -16,8 +16,11 @@ type IOShapingCollector struct {
 	RateBytes *prometheus.GaugeVec
 	RateIops  *prometheus.GaugeVec
 
-	DiskRateBytes *prometheus.GaugeVec
-	DiskRateIops  *prometheus.GaugeVec
+	FSRateBytes *prometheus.GaugeVec
+	FSRateIops  *prometheus.GaugeVec
+
+	AllRateBytes *prometheus.GaugeVec
+	AllRateIops  *prometheus.GaugeVec
 
 	// System metrics
 	SystemLoopDurationUs   *prometheus.GaugeVec
@@ -30,7 +33,8 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 	namespace := "eos"
 
 	standardLabels := []string{"type", "id", "window_sec", "operation"}
-	diskLabels := []string{"node_id", "fsid", "window_sec", "operation"}
+	fsLabels := []string{"node_id", "fsid", "window_sec", "operation"}
+	allLabels := []string{"node_id", "fsid", "app", "uid", "gid", "window_sec", "operation"}
 	systemLabels := []string{"loop_name", "stat"}
 	reportLabels := []string{"stat"}
 
@@ -51,19 +55,33 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 			ConstLabels: labels,
 		}, standardLabels),
 
-		DiskRateBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		FSRateBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace:   namespace,
-			Name:        "io_shaping_disk_rate_bytes",
-			Help:        "IO shaping disk throughput in bytes per second",
+			Name:        "io_shaping_fs_rate_bytes",
+			Help:        "IO shaping filesystem throughput in bytes per second",
 			ConstLabels: labels,
-		}, diskLabels),
+		}, fsLabels),
 
-		DiskRateIops: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		FSRateIops: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace:   namespace,
-			Name:        "io_shaping_disk_rate_iops",
-			Help:        "IO shaping disk operations per second",
+			Name:        "io_shaping_fs_rate_iops",
+			Help:        "IO shaping filesystem operations per second",
 			ConstLabels: labels,
-		}, diskLabels),
+		}, fsLabels),
+
+		AllRateBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Name:        "io_shaping_all_rate_bytes",
+			Help:        "IO shaping all-tags throughput in bytes per second",
+			ConstLabels: labels,
+		}, allLabels),
+
+		AllRateIops: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Name:        "io_shaping_all_rate_iops",
+			Help:        "IO shaping all-tags operations per second",
+			ConstLabels: labels,
+		}, allLabels),
 
 		SystemLoopDurationUs: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace:   namespace,
@@ -83,7 +101,7 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 
 func (o *IOShapingCollector) collectorList() []prometheus.Collector {
 	return []prometheus.Collector{
-		o.RateBytes, o.RateIops, o.DiskRateBytes, o.DiskRateIops, o.SystemLoopDurationUs, o.ReportsProcessedPerSec,
+		o.RateBytes, o.RateIops, o.FSRateBytes, o.FSRateIops, o.AllRateBytes, o.AllRateIops, o.SystemLoopDurationUs, o.ReportsProcessedPerSec,
 	}
 }
 
@@ -152,14 +170,14 @@ func (o *IOShapingCollector) collectIOShaping() error {
 		}
 	}
 
-	diskStats, err := client.ListIOShapingDisks(context.Background())
+	fsStats, err := client.ListIOShapingFS(context.Background())
 	if err != nil {
-		log.Printf("failed to collect IO shaping disk stats: %v", err)
+		log.Printf("failed to collect IO shaping filesystem stats: %v", err)
 		return nil
 	}
 
-	for _, s := range diskStats {
-		setDiskMetric := func(vec *prometheus.GaugeVec, operation, valStr string) {
+	for _, s := range fsStats {
+		setFSMetric := func(vec *prometheus.GaugeVec, operation, valStr string) {
 			if valStr == "" {
 				return
 			}
@@ -168,10 +186,32 @@ func (o *IOShapingCollector) collectIOShaping() error {
 			}
 		}
 
-		setDiskMetric(o.DiskRateBytes, "read", s.ReadRateBps)
-		setDiskMetric(o.DiskRateBytes, "write", s.WriteRateBps)
-		setDiskMetric(o.DiskRateIops, "read", s.ReadIops)
-		setDiskMetric(o.DiskRateIops, "write", s.WriteIops)
+		setFSMetric(o.FSRateBytes, "read", s.ReadRateBps)
+		setFSMetric(o.FSRateBytes, "write", s.WriteRateBps)
+		setFSMetric(o.FSRateIops, "read", s.ReadIops)
+		setFSMetric(o.FSRateIops, "write", s.WriteIops)
+	}
+
+	allStats, err := client.ListIOShapingAll(context.Background())
+	if err != nil {
+		log.Printf("failed to collect IO shaping all-tags stats: %v", err)
+		return nil
+	}
+
+	for _, s := range allStats {
+		setAllMetric := func(vec *prometheus.GaugeVec, operation, valStr string) {
+			if valStr == "" {
+				return
+			}
+			if val, err := strconv.ParseFloat(valStr, 64); err == nil {
+				vec.WithLabelValues(s.NodeID, s.FSID, s.App, s.UID, s.GID, s.WindowSec, operation).Set(val)
+			}
+		}
+
+		setAllMetric(o.AllRateBytes, "read", s.ReadRateBps)
+		setAllMetric(o.AllRateBytes, "write", s.WriteRateBps)
+		setAllMetric(o.AllRateIops, "read", s.ReadIops)
+		setAllMetric(o.AllRateIops, "write", s.WriteIops)
 	}
 
 	return nil

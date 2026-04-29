@@ -1949,8 +1949,8 @@ type IOShapingStat struct {
 	SystemStatsWindowSeconds string
 }
 
-// ShapingDiskStatsJSON represents a single disk entry returned by `eos io shaping ls --disks --json`.
-type ShapingDiskStatsJSON struct {
+// ShapingFSStatsJSON represents a single filesystem entry returned by `eos io shaping ls --fs --json`.
+type ShapingFSStatsJSON struct {
 	Type         string      `json:"type"`
 	NodeID       string      `json:"node_id"`
 	FSID         json.Number `json:"fsid"`
@@ -1961,11 +1961,41 @@ type ShapingDiskStatsJSON struct {
 	WriteIops    json.Number `json:"write_iops"`
 }
 
-// IOShapingDiskStat is the parsing-friendly representation of disk shaping stats.
-type IOShapingDiskStat struct {
+// IOShapingFSStat is the parsing-friendly representation of filesystem shaping stats.
+type IOShapingFSStat struct {
 	Type         string
 	NodeID       string
 	FSID         string
+	WindowSec    string
+	ReadRateBps  string
+	WriteRateBps string
+	ReadIops     string
+	WriteIops    string
+}
+
+// ShapingAllStatsJSON represents a single all-tags entry returned by `eos io shaping ls --all --json`.
+type ShapingAllStatsJSON struct {
+	Type         string      `json:"type"`
+	NodeID       string      `json:"node_id"`
+	FSID         json.Number `json:"fsid"`
+	App          string      `json:"app"`
+	UID          json.Number `json:"uid"`
+	GID          json.Number `json:"gid"`
+	WindowSec    json.Number `json:"window_sec"`
+	ReadRateBps  json.Number `json:"read_rate_bps"`
+	WriteRateBps json.Number `json:"write_rate_bps"`
+	ReadIops     json.Number `json:"read_iops"`
+	WriteIops    json.Number `json:"write_iops"`
+}
+
+// IOShapingAllStat is the parsing-friendly representation of all-tags shaping stats.
+type IOShapingAllStat struct {
+	Type         string
+	NodeID       string
+	FSID         string
+	App          string
+	UID          string
+	GID          string
 	WindowSec    string
 	ReadRateBps  string
 	WriteRateBps string
@@ -2049,43 +2079,95 @@ func (c *Client) parseIOShaping(raw string) ([]*IOShapingStat, error) {
 	return out, nil
 }
 
-// ListIOShapingDisks runs `eos io shaping ls --disks --json` and parses the output.
-func (c *Client) ListIOShapingDisks(ctx context.Context) ([]*IOShapingDiskStat, error) {
+// ListIOShapingFS runs `eos io shaping ls --fs --json` and parses the output.
+func (c *Client) ListIOShapingFS(ctx context.Context) ([]*IOShapingFSStat, error) {
 	ctxWt, cancel := c.getTimeout(ctx)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "io", "shaping", "ls", "--disks", "--json")
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "io", "shaping", "ls", "--fs", "--json")
 	stdout, _, err := c.execute(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch disk shaping stats: %w", err)
+		return nil, fmt.Errorf("failed to fetch filesystem shaping stats: %w", err)
 	}
 
-	return c.parseIOShapingDisks(stdout)
+	return c.parseIOShapingFS(stdout)
 }
 
-func (c *Client) parseIOShapingDisks(raw string) ([]*IOShapingDiskStat, error) {
+func (c *Client) parseIOShapingFS(raw string) ([]*IOShapingFSStat, error) {
 	trim := strings.TrimSpace(raw)
 	if trim == "" {
-		return []*IOShapingDiskStat{}, nil
+		return []*IOShapingFSStat{}, nil
 	}
 
 	dec := json.NewDecoder(strings.NewReader(raw))
 	dec.UseNumber()
 
-	var mj []ShapingDiskStatsJSON
+	var mj []ShapingFSStatsJSON
 	if err := dec.Decode(&mj); err != nil {
 		if err == io.EOF || trim == "[]" {
-			return []*IOShapingDiskStat{}, nil
+			return []*IOShapingFSStat{}, nil
 		}
-		return nil, fmt.Errorf("failed to decode disk io shaping json: %w", err)
+		return nil, fmt.Errorf("failed to decode filesystem io shaping json: %w", err)
 	}
 
-	out := make([]*IOShapingDiskStat, 0, len(mj))
+	out := make([]*IOShapingFSStat, 0, len(mj))
 	for _, v := range mj {
-		stat := &IOShapingDiskStat{
+		stat := &IOShapingFSStat{
 			Type:         v.Type,
 			NodeID:       v.NodeID,
 			FSID:         v.FSID.String(),
+			WindowSec:    v.WindowSec.String(),
+			ReadRateBps:  v.ReadRateBps.String(),
+			WriteRateBps: v.WriteRateBps.String(),
+			ReadIops:     v.ReadIops.String(),
+			WriteIops:    v.WriteIops.String(),
+		}
+		out = append(out, stat)
+	}
+
+	return out, nil
+}
+
+// ListIOShapingAll runs `eos io shaping ls --all --json` and parses the output.
+func (c *Client) ListIOShapingAll(ctx context.Context) ([]*IOShapingAllStat, error) {
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "io", "shaping", "ls", "--all", "--json")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch all-tags shaping stats: %w", err)
+	}
+
+	return c.parseIOShapingAll(stdout)
+}
+
+func (c *Client) parseIOShapingAll(raw string) ([]*IOShapingAllStat, error) {
+	trim := strings.TrimSpace(raw)
+	if trim == "" {
+		return []*IOShapingAllStat{}, nil
+	}
+
+	dec := json.NewDecoder(strings.NewReader(raw))
+	dec.UseNumber()
+
+	var mj []ShapingAllStatsJSON
+	if err := dec.Decode(&mj); err != nil {
+		if err == io.EOF || trim == "[]" {
+			return []*IOShapingAllStat{}, nil
+		}
+		return nil, fmt.Errorf("failed to decode all-tags io shaping json: %w", err)
+	}
+
+	out := make([]*IOShapingAllStat, 0, len(mj))
+	for _, v := range mj {
+		stat := &IOShapingAllStat{
+			Type:         v.Type,
+			NodeID:       v.NodeID,
+			FSID:         v.FSID.String(),
+			App:          v.App,
+			UID:          v.UID.String(),
+			GID:          v.GID.String(),
 			WindowSec:    v.WindowSec.String(),
 			ReadRateBps:  v.ReadRateBps.String(),
 			WriteRateBps: v.WriteRateBps.String(),
