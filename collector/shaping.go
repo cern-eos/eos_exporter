@@ -16,6 +16,9 @@ type IOShapingCollector struct {
 	RateBytes *prometheus.GaugeVec
 	RateIops  *prometheus.GaugeVec
 
+	DiskRateBytes *prometheus.GaugeVec
+	DiskRateIops  *prometheus.GaugeVec
+
 	// System metrics
 	SystemLoopDurationUs   *prometheus.GaugeVec
 	ReportsProcessedPerSec *prometheus.GaugeVec
@@ -27,6 +30,7 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 	namespace := "eos"
 
 	standardLabels := []string{"type", "id", "window_sec", "operation"}
+	diskLabels := []string{"node_id", "fsid", "window_sec", "operation"}
 	systemLabels := []string{"loop_name", "stat"}
 	reportLabels := []string{"stat"}
 
@@ -47,6 +51,20 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 			ConstLabels: labels,
 		}, standardLabels),
 
+		DiskRateBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Name:        "io_shaping_disk_rate_bytes",
+			Help:        "IO shaping disk throughput in bytes per second",
+			ConstLabels: labels,
+		}, diskLabels),
+
+		DiskRateIops: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Name:        "io_shaping_disk_rate_iops",
+			Help:        "IO shaping disk operations per second",
+			ConstLabels: labels,
+		}, diskLabels),
+
 		SystemLoopDurationUs: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace:   namespace,
 			Name:        "io_shaping_sys_loop_duration_microseconds",
@@ -65,7 +83,7 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 
 func (o *IOShapingCollector) collectorList() []prometheus.Collector {
 	return []prometheus.Collector{
-		o.RateBytes, o.RateIops, o.SystemLoopDurationUs, o.ReportsProcessedPerSec,
+		o.RateBytes, o.RateIops, o.DiskRateBytes, o.DiskRateIops, o.SystemLoopDurationUs, o.ReportsProcessedPerSec,
 	}
 }
 
@@ -132,6 +150,28 @@ func (o *IOShapingCollector) collectIOShaping() error {
 			setMetric(o.RateIops, "read", s.ReadIops)
 			setMetric(o.RateIops, "write", s.WriteIops)
 		}
+	}
+
+	diskStats, err := client.ListIOShapingDisks(context.Background())
+	if err != nil {
+		log.Printf("failed to collect IO shaping disk stats: %v", err)
+		return nil
+	}
+
+	for _, s := range diskStats {
+		setDiskMetric := func(vec *prometheus.GaugeVec, operation, valStr string) {
+			if valStr == "" {
+				return
+			}
+			if val, err := strconv.ParseFloat(valStr, 64); err == nil {
+				vec.WithLabelValues(s.NodeID, s.FSID, s.WindowSec, operation).Set(val)
+			}
+		}
+
+		setDiskMetric(o.DiskRateBytes, "read", s.ReadRateBps)
+		setDiskMetric(o.DiskRateBytes, "write", s.WriteRateBps)
+		setDiskMetric(o.DiskRateIops, "read", s.ReadIops)
+		setDiskMetric(o.DiskRateIops, "write", s.WriteIops)
 	}
 
 	return nil

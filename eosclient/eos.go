@@ -1949,6 +1949,30 @@ type IOShapingStat struct {
 	SystemStatsWindowSeconds string
 }
 
+// ShapingDiskStatsJSON represents a single disk entry returned by `eos io shaping ls --disks --json`.
+type ShapingDiskStatsJSON struct {
+	Type         string      `json:"type"`
+	NodeID       string      `json:"node_id"`
+	FSID         json.Number `json:"fsid"`
+	WindowSec    json.Number `json:"window_sec"`
+	ReadRateBps  json.Number `json:"read_rate_bps"`
+	WriteRateBps json.Number `json:"write_rate_bps"`
+	ReadIops     json.Number `json:"read_iops"`
+	WriteIops    json.Number `json:"write_iops"`
+}
+
+// IOShapingDiskStat is the parsing-friendly representation of disk shaping stats.
+type IOShapingDiskStat struct {
+	Type         string
+	NodeID       string
+	FSID         string
+	WindowSec    string
+	ReadRateBps  string
+	WriteRateBps string
+	ReadIops     string
+	WriteIops    string
+}
+
 // ListIOShaping runs `eos io shaping ls --json --sys --window` for apps, users, and groups
 func (c *Client) ListIOShaping(ctx context.Context, windowTimeSeconds int) ([]*IOShapingStat, error) {
 	ctxWt, cancel := c.getTimeout(ctx)
@@ -2018,6 +2042,55 @@ func (c *Client) parseIOShaping(raw string) ([]*IOShapingStat, error) {
 			FstLimitsLoopMaxUs:         v.FstLimitsLoopMaxUs.String(),
 			ReportsProcessedPerSecMean: v.ReportsProcessedPerSecMean.String(),
 			SystemStatsWindowSeconds:   v.SystemStatsWindowSeconds.String(),
+		}
+		out = append(out, stat)
+	}
+
+	return out, nil
+}
+
+// ListIOShapingDisks runs `eos io shaping ls --disks --json` and parses the output.
+func (c *Client) ListIOShapingDisks(ctx context.Context) ([]*IOShapingDiskStat, error) {
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "io", "shaping", "ls", "--disks", "--json")
+	stdout, _, err := c.execute(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch disk shaping stats: %w", err)
+	}
+
+	return c.parseIOShapingDisks(stdout)
+}
+
+func (c *Client) parseIOShapingDisks(raw string) ([]*IOShapingDiskStat, error) {
+	trim := strings.TrimSpace(raw)
+	if trim == "" {
+		return []*IOShapingDiskStat{}, nil
+	}
+
+	dec := json.NewDecoder(strings.NewReader(raw))
+	dec.UseNumber()
+
+	var mj []ShapingDiskStatsJSON
+	if err := dec.Decode(&mj); err != nil {
+		if err == io.EOF || trim == "[]" {
+			return []*IOShapingDiskStat{}, nil
+		}
+		return nil, fmt.Errorf("failed to decode disk io shaping json: %w", err)
+	}
+
+	out := make([]*IOShapingDiskStat, 0, len(mj))
+	for _, v := range mj {
+		stat := &IOShapingDiskStat{
+			Type:         v.Type,
+			NodeID:       v.NodeID,
+			FSID:         v.FSID.String(),
+			WindowSec:    v.WindowSec.String(),
+			ReadRateBps:  v.ReadRateBps.String(),
+			WriteRateBps: v.WriteRateBps.String(),
+			ReadIops:     v.ReadIops.String(),
+			WriteIops:    v.WriteIops.String(),
 		}
 		out = append(out, stat)
 	}

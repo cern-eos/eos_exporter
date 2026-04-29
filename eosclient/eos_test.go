@@ -57,3 +57,51 @@ func TestParseIOShapingConfigAggregateDetail(t *testing.T) {
 		t.Fatal("expected detail filesystem to be false for aggregate detail")
 	}
 }
+
+func TestParseIOShapingDisks(t *testing.T) {
+	raw := `[{
+		"type": "disk",
+		"node_id": "st-120-100gb-fuvisz.cern.ch:1095",
+		"fsid": 14658,
+		"window_sec": 60,
+		"read_rate_bps": 0.00,
+		"write_rate_bps": 0.07,
+		"read_iops": 0.00,
+		"write_iops": 0.03
+	}]`
+
+	client := &Client{}
+	stats, err := client.parseIOShapingDisks(raw)
+	if err != nil {
+		t.Fatalf("parseIOShapingDisks returned error: %v", err)
+	}
+	if len(stats) != 1 {
+		t.Fatalf("expected one disk stat, got %d", len(stats))
+	}
+
+	stat := stats[0]
+	if stat.Type != "disk" {
+		t.Fatalf("expected type disk, got %q", stat.Type)
+	}
+	if stat.NodeID != "st-120-100gb-fuvisz.cern.ch:1095" {
+		t.Fatalf("expected node id st-120-100gb-fuvisz.cern.ch:1095, got %q", stat.NodeID)
+	}
+	if stat.FSID != "14658" {
+		t.Fatalf("expected fsid 14658, got %q", stat.FSID)
+	}
+	if stat.WindowSec != "60" {
+		t.Fatalf("expected window 60, got %q", stat.WindowSec)
+	}
+	if stat.ReadRateBps != "0.00" {
+		t.Fatalf("expected read rate 0.00, got %q", stat.ReadRateBps)
+	}
+	if stat.WriteRateBps != "0.07" {
+		t.Fatalf("expected write rate 0.07, got %q", stat.WriteRateBps)
+	}
+	if stat.ReadIops != "0.00" {
+		t.Fatalf("expected read iops 0.00, got %q", stat.ReadIops)
+	}
+	if stat.WriteIops != "0.03" {
+		t.Fatalf("expected write iops 0.03, got %q", stat.WriteIops)
+	}
+}
