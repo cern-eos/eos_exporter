@@ -1976,6 +1976,7 @@ type IOShapingFSStat struct {
 // ShapingAllStatsJSON represents a single all-tags entry returned by `eos io shaping ls --all --json`.
 type ShapingAllStatsJSON struct {
 	Type         string      `json:"type"`
+	ID           string      `json:"id"`
 	NodeID       string      `json:"node_id"`
 	FSID         json.Number `json:"fsid"`
 	App          string      `json:"app"`
@@ -1986,11 +1987,24 @@ type ShapingAllStatsJSON struct {
 	WriteRateBps json.Number `json:"write_rate_bps"`
 	ReadIops     json.Number `json:"read_iops"`
 	WriteIops    json.Number `json:"write_iops"`
+
+	EstimatorsLoopMedianUs json.Number `json:"estimators_loop_median_us"`
+	EstimatorsLoopMinUs    json.Number `json:"estimators_loop_min_us"`
+	EstimatorsLoopMaxUs    json.Number `json:"estimators_loop_max_us"`
+
+	FstLimitsLoopMedianUs json.Number `json:"fst_limits_loop_median_us"`
+	FstLimitsLoopMinUs    json.Number `json:"fst_limits_loop_min_us"`
+	FstLimitsLoopMaxUs    json.Number `json:"fst_limits_loop_max_us"`
+
+	ReportsProcessedPerSecMean json.Number `json:"reports_processed_per_sec_mean"`
+
+	SystemStatsWindowSeconds json.Number `json:"system_stats_window_seconds"`
 }
 
 // IOShapingAllStat is the parsing-friendly representation of all-tags shaping stats.
 type IOShapingAllStat struct {
 	Type         string
+	ID           string
 	NodeID       string
 	FSID         string
 	App          string
@@ -2001,6 +2015,18 @@ type IOShapingAllStat struct {
 	WriteRateBps string
 	ReadIops     string
 	WriteIops    string
+
+	EstimatorsLoopMedianUs string
+	EstimatorsLoopMinUs    string
+	EstimatorsLoopMaxUs    string
+
+	FstLimitsLoopMedianUs string
+	FstLimitsLoopMinUs    string
+	FstLimitsLoopMaxUs    string
+
+	ReportsProcessedPerSecMean string
+
+	SystemStatsWindowSeconds string
 }
 
 // ListIOShaping runs `eos io shaping ls --json --sys --window` for apps, users, and groups
@@ -2128,15 +2154,21 @@ func (c *Client) parseIOShapingFS(raw string) ([]*IOShapingFSStat, error) {
 	return out, nil
 }
 
-// ListIOShapingAll runs `eos io shaping ls --all --json` and parses the output.
-func (c *Client) ListIOShapingAll(ctx context.Context) ([]*IOShapingAllStat, error) {
+// ListIOShapingAll runs `eos io shaping ls --all --sys --window` and parses the output.
+func (c *Client) ListIOShapingAll(ctx context.Context, windowTimeSeconds int) ([]*IOShapingAllStat, error) {
 	ctxWt, cancel := c.getTimeout(ctx)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "io", "shaping", "ls", "--all", "--json")
+	cmd := exec.CommandContext(
+		ctxWt,
+		"/usr/bin/eos", "io", "shaping", "ls",
+		"--all", "--sys",
+		"--window", strconv.Itoa(windowTimeSeconds),
+		"--json",
+	)
 	stdout, _, err := c.execute(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch all-tags shaping stats: %w", err)
+		return nil, fmt.Errorf("failed to fetch all-tags shaping stats for window %ds: %w", windowTimeSeconds, err)
 	}
 
 	return c.parseIOShapingAll(stdout)
@@ -2163,6 +2195,7 @@ func (c *Client) parseIOShapingAll(raw string) ([]*IOShapingAllStat, error) {
 	for _, v := range mj {
 		stat := &IOShapingAllStat{
 			Type:         v.Type,
+			ID:           v.ID,
 			NodeID:       v.NodeID,
 			FSID:         v.FSID.String(),
 			App:          v.App,
@@ -2173,6 +2206,15 @@ func (c *Client) parseIOShapingAll(raw string) ([]*IOShapingAllStat, error) {
 			WriteRateBps: v.WriteRateBps.String(),
 			ReadIops:     v.ReadIops.String(),
 			WriteIops:    v.WriteIops.String(),
+
+			EstimatorsLoopMedianUs:     v.EstimatorsLoopMedianUs.String(),
+			EstimatorsLoopMinUs:        v.EstimatorsLoopMinUs.String(),
+			EstimatorsLoopMaxUs:        v.EstimatorsLoopMaxUs.String(),
+			FstLimitsLoopMedianUs:      v.FstLimitsLoopMedianUs.String(),
+			FstLimitsLoopMinUs:         v.FstLimitsLoopMinUs.String(),
+			FstLimitsLoopMaxUs:         v.FstLimitsLoopMaxUs.String(),
+			ReportsProcessedPerSecMean: v.ReportsProcessedPerSecMean.String(),
+			SystemStatsWindowSeconds:   v.SystemStatsWindowSeconds.String(),
 		}
 		out = append(out, stat)
 	}
