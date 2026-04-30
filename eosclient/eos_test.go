@@ -75,6 +75,69 @@ func TestParseIOShapingConfigAggregateDetail(t *testing.T) {
 	}
 }
 
+func TestParseIOShapingConfigText(t *testing.T) {
+	raw := `--- Traffic Shaping Thread Configuration ---
+Traffic Shaping Enabled:                     true
+Estimators Update Period:                    100 ms
+FST IO Policy Update Period:                 100 ms
+FST IO Stats Reporting Period:               100 ms
+Stats Detail Level:                          fs
+System Stats Time Window:                    15 s`
+
+	client := &Client{}
+	config, err := client.parseIOShapingConfigText(raw)
+	if err != nil {
+		t.Fatalf("parseIOShapingConfigText returned error: %v", err)
+	}
+
+	if !config.Enabled {
+		t.Fatal("expected enabled to be true")
+	}
+	if config.EstimatorsUpdatePeriodMs != "100" {
+		t.Fatalf("expected estimators period 100, got %q", config.EstimatorsUpdatePeriodMs)
+	}
+	if config.FstIOPolicyUpdatePeriodMs != "100" {
+		t.Fatalf("expected FST IO policy period 100, got %q", config.FstIOPolicyUpdatePeriodMs)
+	}
+	if config.FstIOStatsReportingPeriodMs != "100" {
+		t.Fatalf("expected FST IO stats period 100, got %q", config.FstIOStatsReportingPeriodMs)
+	}
+	if !config.DetailFilesystem {
+		t.Fatal("expected detail filesystem to be true")
+	}
+	if config.SystemStatsTimeWindowSeconds != "15" {
+		t.Fatalf("expected system stats time window 15, got %q", config.SystemStatsTimeWindowSeconds)
+	}
+}
+
+func TestParseIOShapingConfigTextAggregate(t *testing.T) {
+	raw := `--- Traffic Shaping Thread Configuration ---
+Traffic Shaping Enabled:                     false
+Stats Detail Level:                          aggregate`
+
+	client := &Client{}
+	config, err := client.parseIOShapingConfigText(raw)
+	if err != nil {
+		t.Fatalf("parseIOShapingConfigText returned error: %v", err)
+	}
+
+	if config.Enabled {
+		t.Fatal("expected enabled to be false")
+	}
+	if config.DetailFilesystem {
+		t.Fatal("expected detail filesystem to be false for aggregate detail")
+	}
+}
+
+func TestParseNSTrafficShapingEnabled(t *testing.T) {
+	raw := `some other line
+Traffic Shaping Info: is_enabled=true foo=bar`
+
+	if got := parseNSTrafficShapingEnabled(raw); got != "true" {
+		t.Fatalf("expected true, got %q", got)
+	}
+}
+
 func TestParseIOShapingFS(t *testing.T) {
 	raw := `[{
 		"type": "fs",
