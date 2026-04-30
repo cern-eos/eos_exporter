@@ -10,6 +10,25 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+type shapingRateValues struct {
+	ReadRateBps  float64
+	WriteRateBps float64
+	ReadIops     float64
+	WriteIops    float64
+}
+
+type shapingStandardKey struct {
+	Type      string
+	ID        string
+	WindowSec string
+}
+
+type shapingFSKey struct {
+	NodeID    string
+	FSID      string
+	WindowSec string
+}
+
 type IOShapingCollector struct {
 	*CollectorOpts
 	idResolver *unixIDResolver
@@ -89,9 +108,9 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 		AllEntries: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace:   namespace,
 			Name:        "io_shaping_all_entries",
-			Help:        "Number of entries returned by eos io shaping ls --all --json.",
+			Help:        "Number of entries returned by eos io shaping ls --all --json for the configured window.",
 			ConstLabels: labels,
-		}, []string{}),
+		}, []string{"window_sec"}),
 
 		SystemLoopDurationUs: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace:   namespace,
@@ -125,92 +144,44 @@ func (o *IOShapingCollector) collectIOShaping() error {
 	}
 
 	windows := []int{15, 300}
+	var allStats []*eosclient.IOShapingAllStat
 
 	for _, win := range windows {
-		stats, err := client.ListIOShaping(context.Background(), win)
+		stats, err := client.ListIOShapingAll(context.Background(), win)
 		if err != nil {
-			log.Printf("failed to collect IO shaping for window %ds: %v", win, err)
+			log.Printf("failed to collect IO shaping all-tags stats for window %ds: %v", win, err)
+			continue
+		}
+		o.AllEntries.WithLabelValues(strconv.Itoa(win)).Set(float64(countIOShapingAllEntries(stats)))
+		allStats = append(allStats, stats...)
+	}
+
+	if len(allStats) == 0 {
+		return nil
+	}
+
+	standardStats, fsStats, _ := projectIOShapingAll(allStats)
+
+	for key, values := range standardStats {
+		setProjectedMetric(o.RateBytes, key.Type, key.ID, key.WindowSec, "read", values.ReadRateBps)
+		setProjectedMetric(o.RateBytes, key.Type, key.ID, key.WindowSec, "write", values.WriteRateBps)
+		setProjectedMetric(o.RateIops, key.Type, key.ID, key.WindowSec, "read", values.ReadIops)
+		setProjectedMetric(o.RateIops, key.Type, key.ID, key.WindowSec, "write", values.WriteIops)
+	}
+
+	for key, values := range fsStats {
+		setFSProjectedMetric(o.FSRateBytes, key.NodeID, key.FSID, key.WindowSec, "read", values.ReadRateBps)
+		setFSProjectedMetric(o.FSRateBytes, key.NodeID, key.FSID, key.WindowSec, "write", values.WriteRateBps)
+		setFSProjectedMetric(o.FSRateIops, key.NodeID, key.FSID, key.WindowSec, "read", values.ReadIops)
+		setFSProjectedMetric(o.FSRateIops, key.NodeID, key.FSID, key.WindowSec, "write", values.WriteIops)
+	}
+
+	for _, s := range allStats {
+		if s.Type == "system" {
+			o.collectSystemMetrics(s)
 			continue
 		}
 
-		for _, s := range stats {
-			// Handle System Stats elegantly with labels
-			if s.Type == "system" {
-				setSysMetric := func(loopName, statName, valStr string) {
-					if valStr == "" {
-						return
-					}
-					if val, err := strconv.ParseFloat(valStr, 64); err == nil {
-						o.SystemLoopDurationUs.WithLabelValues(loopName, statName).Set(val)
-					}
-				}
-
-				setSysMetric("estimators", "median", s.EstimatorsLoopMedianUs)
-				setSysMetric("estimators", "min", s.EstimatorsLoopMinUs)
-				setSysMetric("estimators", "max", s.EstimatorsLoopMaxUs)
-
-				setSysMetric("fst_limits", "median", s.FstLimitsLoopMedianUs)
-				setSysMetric("fst_limits", "min", s.FstLimitsLoopMinUs)
-				setSysMetric("fst_limits", "max", s.FstLimitsLoopMaxUs)
-
-				// Restored Reports metric
-				if s.ReportsProcessedPerSecMean != "" {
-					if val, err := strconv.ParseFloat(s.ReportsProcessedPerSecMean, 64); err == nil {
-						o.ReportsProcessedPerSec.WithLabelValues("mean").Set(val)
-					}
-				}
-
-				continue // Skip the standard groupings for this system JSON object
-			}
-
-			// Handle Standard Groupings
-			setMetric := func(vec *prometheus.GaugeVec, operation, valStr string) {
-				if valStr == "" {
-					return
-				}
-				if val, err := strconv.ParseFloat(valStr, 64); err == nil {
-					vec.WithLabelValues(s.Type, s.ID, s.WindowSec, operation).Set(val)
-				}
-			}
-
-			setMetric(o.RateBytes, "read", s.ReadRateBps)
-			setMetric(o.RateBytes, "write", s.WriteRateBps)
-			setMetric(o.RateIops, "read", s.ReadIops)
-			setMetric(o.RateIops, "write", s.WriteIops)
-		}
-	}
-
-	fsStats, err := client.ListIOShapingFS(context.Background())
-	if err != nil {
-		log.Printf("failed to collect IO shaping filesystem stats: %v", err)
-		return nil
-	}
-
-	for _, s := range fsStats {
-		setFSMetric := func(vec *prometheus.GaugeVec, operation, valStr string) {
-			if valStr == "" {
-				return
-			}
-			if val, err := strconv.ParseFloat(valStr, 64); err == nil {
-				vec.WithLabelValues(s.NodeID, s.FSID, s.WindowSec, operation).Set(val)
-			}
-		}
-
-		setFSMetric(o.FSRateBytes, "read", s.ReadRateBps)
-		setFSMetric(o.FSRateBytes, "write", s.WriteRateBps)
-		setFSMetric(o.FSRateIops, "read", s.ReadIops)
-		setFSMetric(o.FSRateIops, "write", s.WriteIops)
-	}
-
-	allStats, err := client.ListIOShapingAll(context.Background())
-	if err != nil {
-		log.Printf("failed to collect IO shaping all-tags stats: %v", err)
-		return nil
-	}
-
-	o.AllEntries.WithLabelValues().Set(float64(len(allStats)))
-
-	for _, s := range allStats {
 		uidName := o.idResolver.ResolveUser(s.UID)
 		gidName := o.idResolver.ResolveGroup(s.GID)
 
@@ -230,6 +201,112 @@ func (o *IOShapingCollector) collectIOShaping() error {
 	}
 
 	return nil
+}
+
+func countIOShapingAllEntries(stats []*eosclient.IOShapingAllStat) int {
+	entries := 0
+	for _, s := range stats {
+		if s.Type == "all" {
+			entries++
+		}
+	}
+	return entries
+}
+
+func (o *IOShapingCollector) collectSystemMetrics(s *eosclient.IOShapingAllStat) {
+	setSysMetric := func(loopName, statName, valStr string) {
+		if valStr == "" {
+			return
+		}
+		if val, err := strconv.ParseFloat(valStr, 64); err == nil {
+			o.SystemLoopDurationUs.WithLabelValues(loopName, statName).Set(val)
+		}
+	}
+
+	setSysMetric("estimators", "median", s.EstimatorsLoopMedianUs)
+	setSysMetric("estimators", "min", s.EstimatorsLoopMinUs)
+	setSysMetric("estimators", "max", s.EstimatorsLoopMaxUs)
+
+	setSysMetric("fst_limits", "median", s.FstLimitsLoopMedianUs)
+	setSysMetric("fst_limits", "min", s.FstLimitsLoopMinUs)
+	setSysMetric("fst_limits", "max", s.FstLimitsLoopMaxUs)
+
+	if s.ReportsProcessedPerSecMean != "" {
+		if val, err := strconv.ParseFloat(s.ReportsProcessedPerSecMean, 64); err == nil {
+			o.ReportsProcessedPerSec.WithLabelValues("mean").Set(val)
+		}
+	}
+}
+
+func projectIOShapingAll(stats []*eosclient.IOShapingAllStat) (map[shapingStandardKey]shapingRateValues, map[shapingFSKey]shapingRateValues, int) {
+	standardStats := make(map[shapingStandardKey]shapingRateValues)
+	fsStats := make(map[shapingFSKey]shapingRateValues)
+	allEntries := 0
+
+	for _, s := range stats {
+		if s.Type != "all" {
+			continue
+		}
+
+		allEntries++
+		values := shapingRateValues{
+			ReadRateBps:  parseShapingFloat(s.ReadRateBps),
+			WriteRateBps: parseShapingFloat(s.WriteRateBps),
+			ReadIops:     parseShapingFloat(s.ReadIops),
+			WriteIops:    parseShapingFloat(s.WriteIops),
+		}
+
+		addStandardProjection(standardStats, shapingStandardKey{Type: "app", ID: s.App, WindowSec: s.WindowSec}, values)
+		addStandardProjection(standardStats, shapingStandardKey{Type: "uid", ID: s.UID, WindowSec: s.WindowSec}, values)
+		addStandardProjection(standardStats, shapingStandardKey{Type: "gid", ID: s.GID, WindowSec: s.WindowSec}, values)
+		addStandardProjection(standardStats, shapingStandardKey{Type: "node", ID: s.NodeID, WindowSec: s.WindowSec}, values)
+
+		addFSProjection(fsStats, shapingFSKey{NodeID: s.NodeID, FSID: s.FSID, WindowSec: s.WindowSec}, values)
+	}
+
+	return standardStats, fsStats, allEntries
+}
+
+func addStandardProjection(stats map[shapingStandardKey]shapingRateValues, key shapingStandardKey, values shapingRateValues) {
+	if key.ID == "" || key.WindowSec == "" {
+		return
+	}
+	stats[key] = addShapingRateValues(stats[key], values)
+}
+
+func addFSProjection(stats map[shapingFSKey]shapingRateValues, key shapingFSKey, values shapingRateValues) {
+	if key.NodeID == "" || key.FSID == "" || key.WindowSec == "" {
+		return
+	}
+	stats[key] = addShapingRateValues(stats[key], values)
+}
+
+func addShapingRateValues(a, b shapingRateValues) shapingRateValues {
+	return shapingRateValues{
+		ReadRateBps:  a.ReadRateBps + b.ReadRateBps,
+		WriteRateBps: a.WriteRateBps + b.WriteRateBps,
+		ReadIops:     a.ReadIops + b.ReadIops,
+		WriteIops:    a.WriteIops + b.WriteIops,
+	}
+}
+
+func parseShapingFloat(valStr string) float64 {
+	if valStr == "" {
+		return 0
+	}
+	val, err := strconv.ParseFloat(valStr, 64)
+	if err != nil {
+		return 0
+	}
+	return val
+}
+
+func setProjectedMetric(vec *prometheus.GaugeVec, statType, id, windowSec, operation string, val float64) {
+	vec.WithLabelValues(statType, id, windowSec, operation).Set(val)
+}
+
+func setFSProjectedMetric(vec *prometheus.GaugeVec, nodeID, fsid, windowSec, operation string, val float64) {
+	vec.WithLabelValues(nodeID, fsid, windowSec, operation).Set(val)
 }
 
 func (o *IOShapingCollector) Describe(ch chan<- *prometheus.Desc) {
