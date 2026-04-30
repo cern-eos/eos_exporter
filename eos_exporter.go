@@ -64,6 +64,9 @@ var availableCollectors = []struct {
 	{"traffic_shaping_policy", func(opts *collector.CollectorOpts) prometheus.Collector {
 		return collector.NewIOShapingPolicyCollector(opts)
 	}},
+	{"traffic_shaping_config", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewIOShapingConfigCollector(opts)
+	}},
 	{"ns", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewNSCollector(opts) }},
 	{"ns_activity", func(opts *collector.CollectorOpts) prometheus.Collector {
 		return collector.NewNSActivityCollector(opts)

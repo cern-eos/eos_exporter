@@ -58,7 +58,6 @@ type NSCollector struct {
 	Cache_files_hits                           *prometheus.GaugeVec
 	Cache_containers_requests                  *prometheus.GaugeVec
 	Cache_containers_hits                      *prometheus.GaugeVec
-	Traffic_shaping_enabled                    *prometheus.GaugeVec
 }
 
 type NSActivityCollector struct {
@@ -471,15 +470,6 @@ func NewNSCollector(opts *CollectorOpts) *NSCollector {
 			},
 			[]string{},
 		),
-		Traffic_shaping_enabled: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Namespace:   namespace,
-				Name:        "ns_traffic_shaping_enabled",
-				Help:        "Traffic shaping status reported by eos ns stat (1 if enabled, 0 if disabled).",
-				ConstLabels: labels,
-			},
-			[]string{},
-		),
 		Hanging_since: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace:   namespace,
@@ -649,7 +639,6 @@ func (o *NSCollector) collectorList() []prometheus.Collector {
 		o.Cache_files_hits,
 		o.Cache_containers_requests,
 		o.Cache_containers_hits,
-		o.Traffic_shaping_enabled,
 	}
 }
 
@@ -993,14 +982,6 @@ func (o *NSCollector) collectNSDF() error {
 		cache_containers_hits, err := strconv.ParseFloat(m.Cache_containers_hits, 64)
 		if err == nil {
 			o.Cache_containers_hits.WithLabelValues().Set(cache_containers_hits)
-		}
-
-		// Traffic_shaping_enabled
-		switch m.Traffic_shaping_enabled {
-		case "true", "TRUE", "True", "1":
-			o.Traffic_shaping_enabled.WithLabelValues().Set(1)
-		case "false", "FALSE", "False", "0":
-			o.Traffic_shaping_enabled.WithLabelValues().Set(0)
 		}
 
 	}

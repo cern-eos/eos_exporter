@@ -12,9 +12,17 @@ import (
 
 type IOShapingCollector struct {
 	*CollectorOpts
+	idResolver *unixIDResolver
 
 	RateBytes *prometheus.GaugeVec
 	RateIops  *prometheus.GaugeVec
+
+	FSRateBytes *prometheus.GaugeVec
+	FSRateIops  *prometheus.GaugeVec
+
+	AllRateBytes *prometheus.GaugeVec
+	AllRateIops  *prometheus.GaugeVec
+	AllEntries   *prometheus.GaugeVec
 
 	// System metrics
 	SystemLoopDurationUs   *prometheus.GaugeVec
@@ -27,11 +35,14 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 	namespace := "eos"
 
 	standardLabels := []string{"type", "id", "window_sec", "operation"}
+	fsLabels := []string{"node_id", "fsid", "window_sec", "operation"}
+	allLabels := []string{"node_id", "fsid", "app", "uid", "uid_name", "gid", "gid_name", "window_sec", "operation"}
 	systemLabels := []string{"loop_name", "stat"}
 	reportLabels := []string{"stat"}
 
 	return &IOShapingCollector{
 		CollectorOpts: opts,
+		idResolver:    newUnixIDResolver(),
 
 		RateBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace:   namespace,
@@ -46,6 +57,41 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 			Help:        "IO shaping operations per second",
 			ConstLabels: labels,
 		}, standardLabels),
+
+		FSRateBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Name:        "io_shaping_fs_rate_bytes",
+			Help:        "IO shaping filesystem throughput in bytes per second",
+			ConstLabels: labels,
+		}, fsLabels),
+
+		FSRateIops: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Name:        "io_shaping_fs_rate_iops",
+			Help:        "IO shaping filesystem operations per second",
+			ConstLabels: labels,
+		}, fsLabels),
+
+		AllRateBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Name:        "io_shaping_all_rate_bytes",
+			Help:        "IO shaping all-tags throughput in bytes per second",
+			ConstLabels: labels,
+		}, allLabels),
+
+		AllRateIops: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Name:        "io_shaping_all_rate_iops",
+			Help:        "IO shaping all-tags operations per second",
+			ConstLabels: labels,
+		}, allLabels),
+
+		AllEntries: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Name:        "io_shaping_all_entries",
+			Help:        "Number of entries returned by eos io shaping ls --all --json.",
+			ConstLabels: labels,
+		}, []string{}),
 
 		SystemLoopDurationUs: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace:   namespace,
@@ -65,7 +111,7 @@ func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
 
 func (o *IOShapingCollector) collectorList() []prometheus.Collector {
 	return []prometheus.Collector{
-		o.RateBytes, o.RateIops, o.SystemLoopDurationUs, o.ReportsProcessedPerSec,
+		o.RateBytes, o.RateIops, o.FSRateBytes, o.FSRateIops, o.AllRateBytes, o.AllRateIops, o.AllEntries, o.SystemLoopDurationUs, o.ReportsProcessedPerSec,
 	}
 }
 
@@ -132,6 +178,55 @@ func (o *IOShapingCollector) collectIOShaping() error {
 			setMetric(o.RateIops, "read", s.ReadIops)
 			setMetric(o.RateIops, "write", s.WriteIops)
 		}
+	}
+
+	fsStats, err := client.ListIOShapingFS(context.Background())
+	if err != nil {
+		log.Printf("failed to collect IO shaping filesystem stats: %v", err)
+		return nil
+	}
+
+	for _, s := range fsStats {
+		setFSMetric := func(vec *prometheus.GaugeVec, operation, valStr string) {
+			if valStr == "" {
+				return
+			}
+			if val, err := strconv.ParseFloat(valStr, 64); err == nil {
+				vec.WithLabelValues(s.NodeID, s.FSID, s.WindowSec, operation).Set(val)
+			}
+		}
+
+		setFSMetric(o.FSRateBytes, "read", s.ReadRateBps)
+		setFSMetric(o.FSRateBytes, "write", s.WriteRateBps)
+		setFSMetric(o.FSRateIops, "read", s.ReadIops)
+		setFSMetric(o.FSRateIops, "write", s.WriteIops)
+	}
+
+	allStats, err := client.ListIOShapingAll(context.Background())
+	if err != nil {
+		log.Printf("failed to collect IO shaping all-tags stats: %v", err)
+		return nil
+	}
+
+	o.AllEntries.WithLabelValues().Set(float64(len(allStats)))
+
+	for _, s := range allStats {
+		uidName := o.idResolver.ResolveUser(s.UID)
+		gidName := o.idResolver.ResolveGroup(s.GID)
+
+		setAllMetric := func(vec *prometheus.GaugeVec, operation, valStr string) {
+			if valStr == "" {
+				return
+			}
+			if val, err := strconv.ParseFloat(valStr, 64); err == nil {
+				vec.WithLabelValues(s.NodeID, s.FSID, s.App, s.UID, uidName, s.GID, gidName, s.WindowSec, operation).Set(val)
+			}
+		}
+
+		setAllMetric(o.AllRateBytes, "read", s.ReadRateBps)
+		setAllMetric(o.AllRateBytes, "write", s.WriteRateBps)
+		setAllMetric(o.AllRateIops, "read", s.ReadIops)
+		setAllMetric(o.AllRateIops, "write", s.WriteIops)
 	}
 
 	return nil
