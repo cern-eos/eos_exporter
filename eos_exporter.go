@@ -125,23 +125,25 @@ func (c *EOSExporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 type Options struct {
-	ListenAddress     string
-	ListenAddressFast string
-	MetricsPath       string
-	EOSInstance       string
-	Collectors        string
-	Version           bool
-	Help              bool
-	Timeout           int
-	AuditLogPath      string
-	AuditPollInterval int
+	ListenAddress      string
+	ListenAddressFast  string
+	EnableFastExporter bool
+	MetricsPath        string
+	EOSInstance        string
+	Collectors         string
+	Version            bool
+	Help               bool
+	Timeout            int
+	AuditLogPath       string
+	AuditPollInterval  int
 }
 
 var cmdOptions *Options = &Options{}
 
 func init() {
 	flag.StringVar(&cmdOptions.ListenAddress, "listen-address", ":9986", "Address on which to expose standard metrics.")
-	flag.StringVar(&cmdOptions.ListenAddressFast, "listen-address-fast", ":9987", "Address on which to expose fast metrics.")
+	flag.StringVar(&cmdOptions.ListenAddressFast, "listen-address-fast", ":9987", "Address on which to expose fast metrics when --enable-fast-exporter is set.")
+	flag.BoolVar(&cmdOptions.EnableFastExporter, "enable-fast-exporter", false, "Enable the deprecated fast metrics exporter endpoint.")
 	flag.StringVar(&cmdOptions.MetricsPath, "telemetry-path", "/metrics", "Path under which to expose metrics.")
 	flag.IntVar(&cmdOptions.Timeout, "timeout", 30, "Number of seconds to timeout when querying EOS.")
 	flag.StringVar(&cmdOptions.EOSInstance, "eos-instance", "", "EOS instance name.")
@@ -244,8 +246,9 @@ func main() {
 	// Distribute collectors based on type and flags
 	for _, c := range availableCollectors {
 		if isFastCollector(c.name) {
-			// Fast collectors are ALWAYS enabled and routed to the fast port
-			fastCollectors = append(fastCollectors, c.creator(collectorOpts))
+			if cmdOptions.EnableFastExporter {
+				fastCollectors = append(fastCollectors, c.creator(collectorOpts))
+			}
 		} else {
 			// Slow collectors obey the --collectors flag
 			if cmdOptions.Collectors == "all" || cmdOptions.Collectors == "" || requestedMap[c.name] {
@@ -254,11 +257,14 @@ func main() {
 		}
 	}
 
-	fastRegistry := prometheus.NewRegistry()
-	if len(fastCollectors) > 0 {
-		fastRegistry.MustRegister(&EOSExporter{collectors: fastCollectors})
+	var fastServer *http.Server
+	if cmdOptions.EnableFastExporter {
+		fastRegistry := prometheus.NewRegistry()
+		if len(fastCollectors) > 0 {
+			fastRegistry.MustRegister(&EOSExporter{collectors: fastCollectors})
+		}
+		fastServer = createServer(cmdOptions.ListenAddressFast, cmdOptions.MetricsPath, fastRegistry)
 	}
-	fastServer := createServer(cmdOptions.ListenAddressFast, cmdOptions.MetricsPath, fastRegistry)
 
 	stdRegistry := prometheus.NewRegistry()
 
@@ -271,12 +277,16 @@ func main() {
 
 	stdServer := createServer(cmdOptions.ListenAddress, cmdOptions.MetricsPath, stdRegistry)
 
-	go func() {
-		log.Println("Fast metrics listening on", cmdOptions.ListenAddressFast)
-		if err := fastServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Fast server failed: %v", err)
-		}
-	}()
+	if cmdOptions.EnableFastExporter {
+		go func() {
+			log.Println("Fast metrics listening on", cmdOptions.ListenAddressFast)
+			if err := fastServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Fatalf("Fast server failed: %v", err)
+			}
+		}()
+	} else {
+		log.Println("Fast metrics exporter disabled")
+	}
 
 	go func() {
 		log.Println("Standard metrics listening on", cmdOptions.ListenAddress)
@@ -295,14 +305,17 @@ func main() {
 	defer cancel()
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(1)
 
-	go func() {
-		defer wg.Done()
-		if err := fastServer.Shutdown(ctx); err != nil {
-			log.Printf("Fast server shutdown error: %v", err)
-		}
-	}()
+	if fastServer != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := fastServer.Shutdown(ctx); err != nil {
+				log.Printf("Fast server shutdown error: %v", err)
+			}
+		}()
+	}
 
 	go func() {
 		defer wg.Done()
