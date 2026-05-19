@@ -26,6 +26,9 @@ make build
 - By default, the exporter exposes the metrics on the port `9986` and url `/metrics`. 
     - Change the port with the argument `-listen-address`
     - Change the url with `-telemetry-path`
+- The deprecated fast metrics exporter is disabled by default.
+    - Enable it with `-enable-fast-exporter`
+    - Change its port with `-listen-address-fast`
 - For more options, use `--help`
 
 ## Prometheus example configuration
