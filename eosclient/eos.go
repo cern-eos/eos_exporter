@@ -2317,7 +2317,11 @@ func (c *Client) ListIOShapingConfig(ctx context.Context) (*IOShapingConfig, err
 	cmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "io", "shaping", "config", "ls", "--json")
 	stdout, stderr, err := c.execute(cmd)
 	if err == nil {
-		return c.parseIOShapingConfig(stdout)
+		config, parseErr := c.parseIOShapingConfig(stdout)
+		if parseErr == nil {
+			return config, nil
+		}
+		err = parseErr
 	}
 
 	textCmd := exec.CommandContext(ctxWt, "/usr/bin/eos", "io", "shaping", "config", "ls")

@@ -2,332 +2,189 @@ package collector
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strconv"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/cern-eos/eos_exporter/eosclient"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type shapingRateValues struct {
-	ReadRateBps  float64
-	WriteRateBps float64
-	ReadIops     float64
-	WriteIops    float64
-}
-
-type shapingStandardKey struct {
-	Type      string
-	ID        string
-	WindowSec string
-}
-
-type shapingFSKey struct {
-	NodeID    string
-	FSID      string
-	WindowSec string
-}
+const shapingCacheTTL = time.Second
 
 type IOShapingCollector struct {
 	*CollectorOpts
-	idResolver *unixIDResolver
-
-	RateBytes *prometheus.GaugeVec
-	RateIops  *prometheus.GaugeVec
-
-	FSRateBytes *prometheus.GaugeVec
-	FSRateIops  *prometheus.GaugeVec
-
-	AllRateBytes *prometheus.GaugeVec
-	AllRateIops  *prometheus.GaugeVec
-	AllEntries   *prometheus.GaugeVec
-
-	// System metrics
-	SystemLoopDurationUs   *prometheus.GaugeVec
-	ReportsProcessedPerSec *prometheus.GaugeVec
+	mu            sync.Mutex
+	lastRefresh   time.Time
+	snapshot      *eosclient.IOShapingCounters
+	failureLogged bool
+	fetch         func(context.Context) (*eosclient.IOShapingCounters, error)
+	userLabel     func(string) string
+	groupLabel    func(string) string
+	desc          map[string]*prometheus.Desc
 }
 
 func NewIOShapingCollector(opts *CollectorOpts) *IOShapingCollector {
-	cluster := opts.Cluster
-	labels := prometheus.Labels{"cluster": cluster}
-	namespace := "eos"
-
-	standardLabels := []string{"type", "id", "window_sec", "operation"}
-	fsLabels := []string{"node_id", "fsid", "window_sec", "operation"}
-	allLabels := []string{"node_id", "fsid", "app", "uid", "uid_name", "gid", "gid_name", "window_sec", "operation"}
-	systemLabels := []string{"loop_name", "stat"}
-	reportLabels := []string{"stat"}
-
-	return &IOShapingCollector{
-		CollectorOpts: opts,
-		idResolver:    newUnixIDResolver(),
-
-		RateBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Name:        "io_shaping_rate_bytes",
-			Help:        "IO shaping throughput in bytes per second",
-			ConstLabels: labels,
-		}, standardLabels),
-
-		RateIops: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Name:        "io_shaping_rate_iops",
-			Help:        "IO shaping operations per second",
-			ConstLabels: labels,
-		}, standardLabels),
-
-		FSRateBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Name:        "io_shaping_fs_rate_bytes",
-			Help:        "IO shaping filesystem throughput in bytes per second",
-			ConstLabels: labels,
-		}, fsLabels),
-
-		FSRateIops: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Name:        "io_shaping_fs_rate_iops",
-			Help:        "IO shaping filesystem operations per second",
-			ConstLabels: labels,
-		}, fsLabels),
-
-		AllRateBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Name:        "io_shaping_all_rate_bytes",
-			Help:        "IO shaping all-tags throughput in bytes per second",
-			ConstLabels: labels,
-		}, allLabels),
-
-		AllRateIops: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Name:        "io_shaping_all_rate_iops",
-			Help:        "IO shaping all-tags operations per second",
-			ConstLabels: labels,
-		}, allLabels),
-
-		AllEntries: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Name:        "io_shaping_all_entries",
-			Help:        "Number of entries returned by eos io shaping ls --all --json for the configured window.",
-			ConstLabels: labels,
-		}, []string{"window_sec"}),
-
-		SystemLoopDurationUs: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Name:        "io_shaping_sys_loop_duration_microseconds",
-			Help:        "System thread loop duration in microseconds",
-			ConstLabels: labels,
-		}, systemLabels),
-
-		ReportsProcessedPerSec: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Name:        "io_shaping_reports_processed_per_sec",
-			Help:        "FST IO reports processed per second",
-			ConstLabels: labels,
-		}, reportLabels),
-	}
-}
-
-func (o *IOShapingCollector) collectorList() []prometheus.Collector {
-	return []prometheus.Collector{
-		o.RateBytes, o.RateIops, o.FSRateBytes, o.FSRateIops, o.AllRateBytes, o.AllRateIops, o.AllEntries, o.SystemLoopDurationUs, o.ReportsProcessedPerSec,
-	}
-}
-
-func (o *IOShapingCollector) collectIOShaping() error {
-	ins := getEOSInstance()
-	url := "root://" + ins
-	opt := &eosclient.Options{URL: url, Timeout: o.Timeout}
-	client, err := eosclient.New(opt)
-	if err != nil {
-		return fmt.Errorf("failed to create eosclient: %w", err)
-	}
-
-	windows := []int{15, 300}
-	var allStats []*eosclient.IOShapingAllStat
-
-	for _, win := range windows {
-		stats, err := client.ListIOShapingAll(context.Background(), win)
+	resolver := newUnixIDResolver()
+	o := &IOShapingCollector{CollectorOpts: opts, desc: make(map[string]*prometheus.Desc)}
+	o.userLabel = func(id string) string { return resolvedShapingID(id, resolver.ResolveUser(id)) }
+	o.groupLabel = func(id string) string { return resolvedShapingID(id, resolver.ResolveGroup(id)) }
+	o.fetch = func(ctx context.Context) (*eosclient.IOShapingCounters, error) {
+		client, err := eosclient.New(&eosclient.Options{URL: "root://" + getEOSInstance(), Timeout: opts.Timeout})
 		if err != nil {
-			log.Printf("failed to collect IO shaping all-tags stats for window %ds: %v", win, err)
-			continue
+			return nil, err
 		}
-		o.AllEntries.WithLabelValues(strconv.Itoa(win)).Set(float64(countIOShapingAllEntries(stats)))
-		allStats = append(allStats, stats...)
+		return client.ListIOShapingCounters(ctx)
 	}
-
-	if len(allStats) == 0 {
-		return nil
+	add := func(name, help string, labels ...string) {
+		o.desc[name] = prometheus.NewDesc("eos_"+name, help, labels, prometheus.Labels{"cluster": opts.Cluster})
 	}
-
-	standardStats, fsStats, _ := projectIOShapingAll(allStats)
-
-	for key, values := range standardStats {
-		setProjectedMetric(o.RateBytes, key.Type, key.ID, key.WindowSec, "read", values.ReadRateBps)
-		setProjectedMetric(o.RateBytes, key.Type, key.ID, key.WindowSec, "write", values.WriteRateBps)
-		setProjectedMetric(o.RateIops, key.Type, key.ID, key.WindowSec, "read", values.ReadIops)
-		setProjectedMetric(o.RateIops, key.Type, key.ID, key.WindowSec, "write", values.WriteIops)
-	}
-
-	for key, values := range fsStats {
-		setFSProjectedMetric(o.FSRateBytes, key.NodeID, key.FSID, key.WindowSec, "read", values.ReadRateBps)
-		setFSProjectedMetric(o.FSRateBytes, key.NodeID, key.FSID, key.WindowSec, "write", values.WriteRateBps)
-		setFSProjectedMetric(o.FSRateIops, key.NodeID, key.FSID, key.WindowSec, "read", values.ReadIops)
-		setFSProjectedMetric(o.FSRateIops, key.NodeID, key.FSID, key.WindowSec, "write", values.WriteIops)
-	}
-
-	for _, s := range allStats {
-		if s.Type == "system" {
-			o.collectSystemMetrics(s)
-			continue
-		}
-
-		uidName := o.idResolver.ResolveUser(s.UID)
-		gidName := o.idResolver.ResolveGroup(s.GID)
-
-		setAllMetric := func(vec *prometheus.GaugeVec, operation, valStr string) {
-			if valStr == "" {
-				return
-			}
-			if val, err := strconv.ParseFloat(valStr, 64); err == nil {
-				vec.WithLabelValues(s.NodeID, s.FSID, s.App, s.UID, uidName, s.GID, gidName, s.WindowSec, operation).Set(val)
-			}
-		}
-
-		setAllMetric(o.AllRateBytes, "read", s.ReadRateBps)
-		setAllMetric(o.AllRateBytes, "write", s.WriteRateBps)
-		setAllMetric(o.AllRateIops, "read", s.ReadIops)
-		setAllMetric(o.AllRateIops, "write", s.WriteIops)
-	}
-
-	return nil
+	add("io_shaping_bytes_total", "Total IO shaping bytes observed", "type", "id", "operation")
+	add("io_shaping_operations_total", "Total IO shaping operations observed", "type", "id", "operation")
+	labels := []string{"node_id", "fsid", "app", "uid", "uid_id", "uid_name", "gid", "gid_id", "gid_name", "groups", "operation"}
+	add("io_shaping_all_bytes_total", "Total IO shaping all-tags bytes observed", labels...)
+	add("io_shaping_all_operations_total", "Total IO shaping all-tags operations observed", labels...)
+	add("io_shaping_all_entries", "Number of retained all-tags IO shaping entries.")
+	add("io_shaping_all_entries_exported", "Number of all-tags IO shaping entries exported in this scrape.")
+	add("io_shaping_all_entries_limited", "Whether the MGM has rejected new monitoring identities.")
+	add("io_shaping_counter_entries_rejected_total", "Monitoring identities rejected by MGM retention bounds.")
+	add("io_shaping_counter_entries_limit", "Maximum retained monitoring identities.")
+	add("io_shaping_scrape_success", "Whether cumulative shaping counters were collected successfully.")
+	add("io_shaping_sys_loop_duration_microseconds", "System thread loop duration in microseconds", "loop_name", "stat")
+	add("io_shaping_reports_processed_per_sec", "FST IO reports processed per second", "stat")
+	add("monit_enabled", "Whether this exporter provides the EOS monitoring metric interface.")
+	add("monit_cache_ttl_seconds", "Counter snapshot cache lifetime in seconds.")
+	return o
 }
 
-func countIOShapingAllEntries(stats []*eosclient.IOShapingAllStat) int {
-	entries := 0
-	for _, s := range stats {
-		if s.Type == "all" {
-			entries++
-		}
+func resolvedShapingID(id, name string) string {
+	if name == "" || name == id {
+		return id
 	}
-	return entries
+	return id + "(" + name + ")"
 }
 
-func (o *IOShapingCollector) collectSystemMetrics(s *eosclient.IOShapingAllStat) {
-	setSysMetric := func(loopName, statName, valStr string) {
-		if valStr == "" {
-			return
-		}
-		if val, err := strconv.ParseFloat(valStr, 64); err == nil {
-			o.SystemLoopDurationUs.WithLabelValues(loopName, statName).Set(val)
-		}
+func shapingNodeLabel(node string) string {
+	if strings.HasPrefix(node, "/eos/") && strings.HasSuffix(node, "/fst") {
+		node = strings.TrimSuffix(strings.TrimPrefix(node, "/eos/"), "/fst")
 	}
-
-	setSysMetric("estimators", "median", s.EstimatorsLoopMedianUs)
-	setSysMetric("estimators", "min", s.EstimatorsLoopMinUs)
-	setSysMetric("estimators", "max", s.EstimatorsLoopMaxUs)
-
-	setSysMetric("fst_limits", "median", s.FstLimitsLoopMedianUs)
-	setSysMetric("fst_limits", "min", s.FstLimitsLoopMinUs)
-	setSysMetric("fst_limits", "max", s.FstLimitsLoopMaxUs)
-
-	if s.ReportsProcessedPerSecMean != "" {
-		if val, err := strconv.ParseFloat(s.ReportsProcessedPerSecMean, 64); err == nil {
-			o.ReportsProcessedPerSec.WithLabelValues("mean").Set(val)
-		}
+	if node == "" {
+		return "<unknown>"
 	}
-}
-
-func projectIOShapingAll(stats []*eosclient.IOShapingAllStat) (map[shapingStandardKey]shapingRateValues, map[shapingFSKey]shapingRateValues, int) {
-	standardStats := make(map[shapingStandardKey]shapingRateValues)
-	fsStats := make(map[shapingFSKey]shapingRateValues)
-	allEntries := 0
-
-	for _, s := range stats {
-		if s.Type != "all" {
-			continue
-		}
-
-		allEntries++
-		values := shapingRateValues{
-			ReadRateBps:  parseShapingFloat(s.ReadRateBps),
-			WriteRateBps: parseShapingFloat(s.WriteRateBps),
-			ReadIops:     parseShapingFloat(s.ReadIops),
-			WriteIops:    parseShapingFloat(s.WriteIops),
-		}
-
-		addStandardProjection(standardStats, shapingStandardKey{Type: "app", ID: s.App, WindowSec: s.WindowSec}, values)
-		addStandardProjection(standardStats, shapingStandardKey{Type: "uid", ID: s.UID, WindowSec: s.WindowSec}, values)
-		addStandardProjection(standardStats, shapingStandardKey{Type: "gid", ID: s.GID, WindowSec: s.WindowSec}, values)
-		addStandardProjection(standardStats, shapingStandardKey{Type: "node", ID: s.NodeID, WindowSec: s.WindowSec}, values)
-
-		addFSProjection(fsStats, shapingFSKey{NodeID: s.NodeID, FSID: s.FSID, WindowSec: s.WindowSec}, values)
-	}
-
-	return standardStats, fsStats, allEntries
-}
-
-func addStandardProjection(stats map[shapingStandardKey]shapingRateValues, key shapingStandardKey, values shapingRateValues) {
-	if key.ID == "" || key.WindowSec == "" {
-		return
-	}
-	stats[key] = addShapingRateValues(stats[key], values)
-}
-
-func addFSProjection(stats map[shapingFSKey]shapingRateValues, key shapingFSKey, values shapingRateValues) {
-	if key.NodeID == "" || key.FSID == "" || key.WindowSec == "" {
-		return
-	}
-	stats[key] = addShapingRateValues(stats[key], values)
-}
-
-func addShapingRateValues(a, b shapingRateValues) shapingRateValues {
-	return shapingRateValues{
-		ReadRateBps:  a.ReadRateBps + b.ReadRateBps,
-		WriteRateBps: a.WriteRateBps + b.WriteRateBps,
-		ReadIops:     a.ReadIops + b.ReadIops,
-		WriteIops:    a.WriteIops + b.WriteIops,
-	}
-}
-
-func parseShapingFloat(valStr string) float64 {
-	if valStr == "" {
-		return 0
-	}
-	val, err := strconv.ParseFloat(valStr, 64)
-	if err != nil {
-		return 0
-	}
-	return val
-}
-
-func setProjectedMetric(vec *prometheus.GaugeVec, statType, id, windowSec, operation string, val float64) {
-	vec.WithLabelValues(statType, id, windowSec, operation).Set(val)
-}
-
-func setFSProjectedMetric(vec *prometheus.GaugeVec, nodeID, fsid, windowSec, operation string, val float64) {
-	vec.WithLabelValues(nodeID, fsid, windowSec, operation).Set(val)
+	return node
 }
 
 func (o *IOShapingCollector) Describe(ch chan<- *prometheus.Desc) {
-	for _, metric := range o.collectorList() {
-		metric.Describe(ch)
+	for _, desc := range o.desc {
+		ch <- desc
 	}
 }
 
 func (o *IOShapingCollector) Collect(ch chan<- prometheus.Metric) {
-	for _, metric := range o.collectorList() {
-		if gaugeVec, ok := metric.(*prometheus.GaugeVec); ok {
-			gaugeVec.Reset()
+	// Serialize refreshes and label resolution; concurrent HTTP scrapes must not
+	// race a mutable snapshot or run duplicate EOS commands.
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	emit := func(name string, kind prometheus.ValueType, value float64, labels ...string) {
+		ch <- prometheus.MustNewConstMetric(o.desc[name], kind, value, labels...)
+	}
+	emit("monit_enabled", prometheus.GaugeValue, 1)
+	emit("monit_cache_ttl_seconds", prometheus.GaugeValue, shapingCacheTTL.Seconds())
+	if o.snapshot == nil || time.Since(o.lastRefresh) >= shapingCacheTTL {
+		snapshot, err := o.fetch(context.Background())
+		if err != nil {
+			// Do not keep exposing an old snapshot as healthy after an EOS failure.
+			o.snapshot = nil
+			if !o.failureLogged {
+				log.Printf("failed collecting IO shaping counters: %v", err)
+				o.failureLogged = true
+			}
+			emit("io_shaping_scrape_success", prometheus.GaugeValue, 0)
+			return
+		}
+		o.failureLogged = false
+		o.snapshot = snapshot
+		o.lastRefresh = time.Now()
+	}
+	emit("io_shaping_scrape_success", prometheus.GaugeValue, 1)
+	snapshot := o.snapshot
+	emit("io_shaping_all_entries", prometheus.GaugeValue, float64(len(snapshot.Entries)))
+	emit("io_shaping_all_entries_exported", prometheus.GaugeValue, float64(len(snapshot.Entries)))
+	limited := 0.0
+	if snapshot.RejectedEntriesTotal > 0 {
+		limited = 1
+	}
+	emit("io_shaping_all_entries_limited", prometheus.GaugeValue, limited)
+	emit("io_shaping_counter_entries_rejected_total", prometheus.CounterValue, float64(snapshot.RejectedEntriesTotal))
+	emit("io_shaping_counter_entries_limit", prometheus.GaugeValue, float64(snapshot.LimitEntries))
+
+	type projection struct{ kind, id string }
+	projections := make(map[projection][4]float64)
+	// Match the native exporter label formatting, and aggregate identities that
+	// normalize to the same node/application labels before emitting samples.
+	type identity struct {
+		node, app string
+		uid, gid  uint32
+	}
+	all := make(map[identity][4]float64)
+	for _, row := range snapshot.Entries {
+		app := row.App
+		if app == "" {
+			app = "<unknown>"
+		}
+		key := identity{shapingNodeLabel(row.NodeID), app, row.UID, row.GID}
+		values := all[key]
+		for i, v := range []uint64{row.BytesReadTotal, row.BytesWrittenTotal, row.ReadOpsTotal, row.WriteOpsTotal} {
+			values[i] += float64(v)
+		}
+		all[key] = values
+	}
+	for key, values := range all {
+		uidID, gidID := strconv.FormatUint(uint64(key.uid), 10), strconv.FormatUint(uint64(key.gid), 10)
+		uid, gid := o.userLabel(uidID), o.groupLabel(gidID)
+		for _, p := range []projection{{"app", key.app}, {"uid", uid}, {"gid", gid}, {"node", key.node}} {
+			total := projections[p]
+			for i, v := range values {
+				total[i] += v
+			}
+			projections[p] = total
+		}
+		for i, operation := range []string{"read", "write"} {
+			// fsid=0 is the native exporter's aggregate/unknown-filesystem convention.
+			labels := []string{key.node, "0", key.app, uid, uidID, uid, gid, gidID, gid, gid, operation}
+			emit("io_shaping_all_bytes_total", prometheus.CounterValue, values[i], labels...)
+			emit("io_shaping_all_operations_total", prometheus.CounterValue, values[i+2], labels...)
 		}
 	}
-
-	if err := o.collectIOShaping(); err != nil {
-		log.Println("failed collecting IO shaping metrics:", err)
-		return
+	for key, values := range projections {
+		for i, operation := range []string{"read", "write"} {
+			emit("io_shaping_bytes_total", prometheus.CounterValue, values[i], key.kind, key.id, operation)
+			emit("io_shaping_operations_total", prometheus.CounterValue, values[i+2], key.kind, key.id, operation)
+		}
 	}
-
-	for _, metric := range o.collectorList() {
-		metric.Collect(ch)
+	system := snapshot.System
+	for _, loop := range []struct {
+		name   string
+		values [3]string
+	}{
+		{"estimators", [3]string{system.EstimatorsLoopMedianUs.String(), system.EstimatorsLoopMinUs.String(), system.EstimatorsLoopMaxUs.String()}},
+		{"fst_limits", [3]string{system.FstLimitsLoopMedianUs.String(), system.FstLimitsLoopMinUs.String(), system.FstLimitsLoopMaxUs.String()}},
+	} {
+		for i, stat := range []string{"median", "min", "max"} {
+			if loop.values[i] == "" {
+				continue
+			}
+			value, err := strconv.ParseFloat(loop.values[i], 64)
+			if err == nil {
+				emit("io_shaping_sys_loop_duration_microseconds", prometheus.GaugeValue, value, loop.name, stat)
+			}
+		}
+	}
+	if value, err := strconv.ParseFloat(system.ReportsProcessedPerSecMean.String(), 64); err == nil {
+		emit("io_shaping_reports_processed_per_sec", prometheus.GaugeValue, value, "mean")
 	}
 }
+
+var _ prometheus.Collector = (*IOShapingCollector)(nil)
