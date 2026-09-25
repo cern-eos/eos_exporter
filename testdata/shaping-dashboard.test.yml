@@ -1,0 +1,59 @@
+# Counter names, labels and queries used by the EOS Traffic Shaping dashboard.
+# Two nodes share an application/user/group. One source counter resets.
+evaluation_interval: 15s
+fuzzy_compare: true
+tests:
+  - interval: 15s
+    input_series:
+      - series: 'eos_monit_enabled{cluster="test"}'
+        values: '1+0x8'
+      - series: 'eos_io_shaping_bytes_total{cluster="test",type="app",id="analysis",operation="read"}'
+        values: '0+450x8'
+      - series: 'eos_io_shaping_operations_total{cluster="test",type="app",id="analysis",operation="read"}'
+        values: '0+45x8'
+      - series: 'eos_io_shaping_all_bytes_total{cluster="test",node_id="node1:1095",fsid="0",app="analysis",uid="100(alice)",uid_id="100",uid_name="100(alice)",gid="200(users)",gid_id="200",gid_name="200(users)",groups="200(users)",operation="read"}'
+        values: '0+150x8'
+      - series: 'eos_io_shaping_all_bytes_total{cluster="test",node_id="node2:1095",fsid="0",app="analysis",uid="100(alice)",uid_id="100",uid_name="100(alice)",gid="200(users)",gid_id="200",gid_name="200(users)",groups="200(users)",operation="read"}'
+        values: '0+300x8'
+      - series: 'eos_io_shaping_bytes_total{cluster="reset",type="app",id="analysis",operation="read"}'
+        values: '1000 1150 1300 0 150 300 450 600 750'
+    promql_expr_test:
+      - expr: 'sum by (cluster) (rate(eos_io_shaping_bytes_total{type="app",operation="read"}[1m]))'
+        eval_time: 2m
+        exp_samples:
+          - labels: '{cluster="test"}'
+            value: 30
+          - labels: '{cluster="reset"}'
+            value: 10
+      - expr: 'sum(rate(eos_io_shaping_operations_total{cluster="test",type="app",operation="read"}[1m])) or vector(0)'
+        eval_time: 2m
+        exp_samples:
+          - labels: '{}'
+            value: 3
+      - expr: 'topk(5, sum by (id) (rate(eos_io_shaping_bytes_total{cluster="test",type="app",operation="read"}[1m])))'
+        eval_time: 2m
+        exp_samples:
+          - labels: '{id="analysis"}'
+            value: 30
+      - expr: 'sum by (app) (rate(eos_io_shaping_all_bytes_total{cluster="test",node_id=~"node1:1095",app=~".*",uid_name=~".*",gid_name=~".*",fsid=~".*",operation="read"}[1m]))'
+        eval_time: 2m
+        exp_samples:
+          - labels: '{app="analysis"}'
+            value: 10
+      - expr: 'sum by (node_id) (rate(eos_io_shaping_all_bytes_total{cluster="test",node_id=~".*",app=~"analysis",uid_name=~".*",gid_name=~".*",fsid=~".*",operation="read"}[1m]))'
+        eval_time: 2m
+        exp_samples:
+          - labels: '{node_id="node1:1095"}'
+            value: 10
+          - labels: '{node_id="node2:1095"}'
+            value: 20
+      - expr: 'sum by (uid_name) (rate(eos_io_shaping_all_bytes_total{cluster="test",node_id=~".*",app=~"analysis",uid_name=~".*",gid_name=~".*",fsid=~".*",operation="read"}[1m]))'
+        eval_time: 2m
+        exp_samples:
+          - labels: '{uid_name="100(alice)"}'
+            value: 29.999999999999996
+      - expr: 'count((sum by (node_id) (rate(eos_io_shaping_all_bytes_total{cluster="test",node_id=~".*",app=~".*",uid_name=~".*",gid_name=~".*",fsid=~".*",operation=~"read|write"}[1m]))) > 0)'
+        eval_time: 2m
+        exp_samples:
+          - labels: '{}'
+            value: 2

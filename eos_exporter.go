@@ -57,6 +57,9 @@ var availableCollectors = []struct {
 	{"space", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewSpaceCollector(opts) }},
 	{"group", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewGroupCollector(opts) }},
 	{"node", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewNodeCollector(opts) }},
+	{"mgm_version", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewMGMLeaderVersionCollector(opts)
+	}},
 	{"fs", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewFSCollector(opts) }},
 	{"io_info", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewIOInfoCollector(opts) }},
 	{"io_app_info", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewIOAppInfoCollector(opts) }},
@@ -228,7 +231,7 @@ func main() {
 		// Add future fast metrics here
 	}
 
-	// Fast metrics will not be exposed in the standard endpoint to avoid duplication!
+	// Shaping collectors belong to the fast endpoint and never delay standard scrapes.
 	isFastCollector := func(name string) bool {
 		return fastCollectorsSet[name]
 	}

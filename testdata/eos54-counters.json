@@ -1,0 +1,35 @@
+[
+	{
+		"counters" :
+		{
+			"entries" :
+			[
+				{
+					"app" : "analysis",
+					"bytes_read_total" : 150,
+					"bytes_written_total" : 300,
+					"gid" : 200,
+					"node_id" : "/eos/node1:1095/fst",
+					"read_ops_total" : 15,
+					"uid" : 100,
+					"write_ops_total" : 30
+				},
+				{
+					"app" : "analysis",
+					"bytes_read_total" : 300,
+					"bytes_written_total" : 600,
+					"gid" : 200,
+					"node_id" : "/eos/node2:1095/fst",
+					"read_ops_total" : 30,
+					"uid" : 100,
+					"write_ops_total" : 60
+				}
+			],
+			"limit_entries" : 50000,
+			"rejected_entries_total" : 0,
+			"version" : 1
+		},
+		"id" : "engine_meta",
+		"type" : "system"
+	}
+]

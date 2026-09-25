@@ -1,0 +1,24 @@
+name: Tests
+on:
+  pull_request:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: ./get_build_info.sh
+      - run: go test -race ./...
+      - run: go build
+      - name: Verify dashboard PromQL
+        run: >-
+          docker run --rm --entrypoint=/bin/promtool
+          -v "$PWD/testdata:/tests:ro" prom/prometheus:v3.10.0
+          test rules /tests/shaping-dashboard.test.yml
