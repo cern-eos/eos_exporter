@@ -57,6 +57,9 @@ var availableCollectors = []struct {
 	{"space", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewSpaceCollector(opts) }},
 	{"group", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewGroupCollector(opts) }},
 	{"node", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewNodeCollector(opts) }},
+	{"mgm_version", func(opts *collector.CollectorOpts) prometheus.Collector {
+		return collector.NewMGMLeaderVersionCollector(opts)
+	}},
 	{"fs", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewFSCollector(opts) }},
 	{"io_info", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewIOInfoCollector(opts) }},
 	{"io_app_info", func(opts *collector.CollectorOpts) prometheus.Collector { return collector.NewIOAppInfoCollector(opts) }},

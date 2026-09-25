@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	osuser "os/user"
@@ -374,6 +375,85 @@ func (c *Client) execute(cmd *exec.Cmd) (string, string, error) {
 func (c *Client) getTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	timeout := time.Duration(c.opt.Timeout) * time.Second
 	return context.WithTimeout(ctx, time.Duration(timeout))
+}
+
+type MGMLeaderVersion struct {
+	Leader  string
+	Version string
+	Release string
+}
+
+func parseLocalMGMRole(output string) (bool, string, error) {
+	for _, field := range strings.Fields(output) {
+		if role, found := strings.CutPrefix(field, "is_master="); found {
+			switch role {
+			case "false":
+				return false, "", nil
+			case "true":
+				for _, field := range strings.Fields(output) {
+					if leader, found := strings.CutPrefix(field, "master_id="); found {
+						host, port, err := net.SplitHostPort(leader)
+						if err != nil || host == "" || port == "" {
+							return false, "", fmt.Errorf("invalid MGM master_id %q", leader)
+						}
+						return true, leader, nil
+					}
+				}
+				return false, "", errors.New("MGM master_id is missing from eos ns output")
+			default:
+				return false, "", fmt.Errorf("invalid MGM is_master %q", role)
+			}
+		}
+	}
+	return false, "", errors.New("MGM is_master is missing from eos ns output")
+}
+
+func parseMGMVersion(output string) (string, string, error) {
+	var version, release string
+	for _, field := range strings.Fields(output) {
+		if value, found := strings.CutPrefix(field, "EOS_SERVER_VERSION="); found {
+			version = value
+		}
+		if value, found := strings.CutPrefix(field, "EOS_SERVER_RELEASE="); found {
+			release = value
+		}
+	}
+	if version == "" || release == "" {
+		return "", "", errors.New("EOS server version or release is missing from eos version output")
+	}
+	return version, release, nil
+}
+
+// GetLocalMGMLeaderVersion reports this MGM only when it is the leader.
+func (c *Client) GetLocalMGMLeaderVersion(ctx context.Context) (*MGMLeaderVersion, error) {
+	ctxWt, cancel := c.getTimeout(ctx)
+	defer cancel()
+
+	nsCmd := exec.CommandContext(ctxWt, c.opt.EosBinary, "ns", "stat", "-m")
+	nsCmd.Env = append(os.Environ(), "EOS_MGM_URL="+c.opt.URL)
+	nsOutput, nsStderr, err := c.execute(nsCmd)
+	if err != nil {
+		return nil, fmt.Errorf("eos ns failed: %w (stderr: %s)", err, strings.TrimSpace(nsStderr))
+	}
+	isLeader, leader, err := parseLocalMGMRole(nsOutput)
+	if err != nil {
+		return nil, err
+	}
+	if !isLeader {
+		return nil, nil
+	}
+
+	versionCmd := exec.CommandContext(ctxWt, c.opt.EosBinary, "version")
+	versionCmd.Env = append(os.Environ(), "EOS_MGM_URL="+c.opt.URL)
+	versionOutput, versionStderr, err := c.execute(versionCmd)
+	if err != nil {
+		return nil, fmt.Errorf("eos version on local MGM failed: %w (stderr: %s)", err, strings.TrimSpace(versionStderr))
+	}
+	version, release, err := parseMGMVersion(versionOutput)
+	if err != nil {
+		return nil, err
+	}
+	return &MGMLeaderVersion{Leader: leader, Version: version, Release: release}, nil
 }
 
 // List the nodes on the instance
